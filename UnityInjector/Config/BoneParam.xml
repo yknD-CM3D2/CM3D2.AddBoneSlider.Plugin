@@ -1,0 +1,637 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE bones [
+    <!ELEMENT bones (bone*)>
+    <!ATTLIST bones format         CDATA #REQUIRED
+                   name           CDATA "BoneParam.xml"
+                   description    CDATA "CM3D2.AddBonesSlider.Plugin の各スライダーのパラメータ定義用XML">
+    <!ELEMENT bone (value*)>
+    <!ATTLIST bone id              CDATA #REQUIRED
+                  description     CDATA ""
+                  type            CDATA "slider"
+                  on_wideslider   CDATA "false"
+                  visible         CDATA "true">
+    <!ELEMENT value EMPTY>
+    <!ATTLIST value prop_name     CDATA #REQUIRED
+                    axis          CDATA "trax"
+                    zero          CDATA "0"
+                    min           CDATA "-10"
+                    max           CDATA "10"
+                    label         CDATA ""
+                    type          CDATA "num"
+                    default       CDATA "NaN"
+                    visible       CDATA "true">
+] >
+
+<!--
+    設置場所 :\UnityInjector\Config\BoneParam.xml
+
+    書式説明 : CM3D2.AddBoneSlider.Plugin.0.0.1.1 以降に対応
+
+    <bone id="Bip01 Pelvis"                : 必須。ボーン名もしくは各パラメータ識別名。
+          description="..."                : 必須。GUIに表示される名前。
+          category="Lower"                 : 必須。各ボーンの分類。
+          visible="true"                   : 省略可。規定値は"true"。"false"指定でこのボーンもしくはパラメータのスライダーを表示させない。
+          nosave="false"                   : 省略可。規定値は"false"。"true"指定でポーズ保存機能でこのボーンもしくはパラメータの値を保存しない。
+                                             ※ボーン以外のパラメータは現在ポーズ保存に対応していないため、true指定しないでください。
+          path="Bip01/Bip01 Pelvis"        : 必須。ボーンの構成パス。ボーン以外のパラメーターは""を指定。
+    >
+    
+        <value prop_name="Bip01 Pelvis.x": 必須。各ボーンもしくはパラメータの値の識別名。
+               axis="rotx"               : 必須。値の種類。現在この値は未使用。
+               zero="90.0"               : 必須。スライダーの原点に合わせる値。GUI上の値にこの値を足したものが実際のボーンもしくはパラメータの値となる。
+               min="-25"                 : 必須。スライダーの最小値。
+               max="25"                  : 必須。スライダーの最大値。
+               default="0"               : 必須。スライダーのデフォルト値。リセットボタンを押した場合、この値になる。
+               label="ひねり"              : 必須。GUIに表示される値の名前。
+               visible="true"            : 省略可。規定値は"true"。"false"指定でこのvalueのスライダーを表示させない。
+                />  
+        />
+
+        <value prop_name="Bip01 Pelvis.z" axis="rotz" zero="90.0"  min="-25" max="25" default="0" label="ひねり"  />
+                                         : <value ... /> の一行表記。
+        ...                              : 表示させるボーン値およびパラメータ数だけ、 <value ... /> を記載する。
+    </bone>
+-->
+
+<bones format="1.00" name="BoneParam.xml"
+      description="CM3D2.AddBoneSlider.Plugin の各スライダーのパラメータ定義用XML">
+      
+    <bone id="allpos" description="ALLPOS"  category="Default" nosave="true" path="">
+        <value prop_name="allpos.px" axis="posx" zero="0"  min="-10" max="10" default="0" label="X軸移動"  />
+        <value prop_name="allpos.py" axis="posy" zero="0"  min="-10" max="10" default="0" label="Y軸移動"  />
+        <value prop_name="allpos.pz" axis="posz" zero="0"  min="-10" max="10" default="0" label="Z軸移動"  />
+        <value prop_name="allpos.x" axis="rotx" zero="0"  min="0" max="360" default="0.0" label="X軸回転"  />
+        <value prop_name="allpos.y" axis="roty" zero="0"  min="0" max="360" default="0.0" label="Y軸回転"  />
+        <value prop_name="allpos.z" axis="rotz" zero="0"  min="0" max="360" default="0.0" label="Z軸回転"  />
+    </bone>
+    
+    <bone id="offset" description="OFFSET"  category="Default" nosave="true" path="">
+        <value prop_name="offset.px" axis="posx" zero="0"  min="-10" max="10" default="0" label="X軸移動"  />
+        <value prop_name="offset.py" axis="posy" zero="0"  min="-10" max="10" default="0" label="Y軸移動"  />
+        <value prop_name="offset.pz" axis="posz" zero="0"  min="-10" max="10" default="0" label="Z軸移動"  />
+        <value prop_name="offset.x" axis="rotx" zero="0"  min="0" max="360" default="0.0" label="X軸回転"  />
+        <value prop_name="offset.y" axis="roty" zero="0"  min="0" max="360" default="0.0" label="Y軸回転"  />
+        <value prop_name="offset.z" axis="rotz" zero="0"  min="0" max="360" default="0.0" label="Z軸回転"  />
+    </bone>
+
+    <bone id="camera" description="CAMERA"  category="Default" nosave="true" path="">
+        <value prop_name="camera.px" axis="posx" zero="0"  min="-10" max="10" default="0" label="X軸移動"  />
+        <value prop_name="camera.py" axis="posy" zero="0"  min="-10" max="10" default="0.8205" label="Y軸移動"  />
+        <value prop_name="camera.pz" axis="posz" zero="0"  min="-10" max="10" default="0.0261" label="Z軸移動"  />
+        <value prop_name="camera.ry" axis="ry2" zero="0"  min="0" max="360" default="180" label="X軸回転"  />
+        <value prop_name="camera.rx" axis="rx2" zero="0"  min="0" max="360" default="11.5528" label="Y軸回転"  /> 
+        <value prop_name="camera.rz" axis="rz2" zero="180"  min="0" max="360" default="180" label="Z軸回転"  />
+        <value prop_name="camera.d" axis="dist" zero="0"  min="0" max="10" default="3" label="カメラ距離"  />
+        <value prop_name="camera.fov" axis="fov" zero="0"  min="0" max="180" default="35" label="カメラ視野"  />
+    </bone>
+    
+    <bone id="eye" description="目"  category="Default" nosave="true" visible="true"  path="">
+        <value prop_name="eye.ly" axis="ly" zero="347.7229"  min="-13" max="25" default="0" label="左目左右"  />
+        <value prop_name="eye.lz" axis="lz" zero="10.2197"  min="-25" max="30" default="0" label="左目上下"  />
+        <value prop_name="eye.ry" axis="ry" zero="347.7229"  min="-13" max="25" default="0" label="右目左右"  />
+        <value prop_name="eye.rz" axis="rz" zero="-349.7802"  min="-25" max="30" default="0" label="右目上下"  />
+        
+    </bone> 
+    
+    <bone id="secret" description="?"  category="Default" nosave="true" visible="true"  path="">
+        <value prop_name="secret.mlud" axis="MuneUpDown" zero="0"  min="-100" max="300" default="0" label="左胸上下"  />
+        <value prop_name="secret.mly" axis="MuneYori" zero="0"  min="-100" max="100" default="0" label="左胸左右"  />
+        <value prop_name="secret.mrud" axis="MuneUpDown" zero="0"  min="-100" max="300" default="0" label="右胸上下"  />
+        <value prop_name="secret.mry" axis="MuneYori" zero="0"  min="-100" max="100" default="0" label="右胸左右"  />
+    </bone>    
+
+    <bone id="Bip01" description="全体"  category="Lower" path="Bip01">
+        <value prop_name="Bip01.px" axis="posx" zero="0"  min="-3" max="3" default="0.0" label="X軸移動"  />
+        <value prop_name="Bip01.py" axis="posy" zero="0.9057"  min="-3" max="3" default="0" label="Y軸移動"  />
+        <value prop_name="Bip01.pz" axis="posz" zero="0.0261"  min="-3" max="3" default="0" label="Z軸移動"  />
+        <value prop_name="Bip01.x" axis="rotx" zero="0"  min="-180" max="180" default="0.0" label="Y軸回転"  />
+        <value prop_name="Bip01.y" axis="roty" zero="90"  min="-180" max="180" default="0.0" label="X軸回転"  />
+        <value prop_name="Bip01.z" axis="rotz" zero="90"  min="-180" max="180" default="0.0" label="Z軸回転"  />
+    </bone>
+
+    <bone id="Bip01 Footsteps" description="歩幅"  category="Lower" nosave="true" visible="true" path="Bip01/Bip01 Footsteps">
+        <value prop_name="Bip01 Footsteps.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Bip01 Footsteps.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 Footsteps.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+      
+    <bone id="Bip01 Head" description="頭"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 Neck/Bip01 Head">
+        <value prop_name="Bip01 Head.x" axis="rotx" zero="0"  min="-50" max="50" default="0" label="ひねり"  />
+        <value prop_name="Bip01 Head.y" axis="roty" zero="0"  min="-40" max="40" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 Head.z" axis="rotz" zero="15.8494"  min="-40" max="80" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 Neck" description="首"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 Neck">
+        <value prop_name="Bip01 Neck.x" axis="rotx" zero="0.0"  min="-50" max="50" default="0" label="ひねり"  />
+        <value prop_name="Bip01 Neck.y" axis="roty" zero="0.0"  min="-40" max="40" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 Neck.z" axis="rotz" zero="342.2753"  min="-50" max="42.5" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 Spine1a" description="背中上"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a">
+        <value prop_name="Bip01 Spine1a.x" axis="rotx" zero="0.0"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 Spine1a.y" axis="roty" zero="0"  min="-17.5" max="17.5" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 Spine1a.z" axis="rotz" zero="0"  min="-30" max="22.5" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 Spine1" description="背中下"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1">
+        <value prop_name="Bip01 Spine1.x" axis="rotx" zero="0"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 Spine1.y" axis="roty" zero="0"  min="-17.5" max="17.5" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 Spine1.z" axis="rotz" zero="0"  min="-30" max="22.5" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 Spine0a" description="腰上"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a">
+        <value prop_name="Bip01 Spine0a.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 Spine0a.y" axis="roty" zero="0.0"  min="-15" max="15" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 Spine0a.z" axis="rotz" zero="0"  min="-35" max="17.5" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 Spine" description="腰下"  category="Upper" path="Bip01/Bip01 Spine">
+        <value prop_name="Bip01 Spine.z" axis="rotz" zero="90.0"  min="-10" max="10" default="0" label="ひねり"  /> 
+        <value prop_name="Bip01 Spine.y" axis="roty" zero="90.0"  min="-15" max="15" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 Spine.x" axis="rotx" zero="0"  min="-35" max="17.5" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 Pelvis" description="骨盤"  category="Lower" path="Bip01/Bip01 Pelvis">
+        <value prop_name="Bip01 Pelvis.z" axis="rotz" zero="90.0"  min="-25" max="25" default="0" label="ひねり"  />   
+        <value prop_name="Bip01 Pelvis.y" axis="roty" zero="90.0"  min="-35" max="35" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 Pelvis.x" axis="rotx" zero="0"  min="-40" max="25" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Thigh" description="左太腿"  category="Lower" path="Bip01/Bip01 Pelvis/Bip01 L Thigh">
+        <value prop_name="Bip01 L Thigh.x" axis="rotx" zero="0"  min="-45" max="55" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Thigh.y" axis="roty" zero="180"  min="-50" max="35" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Thigh.z" axis="rotz" zero="0"  min="-30" max="130" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Calf" description="左すね"  category="Lower" path="Bip01/Bip01 Pelvis/Bip01 L Thigh/Bip01 L Calf">
+        <value prop_name="Bip01 L Calf.x" axis="rotx" zero="0.0"  min="-40" max="30" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Calf.y" axis="roty" zero="0.0"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Calf.z" axis="rotz" zero="0.0"  min="-10" max="150" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Foot" description="左足"  category="Lower" path="Bip01/Bip01 Pelvis/Bip01 L Thigh/Bip01 L Calf/Bip01 L Foot">
+        <value prop_name="Bip01 L Foot.x" axis="rotx" zero="0"  min="-30" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Foot.y" axis="roty" zero="0"  min="-30" max="40" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Foot.z" axis="rotz" zero="0"  min="-35" max="60" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Toe0" description="左足小指"  category="Toe" path="Bip01/Bip01 Pelvis/Bip01 L Thigh/Bip01 L Calf/Bip01 L Foot/Bip01 L Toe0">
+        <value prop_name="Bip01 L Toe0.x" axis="rotx" zero="-0.5248"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Toe0.y" axis="roty" zero="12.8727"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Toe0.z" axis="rotz" zero="-79.9091"  min="-50" max="70" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Toe01" description="左足小指先"  category="Toe" path="Bip01/Bip01 Pelvis/Bip01 L Thigh/Bip01 L Calf/Bip01 L Foot/Bip01 L Toe0/Bip01 L Toe01">
+        <value prop_name="Bip01 L Toe01.x" axis="rotx" zero="0.0"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Toe01.y" axis="roty" zero="0.0"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Toe01.z" axis="rotz" zero="9.4069"  min="-10" max="85" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Toe1" description="左足中指"  category="Toe" path="Bip01/Bip01 Pelvis/Bip01 L Thigh/Bip01 L Calf/Bip01 L Foot/Bip01 L Toe1">
+        <value prop_name="Bip01 L Toe1.x" axis="rotx" zero="-3.5193"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Toe1.y" axis="roty" zero="-4.6723"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Toe1.z" axis="rotz" zero="-76.5831"  min="-50" max="70" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Toe11" description="左足中指先"  category="Toe" path="Bip01/Bip01 Pelvis/Bip01 L Thigh/Bip01 L Calf/Bip01 L Foot/Bip01 L Toe1/Bip01 L Toe11">
+        <value prop_name="Bip01 L Toe11.x" axis="rotx" zero="0.0"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Toe11.y" axis="roty" zero="0.0"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Toe11.z" axis="rotz" zero="0.0"  min="-10" max="85" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Toe2" description="左足親指"  category="Toe" path="Bip01/Bip01 Pelvis/Bip01 L Thigh/Bip01 L Calf/Bip01 L Foot/Bip01 L Toe2">
+        <value prop_name="Bip01 L Toe2.x" axis="rotx" zero="2.1073"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Toe2.y" axis="roty" zero="-1.896"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Toe2.z" axis="rotz" zero="-73.169"  min="-70" max="45" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Toe21" description="左足親指先"  category="Toe" path="Bip01/Bip01 Pelvis/Bip01 L Thigh/Bip01 L Calf/Bip01 L Foot/Bip01 L Toe2/Bip01 L Toe21">
+        <value prop_name="Bip01 L Toe21.x" axis="rotx" zero="0.0"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Toe21.y" axis="roty" zero="0.0"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Toe21.z" axis="rotz" zero="3.8861"  min="-10" max="70" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Thigh" description="右太腿"  category="Lower" path="Bip01/Bip01 Pelvis/Bip01 R Thigh">
+        <value prop_name="Bip01 R Thigh.x" axis="rotx" zero="0"  min="-55" max="45" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Thigh.y" axis="roty" zero="180"  min="-35" max="50" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Thigh.z" axis="rotz" zero="0"  min="-30" max="130" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Calf" description="右すね"  category="Lower" path="Bip01/Bip01 Pelvis/Bip01 R Thigh/Bip01 R Calf">
+        <value prop_name="Bip01 R Calf.x" axis="rotx" zero="0.0"  min="-30" max="40" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Calf.y" axis="roty" zero="0.0"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Calf.z" axis="rotz" zero="0.0"  min="-10" max="150" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Foot" description="右足"  category="Lower" path="Bip01/Bip01 Pelvis/Bip01 R Thigh/Bip01 R Calf/Bip01 R Foot">
+        <value prop_name="Bip01 R Foot.x" axis="rotx" zero="0"  min="-20" max="30" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Foot.y" axis="roty" zero="0"  min="-40" max="30" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Foot.z" axis="rotz" zero="0"  min="-35" max="60" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Toe0" description="右足小指"  category="Toe" path="Bip01/Bip01 Pelvis/Bip01 R Thigh/Bip01 R Calf/Bip01 R Foot/Bip01 R Toe0">
+        <value prop_name="Bip01 R Toe0.x" axis="rotx" zero="0.5203"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Toe0.y" axis="roty" zero="-13.8727"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Toe0.z" axis="rotz" zero="280.0909"  min="-50" max="70" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Toe01" description="右足小指先"  category="Toe" path="Bip01/Bip01 Pelvis/Bip01 R Thigh/Bip01 R Calf/Bip01 R Foot/Bip01 R Toe0/Bip01 R Toe01">
+        <value prop_name="Bip01 R Toe01.x" axis="rotx" zero="0.0"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Toe01.y" axis="roty" zero="0.0"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Toe01.z" axis="rotz" zero="9.4069"  min="-10" max="85" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Toe1" description="右足中指"  category="Toe" path="Bip01/Bip01 Pelvis/Bip01 R Thigh/Bip01 R Calf/Bip01 R Foot/Bip01 R Toe1">
+        <value prop_name="Bip01 R Toe1.x" axis="rotx" zero="3.5193"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Toe1.y" axis="roty" zero="4.6723"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Toe1.z" axis="rotz" zero="-76.5831"  min="-50" max="70" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Toe11" description="右足中指先"  category="Toe" path="Bip01/Bip01 Pelvis/Bip01 R Thigh/Bip01 R Calf/Bip01 R Foot/Bip01 R Toe1/Bip01 R Toe11">
+        <value prop_name="Bip01 R Toe11.x" axis="rotx" zero="0.0"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Toe11.y" axis="roty" zero="0.0"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Toe11.z" axis="rotz" zero="0.0"  min="-10" max="85" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Toe2" description="右足親指"  category="Toe" path="Bip01/Bip01 Pelvis/Bip01 R Thigh/Bip01 R Calf/Bip01 R Foot/Bip01 R Toe2">
+        <value prop_name="Bip01 R Toe2.x" axis="rotx" zero="-2.1073"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Toe2.y" axis="roty" zero="2.896"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Toe2.z" axis="rotz" zero="-73.169"  min="-70" max="45" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Toe21" description="右足親指先"  category="Toe" path="Bip01/Bip01 Pelvis/Bip01 R Thigh/Bip01 R Calf/Bip01 R Foot/Bip01 R Toe2/Bip01 R Toe21">
+        <value prop_name="Bip01 R Toe21.x" axis="rotx" zero="0.0"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Toe21.y" axis="roty" zero="0.0"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Toe21.z" axis="rotz" zero="3.8861"  min="-10" max="70" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Clavicle" description="左鎖骨"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle">
+        <value prop_name="Bip01 L Clavicle.x" axis="rotx" zero="0"  min="-30" max="30" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Clavicle.y" axis="roty" zero="-270"  min="-20" max="30" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Clavicle.z" axis="rotz" zero="180"  min="-30" max="30" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L UpperArm" description="左上腕"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm">
+        <value prop_name="Bip01 L UpperArm.x" axis="rotx" zero="0.0"  min="-180" max="90" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L UpperArm.y" axis="roty" zero="-78.0"  min="-90" max="180" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L UpperArm.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Forearm" description="左前腕"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm">
+        <value prop_name="Bip01 L Forearm.x" axis="rotx" zero="0.0"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Forearm.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Forearm.z" axis="rotz" zero="0.0"  min="-10" max="155" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Hand" description="左手"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand">
+        <value prop_name="Bip01 L Hand.x" axis="rotx" zero="-90"  min="-180" max="180" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Hand.y" axis="roty" zero="0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Hand.z" axis="rotz" zero="0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="_IK_handL" description="左手IK"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/_IK_handL">
+        <value prop_name="_IK_handL.x" axis="rotx" zero="0.0"  min="-180" max="180" default="0" label="ひねり"  />
+        <value prop_name="_IK_handL.y" axis="roty" zero="0.0"  min="-180" max="180" default="0" label="横曲げ"  />
+        <value prop_name="_IK_handL.z" axis="rotz" zero="0.0"  min="-180" max="180" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger0" description="左親指付け根"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger0">
+        <value prop_name="Bip01 L Finger0.x" axis="rotx" zero="50.0"  min="-90" max="90" default="-3.0807" label="ひねり"  />
+        <value prop_name="Bip01 L Finger0.y" axis="roty" zero="-55.0"  min="-150" max="150" default="27.2286" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger0.z" axis="rotz" zero="50.0"  min="-150" max="150" default="-60" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger01" description="左親指第ニ関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger0/Bip01 L Finger01">
+        <value prop_name="Bip01 L Finger01.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger01.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger01.z" axis="rotz" zero="0.0"  min="-70" max="20" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger02" description="左親指第一関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger0/Bip01 L Finger01/Bip01 L Finger02">
+        <value prop_name="Bip01 L Finger02.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger02.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger02.z" axis="rotz" zero="0.0"  min="-90" max="20" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger1" description="左人差指第三関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger1">
+        <value prop_name="Bip01 L Finger1.x" axis="rotx" zero="-1.7799"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger1.y" axis="roty" zero="6.6295"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger1.z" axis="rotz" zero="0"  min="-100" max="55" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger11" description="左人差指第ニ関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger1/Bip01 L Finger11">
+        <value prop_name="Bip01 L Finger11.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger11.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger11.z" axis="rotz" zero="-8.4914"  min="-110" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger12" description="左人差指第一関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger1/Bip01 L Finger11/Bip01 L Finger12">
+        <value prop_name="Bip01 L Finger12.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger12.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger12.z" axis="rotz" zero="0.0"  min="-90" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger2" description="左中指第三関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger2">
+        <value prop_name="Bip01 L Finger2.x" axis="rotx" zero="0.1171"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger2.y" axis="roty" zero="-0.324"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger2.z" axis="rotz" zero="0.3687"  min="-100" max="55" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger21" description="左中指第ニ関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger2/Bip01 L Finger21">
+        <value prop_name="Bip01 L Finger21.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger21.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger21.z" axis="rotz" zero="-15.69"  min="-110" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger22" description="左中指第一関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger2/Bip01 L Finger21/Bip01 L Finger22">
+        <value prop_name="Bip01 L Finger22.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger22.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger22.z" axis="rotz" zero="0.0"  min="-90" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger3" description="左薬指第三関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger3">
+        <value prop_name="Bip01 L Finger3.x" axis="rotx" zero="0.9134"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger3.y" axis="roty" zero="-1.2506"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger3.z" axis="rotz" zero="-9.6762"  min="-100" max="55" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger31" description="左薬指第ニ関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger3/Bip01 L Finger31">
+        <value prop_name="Bip01 L Finger31.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger31.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger31.z" axis="rotz" zero="-12.6351"  min="-110" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger32" description="左薬指第一関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger3/Bip01 L Finger31/Bip01 L Finger32">
+        <value prop_name="Bip01 L Finger32.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger32.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger32.z" axis="rotz" zero="1.0027"  min="-90" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger4" description="左小指第三関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger4">
+        <value prop_name="Bip01 L Finger4.x" axis="rotx" zero="1.9802"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger4.y" axis="roty" zero="-2.6158"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger4.z" axis="rotz" zero="9.2883"  min="-100" max="55" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger41" description="左小指第ニ関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger4/Bip01 L Finger41">
+        <value prop_name="Bip01 L Finger41.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger41.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger41.z" axis="rotz" zero="-41.4269"  min="-110" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 L Finger42" description="左小指第一関節"  category="LeftFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 L Clavicle/Bip01 L UpperArm/Bip01 L Forearm/Bip01 L Hand/Bip01 L Finger4/Bip01 L Finger41/Bip01 L Finger42">
+        <value prop_name="Bip01 L Finger42.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 L Finger42.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 L Finger42.z" axis="rotz" zero="3.8928"  min="-90" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Clavicle" description="右鎖骨"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle">
+        <value prop_name="Bip01 R Clavicle.x" axis="rotx" zero="0"  min="-30" max="30" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Clavicle.y" axis="roty" zero="270"  min="-30" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Clavicle.z" axis="rotz" zero="180"  min="-30" max="30" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R UpperArm" description="右上腕"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm">
+        <value prop_name="Bip01 R UpperArm.x" axis="rotx" zero="0.0"  min="-90" max="180" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R UpperArm.y" axis="roty" zero="78.0"  min="-180" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R UpperArm.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Forearm" description="右前腕"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm">
+        <value prop_name="Bip01 R Forearm.x" axis="rotx" zero="0.0"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Forearm.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Forearm.z" axis="rotz" zero="0.0"  min="-10" max="155" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Hand" description="右手"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand">
+        <value prop_name="Bip01 R Hand.x" axis="rotx" zero="90.0"  min="-180" max="180" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Hand.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Hand.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="_IK_handR" description="右手IK"  category="Upper" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/_IK_handR">
+        <value prop_name="_IK_handR.x" axis="rotx" zero="0.0"  min="-180" max="180" default="0" label="ひねり"  />
+        <value prop_name="_IK_handR.y" axis="roty" zero="0.0"  min="-180" max="180" default="0" label="横曲げ"  />
+        <value prop_name="_IK_handR.z" axis="rotz" zero="0.0"  min="-180" max="180" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger0" description="右親指付け根"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger0">
+        <value prop_name="Bip01 R Finger0.x" axis="rotx" zero="-50.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger0.y" axis="roty" zero="55.0"  min="-150" max="150" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger0.z" axis="rotz" zero="50.0"  min="-150" max="150" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger01" description="右親指第ニ関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger0/Bip01 R Finger01">
+        <value prop_name="Bip01 R Finger01.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger01.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger01.z" axis="rotz" zero="0.0"  min="-70" max="20" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger02" description="右親指第一関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger0/Bip01 R Finger01/Bip01 R Finger02">
+        <value prop_name="Bip01 R Finger02.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger02.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger02.z" axis="rotz" zero="0.0"  min="-90" max="20" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger1" description="右人差指第三関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger1">
+        <value prop_name="Bip01 R Finger1.x" axis="rotx" zero="1.7799"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger1.y" axis="roty" zero="-6.6295"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger1.z" axis="rotz" zero="0.0"  min="-100" max="55" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger11" description="右人差指第ニ関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger1/Bip01 R Finger11">
+        <value prop_name="Bip01 R Finger11.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger11.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger11.z" axis="rotz" zero="-8.4914"  min="-110" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger12" description="右人差指第一関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger1/Bip01 R Finger11/Bip01 R Finger12">
+        <value prop_name="Bip01 R Finger12.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger12.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger12.z" axis="rotz" zero="0.0"  min="-90" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger2" description="右中指第三関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger2">
+        <value prop_name="Bip01 R Finger2.x" axis="rotx" zero="-0.1171"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger2.y" axis="roty" zero="0.324"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger2.z" axis="rotz" zero="0.3687"  min="-100" max="55" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger21" description="右中指第ニ関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger2/Bip01 R Finger21">
+        <value prop_name="Bip01 R Finger21.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger21.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger21.z" axis="rotz" zero="-15.69"  min="-110" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger22" description="右中指第一関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger2/Bip01 R Finger21/Bip01 R Finger22">
+        <value prop_name="Bip01 R Finger22.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger22.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger22.z" axis="rotz" zero="0.0"  min="-90" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger3" description="右薬指第三関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger3">
+        <value prop_name="Bip01 R Finger3.x" axis="rotx" zero="-0.9134"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger3.y" axis="roty" zero="1.2506"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger3.z" axis="rotz" zero="-9.6762"  min="-100" max="55" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger31" description="右薬指第ニ関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger3/Bip01 R Finger31">
+        <value prop_name="Bip01 R Finger31.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger31.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger31.z" axis="rotz" zero="-12.6351"  min="-110" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger32" description="右薬指第一関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger3/Bip01 R Finger31/Bip01 R Finger32">
+        <value prop_name="Bip01 R Finger32.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger32.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger32.z" axis="rotz" zero="1.0027"  min="-90" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger4" description="右小指第三関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger4">
+        <value prop_name="Bip01 R Finger4.x" axis="rotx" zero="-1.9802"  min="-20" max="20" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger4.y" axis="roty" zero="2.6158"  min="-20" max="20" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger4.z" axis="rotz" zero="9.2883"  min="-100" max="55" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger41" description="右小指第ニ関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger4/Bip01 R Finger41">
+        <value prop_name="Bip01 R Finger41.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger41.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger41.z" axis="rotz" zero="-41.4269"  min="-110" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <bone id="Bip01 R Finger42" description="右小指第一関節"  category="RightFinger" path="Bip01/Bip01 Spine/Bip01 Spine0a/Bip01 Spine1/Bip01 Spine1a/Bip01 R Clavicle/Bip01 R UpperArm/Bip01 R Forearm/Bip01 R Hand/Bip01 R Finger4/Bip01 R Finger41/Bip01 R Finger42">
+        <value prop_name="Bip01 R Finger42.x" axis="rotx" zero="0.0"  min="-10" max="10" default="0" label="ひねり"  />
+        <value prop_name="Bip01 R Finger42.y" axis="roty" zero="0.0"  min="-10" max="10" default="0" label="横曲げ"  />
+        <value prop_name="Bip01 R Finger42.z" axis="rotz" zero="3.8928"  min="-90" max="10" default="0" label="縦曲げ"  />
+    </bone>
+    
+    <!--
+    <bone id="momotwist_L" description="momotwist_L"  >
+        <value prop_name="momotwist_L.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="momotwist_L.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="momotwist_L.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="momoniku_L" description="momoniku_L"  >
+        <value prop_name="momoniku_L.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="momoniku_L.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="momoniku_L.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="momotwist2_L" description="momotwist2_L"  >
+        <value prop_name="momotwist2_L.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="momotwist2_L.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="momotwist2_L.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="momotwist_R" description="momotwist_R"  >
+        <value prop_name="momotwist_R.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="momotwist_R.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="momotwist_R.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="momoniku_R" description="momoniku_R"  >
+        <value prop_name="momoniku_R.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="momoniku_R.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="momoniku_R.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="momotwist2_R" description="momotwist2_R"  >
+        <value prop_name="momotwist2_R.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="momotwist2_R.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="momotwist2_R.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Hip_L" description="Hip_L"  >
+        <value prop_name="Hip_L.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Hip_L.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Hip_L.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Hip_R" description="Hip_R"  >
+        <value prop_name="Hip_R.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Hip_R.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Hip_R.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Foretwist1_L" description="Foretwist1_L"  >
+        <value prop_name="Foretwist1_L.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Foretwist1_L.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Foretwist1_L.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Foretwist_L" description="Foretwist_L"  >
+        <value prop_name="Foretwist_L.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Foretwist_L.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Foretwist_L.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Uppertwist1_L" description="Uppertwist1_L"  >
+        <value prop_name="Uppertwist1_L.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Uppertwist1_L.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Uppertwist1_L.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Uppertwist_L" description=""  >
+        <value prop_name="Uppertwist_L.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Uppertwist_L.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Uppertwist_L.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Kata_L" description="Kata_L"  >
+        <value prop_name="Kata_L.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Kata_L.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Kata_L.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+
+    <bone id="Foretwist1_R" description="Foretwist1_R"  >
+        <value prop_name="Foretwist1_R.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Foretwist1_R.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Foretwist1_R.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Foretwist_R" description="Foretwist_R"  >
+        <value prop_name="Foretwist_R.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Foretwist_R.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Foretwist_R.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Uppertwist1_R" description="Uppertwist1_R"  >
+        <value prop_name="Uppertwist1_R.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Uppertwist1_R.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Uppertwist1_R.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Uppertwist_R" description="Uppertwist_R"  >
+        <value prop_name="Uppertwist_R.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Uppertwist_R.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Uppertwist_R.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Kata_R" description="Kata_R"  >
+        <value prop_name="Kata_R.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Kata_R.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Kata_R.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+
+    <bone id="Mune_L" description="Mune_L"  >
+        <value prop_name="Mune_L.px" axis="posx" zero="0"  min="-3" max="3" default="0.0" label="X軸"  />
+        <value prop_name="Mune_L.py" axis="posy" zero="0"  min="-3" max="3" default="0" label="Y軸"  />
+        <value prop_name="Mune_L.pz" axis="posz" zero="0"  min="-3" max="3" default="0" label="Z軸"  />
+        <value prop_name="Mune_L.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Mune_L.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Mune_L.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Mune_L_sub" description="Mune_L_sub"  >
+        <value prop_name="Mune_L_sub.px" axis="posx" zero="0"  min="-3" max="3" default="0.0" label="X軸"  />
+        <value prop_name="Mune_L_sub.py" axis="posy" zero="0"  min="-3" max="3" default="0" label="Y軸"  />
+        <value prop_name="Mune_L_sub.pz" axis="posz" zero="0"  min="-3" max="3" default="0" label="Z軸"  />
+        <value prop_name="Mune_L_sub.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Mune_L_sub.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Mune_L_sub.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Mune_R" description="Mune_R"  >
+        <value prop_name="Mune_R.px" axis="posx" zero="0"  min="-3" max="3" default="0.0" label="X軸"  />
+        <value prop_name="Mune_R.py" axis="posy" zero="0"  min="-3" max="3" default="0" label="Y軸"  />
+        <value prop_name="Mune_R.pz" axis="posz" zero="0"  min="-3" max="3" default="0" label="Z軸"  />
+        <value prop_name="Mune_R.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Mune_R.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Mune_R.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    <bone id="Mune_R_sub" description="Mune_R_sub"  >
+        <value prop_name="Mune_R_sub.px" axis="posx" zero="0"  min="-3" max="3" default="0.0" label="X軸"  />
+        <value prop_name="Mune_R_sub.py" axis="posy" zero="0"  min="-3" max="3" default="0" label="Y軸"  />
+        <value prop_name="Mune_R_sub.pz" axis="posz" zero="0"  min="-3" max="3" default="0" label="Z軸"  />
+        <value prop_name="Mune_R_sub.x" axis="rotx" zero="0.0"  min="-90" max="90" default="0" label="ひねり"  />
+        <value prop_name="Mune_R_sub.y" axis="roty" zero="0.0"  min="-90" max="90" default="0" label="横曲げ"  />
+        <value prop_name="Mune_R_sub.z" axis="rotz" zero="0.0"  min="-90" max="90" default="0" label="縦曲げ"  />
+    </bone>
+    -->
+
+</bones>
+
