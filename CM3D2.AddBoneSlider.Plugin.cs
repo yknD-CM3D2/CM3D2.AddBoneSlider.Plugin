@@ -83,12 +83,16 @@ namespace CM3D2.AddBoneSlider.Plugin
     public class SettingIni
     {
         public string ToggleKey = "f10";
+        public string AnmOutputmode = "";
         public int WindowPositionX = -480;
         public int WindowPositionY = 40;
         public string PoseXmlDirectory = "";//Directory.GetCurrentDirectory() + @"\UnityInjector\Config";
         public string PoseImgDirectory = "";//Directory.GetCurrentDirectory() + @"\UnityInjector\Config\PoseImg";
         public string OutputAnmDirectory = @"C:\KISS\CM3D2\PhotoModeData\Mod\Motion";
+        public string OutputJsonDirectory = "";
+        public string OutputAnmSybarisDirectory = "";
         public int DebugLogLevel = 0;
+        public int HandleLegacymode = 0;
     }
 
     public class AddBoneSlider : UnityInjector.PluginBase
@@ -130,6 +134,8 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         //SeceneLevel5（複数メイド撮影）ではStockNoが、SeceneLevel27（公式撮影）ではMaidNoが設定される
         private int currentMaidNo;
+        
+
         private GameObject goAMSPanel;
 
         private GameObject goScrollView;
@@ -140,10 +146,10 @@ namespace CM3D2.AddBoneSlider.Plugin
         private GameObject goPSPanel;
         private GameObject goPSScrollView;
         private GameObject goPSScrollViewTable;
+        private GameObject goPNamePanel;
 
         private UICamera uiCamara;
         private UIPanel uiAMSPanel;
-
         private UIPanel uiScrollPanel;
         private UIScrollView uiScrollView;
         private UIScrollBar uiScrollBar;
@@ -153,6 +159,7 @@ namespace CM3D2.AddBoneSlider.Plugin
         private UIPanel uiPSScrollPanel;
         private UIScrollView uiPSScrollView;
         private UIScrollBar uiPSScrollBar;
+        private UIPanel uiPNamePanel;
         private UITable uiPSTable;
 
         private UI2DSprite uiTextureCurrentMaid;
@@ -172,6 +179,7 @@ namespace CM3D2.AddBoneSlider.Plugin
         public string PoseXmlFileName;
         public string PoseTexDirectoryName;
         public string iniFileName;
+        public string PoseName  ="";
 
 
         SettingIni settingIni;
@@ -382,11 +390,14 @@ namespace CM3D2.AddBoneSlider.Plugin
 
             private Maid maid = null;
             private Transform parentBone;
+
             private GameObject gameObject;
 
             private ControllOnMouse controllOnMouseX;
             private ControllOnMouse controllOnMouseY;
             private ControllOnMouse controllOnMouseZ;
+
+            private int Legacymode;
 
             Texture2D m_texture_red;
             Texture2D m_texture_green;
@@ -401,6 +412,8 @@ namespace CM3D2.AddBoneSlider.Plugin
             GameObject redring;
             GameObject bluering;
             GameObject greenring;
+
+            GizmoRender gizmoRender;
 
             //ハンドルのドラッグ状態取得
             public bool controllDragged()
@@ -503,8 +516,9 @@ namespace CM3D2.AddBoneSlider.Plugin
                 }
             }
 
-            public AngleHandle(Maid _maid = null)
+            public AngleHandle(int _Legacymode ,Maid _maid = null)
             {
+                this.Legacymode = _Legacymode;
                 Init();
 
                 if (_maid != null)
@@ -519,6 +533,16 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 this.gameObject = new GameObject();
 
+                //SSでハンドル君を消すために
+                //公式のハンドルを線の太さ0にして所持しとく
+                //公式のハンドルが消えたらハンドル君も消す
+                //ここまでやるなら公式のハンドル流用しろよとは思うけどなんとなく
+                if (Legacymode == 0)
+                {
+                    gizmoRender = this.gameObject.AddComponent<GizmoRender>();
+                    gizmoRender.Visible = true;
+                    gizmoRender.offsetScale = 0;
+                }
 
                 Color alpha_red = Color.red;
                 alpha_red.a = 0.5f;
@@ -564,13 +588,9 @@ namespace CM3D2.AddBoneSlider.Plugin
                 m_texture_red_2 = new Texture2D(16, 16, TextureFormat.ARGB32, false);
                 for (int y = 0; y < m_texture_red_2.height; y++)
                 {
-                    for (int x = 0; x < m_texture_red_2.width / 2; x++)
+                    for (int x = 0; x < m_texture_red.width; x++)
                     {
-                        m_texture_red_2.SetPixel(x, y, alpha_red);
-                    }
-                    for (int x = m_texture_red_2.width / 2; x < m_texture_red_2.width; x++)
-                    {
-                        m_texture_red_2.SetPixel(x, y, alpha_red_2);
+                        m_texture_red.SetPixel(x, y, alpha_red);
                     }
 
                 }
@@ -581,13 +601,9 @@ namespace CM3D2.AddBoneSlider.Plugin
                 m_texture_green_2 = new Texture2D(16, 16, TextureFormat.ARGB32, false);
                 for (int y = 0; y < m_texture_green_2.height; y++)
                 {
-                    for (int x = 0; x < m_texture_green_2.width / 2; x++)
+                    for (int x = 0; x < m_texture_green.width; x++)
                     {
-                        m_texture_green_2.SetPixel(x, y, alpha_green);
-                    }
-                    for (int x = m_texture_green_2.width / 2; x < m_texture_green_2.width; x++)
-                    {
-                        m_texture_green_2.SetPixel(x, y, alpha_green_2);
+                        m_texture_green.SetPixel(x, y, alpha_green);
                     }
                 }
                 m_texture_green_2.Apply();
@@ -598,13 +614,9 @@ namespace CM3D2.AddBoneSlider.Plugin
                 m_texture_blue_2 = new Texture2D(16, 16, TextureFormat.ARGB32, false);
                 for (int y = 0; y < m_texture_blue_2.height; y++)
                 {
-                    for (int x = 0; x < m_texture_blue_2.width / 2; x++)
+                    for (int x = 0; x < m_texture_blue.width; x++)
                     {
-                        m_texture_blue_2.SetPixel(x, y, alpha_blue);
-                    }
-                    for (int x = m_texture_blue_2.width / 2; x < m_texture_blue_2.width; x++)
-                    {
-                        m_texture_blue_2.SetPixel(x, y, alpha_blue_2);
+                        m_texture_blue.SetPixel(x, y, alpha_blue);
                     }
                 }
                 m_texture_blue_2.Apply();
@@ -645,8 +657,15 @@ namespace CM3D2.AddBoneSlider.Plugin
                 boneCenter.renderer.castShadows = false;
                 boneCenter.renderer.useLightProbes = false;
                 boneCenter.renderer.material.mainTexture = m_texture_white;
-                boneCenter.renderer.material.shader = Shader.Find("Custom/GizmoShader");
-                boneCenter.renderer.material.SetInt("unity_GUIZTestMode", 6);
+                if (Legacymode == 0)
+                {
+                    boneCenter.renderer.material.shader = Shader.Find("Custom/GizmoShader");
+                    boneCenter.renderer.material.SetInt("unity_GUIZTestMode", 6);
+                }
+                else
+                {
+                    boneCenter.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
+                }
                 boneCenter.transform.localScale = new Vector3(0.125f, 0.125f, 0.125f);
                 boneCenter.transform.localEulerAngles = new Vector3(0f, 0f, 0f);
 
@@ -675,8 +694,15 @@ namespace CM3D2.AddBoneSlider.Plugin
                 blueZ.renderer.castShadows = false;
                 blueZ.renderer.useLightProbes = false;
                 blueZ.renderer.material.mainTexture = m_texture_blue;
-                blueZ.renderer.material.shader = Shader.Find("Custom/GizmoShader");
-                blueZ.renderer.material.SetInt("unity_GUIZTestMode", 6);
+                if (Legacymode == 0)
+                {
+                    blueZ.renderer.material.shader = Shader.Find("Custom/GizmoShader");
+                    blueZ.renderer.material.SetInt("unity_GUIZTestMode", 6);
+                }
+                else
+                {
+                    blueZ.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
+                }
                 blueZ.transform.localScale = new Vector3(0.025f, 1f, 0.025f);
                 blueZ.transform.localEulerAngles = new Vector3(0f, 0f, 0f);
                 blueZ.transform.parent = this.gameObject.transform;
@@ -687,8 +713,15 @@ namespace CM3D2.AddBoneSlider.Plugin
                 redX.renderer.castShadows = false;
                 redX.renderer.useLightProbes = false;
                 redX.renderer.material.mainTexture = m_texture_red;
-                redX.renderer.material.shader = Shader.Find("Custom/GizmoShader");
-                redX.renderer.material.SetInt("unity_GUIZTestMode", 6);
+                if (Legacymode == 0)
+                {
+                    redX.renderer.material.shader = Shader.Find("Custom/GizmoShader");
+                    redX.renderer.material.SetInt("unity_GUIZTestMode", 6);
+                }
+                else
+                {
+                    redX.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
+                }
                 redX.transform.localScale = new Vector3(0.025f, 1f, 0.025f);
                 redX.transform.localEulerAngles = new Vector3(90f, 0f, 0f);
                 redX.transform.parent = this.gameObject.transform;
@@ -702,6 +735,15 @@ namespace CM3D2.AddBoneSlider.Plugin
                 greenY.renderer.material.mainTexture = m_texture_green;
                 greenY.renderer.material.shader = Shader.Find("Custom/GizmoShader");
                 greenY.renderer.material.SetInt("unity_GUIZTestMode", 6);
+                if (Legacymode == 0)
+                {
+                    greenY.renderer.material.shader = Shader.Find("Custom/GizmoShader");
+                    greenY.renderer.material.SetInt("unity_GUIZTestMode", 6);
+                }
+                else
+                {
+                    greenY.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
+                }
                 greenY.transform.localScale = new Vector3(0.025f, 1f, 0.025f);
                 greenY.transform.localEulerAngles = new Vector3(0f, 0f, 90f);
                 greenY.transform.parent = this.gameObject.transform;
@@ -868,10 +910,20 @@ namespace CM3D2.AddBoneSlider.Plugin
                 Ring.renderer.castShadows = false;
                 Ring.renderer.useLightProbes = false;
                 Ring.renderer.material.mainTexture = m_texture;
-                Ring.renderer.material.shader = Shader.Find("Hidden/Transplant_Internal-Colored");
-                Ring.renderer.material.SetFloat("_ZTest", 6);
-                Ring.renderer.material.SetFloat("_Cull", 2);
-                Ring.renderer.material.SetFloat("_ZWrite", 0);
+
+                if (Legacymode == 0)
+                {
+                    Ring.renderer.material.shader = Shader.Find("Hidden/Transplant_Internal-Colored");
+                    Ring.renderer.material.SetFloat("_ZTest", 6);
+                    Ring.renderer.material.SetFloat("_Cull", 2);
+                    Ring.renderer.material.SetFloat("_ZWrite", 0);
+
+                }
+                else
+                {
+                    Ring.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
+                }
+                
                 Ring.renderer.material.SetColor("_Color", m_color);
 
                 Ring.transform.localScale = new Vector3(2f, 0.05f, 2f);
@@ -978,12 +1030,19 @@ namespace CM3D2.AddBoneSlider.Plugin
             public void Proc()
             {
                 if (!initComplete) return;
-
-                if (controllOnMouseX.Dragged)
+                
+                //検知用のGizmoRenderが消えたらハンドル君も消える
+                if(gizmoRender.Visible != Visible)
                 {
-
+                    Visible = gizmoRender.Visible;
                 }
 
+            }
+
+            public void setVisible(bool bVisible)
+            {
+                gizmoRender.Visible = bVisible;
+                Visible = bVisible;
             }
 
             //どの軸がドラッグされてるのか判別してドラッグ回転を返す
@@ -1254,7 +1313,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                         if (visible == true)
                         {
-                            Debuginfo.Log(LogLabel + "window destroy at photomode");
+                            //Debuginfo.Log(LogLabel + "window destroy at photomode");
 
                             visible = false;
                             goAMSPanel.SetActive(false);
@@ -1268,9 +1327,23 @@ namespace CM3D2.AddBoneSlider.Plugin
                 {
                     if (bLocked == false)
                     {
+                        //UIと一緒に消す用
+                        if (settingIni.HandleLegacymode == 0)
+                        {
+                            posHandle.Proc();
+                        }
+
+                        //複数撮影SS対策用
+                        if (Input.GetKeyDown(KeyCode.S))
+                        {
+                            //Debuginfo.Log(LogLabel +"input S");
+                            posHandle.Visible = false;
+                        }
+
                         if (posHandle.Visible == true)
                         {
                             syncFromHandle();
+
                         }
                         syncSlider(false);
                     }
@@ -1314,7 +1387,10 @@ namespace CM3D2.AddBoneSlider.Plugin
                     setSliderVisible(bone, b);
                 }
 
-
+                if (sceneLevel == 5 && bone == "allpos")
+                {
+                    setParentAllOffset();
+                }
 
                 setButtonColor(UIButton.current, b);
 
@@ -1327,10 +1403,12 @@ namespace CM3D2.AddBoneSlider.Plugin
             Debuginfo.Log(LogLabel + "OnClickPrevMaid start ");
             int stockNo = FindVisibleMaidStockNo(this.currentMaidNo - 1, -1);
             Debuginfo.Log(LogLabel + "OnClickPrevMaid " + stockNo);
+            
             if (stockNo != -1)
             {
                 currentMaidNo = stockNo;
                 currentMaidChange();
+                Debuginfo.Log(LogLabel + "maid parent:" + maid.transform.parent.name);
             }
         }
 
@@ -1472,7 +1550,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 PoseTexDirectoryName = settingIni.PoseImgDirectory;
 
-                Debuginfo.Log("PoseTexDirectoryName :" + PoseTexDirectoryName);
+                //Debuginfo.Log("PoseTexDirectoryName :" + PoseTexDirectoryName);
                 string dateName = DateTime.Now.ToString("yyyyMMddHHmmssfff");
 
                 XmlElement root = document.DocumentElement;
@@ -1561,9 +1639,56 @@ namespace CM3D2.AddBoneSlider.Plugin
                     return;
                 }
 
+                //ここの間で他のメイドがいたら消す処理を加える
+                //メイドの表示状態を記録しておく
+                //ここで消す
+                bool otherMaid = true;
+                int tempCurrentNo = this.currentMaidNo;
+                List<int> visMaidNo = new List<int>();
+                int stockNo = FindVisibleMaidStockNo(this.currentMaidNo + 1, 1);
+                while (otherMaid)
+                {
+
+                    if (stockNo != -1)
+                    {
+
+                        if (this.currentMaidNo == stockNo)
+                        {
+                            otherMaid = false;
+                            break;
+                        }
+                        else
+                        {
+                            Maid tempMaid;
+                            if (sceneLevel == 27)
+                            {
+                                //公式撮影モード
+                                tempMaid = GameMain.Instance.CharacterMgr.GetMaid(stockNo);
+                            }
+                            else
+                            {
+                                //複数撮影モード
+                                tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(stockNo);
+                            }
+
+                            visMaidNo.Add(stockNo);
+                            tempMaid.Visible = !tempMaid.Visible;
+                            //GameMain.Instance.CharacterMgr.BanishmentMaid(maid);
+
+                            stockNo = FindVisibleMaidStockNo(stockNo + 1, 1);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogError(LogLabel + ":maid is Lost!");
+                        break;
+                    }
+                }
+
                 Camera poseshotthumCamera = posethumshot.gameObject.GetComponent<Camera>();
                 poseshotthumCamera.fieldOfView = 50f;
 
+                //撮影
                 RenderTexture m_rtThumCard = new RenderTexture(100, 100, 24, RenderTextureFormat.ARGB32);
                 m_rtThumCard.filterMode = FilterMode.Bilinear;
                 m_rtThumCard.antiAliasing = 8;
@@ -1572,6 +1697,26 @@ namespace CM3D2.AddBoneSlider.Plugin
                 Texture2D posetex = posethumshot.RenderThum(poseshotthumCamera, m_rtThumCard, m_rtThumCard2, new Size<int>(100, 100));
                 byte[] bytes = posetex.EncodeToPNG();
                 File.WriteAllBytes(text, bytes);
+
+                //ここで消してたメイドを元に戻す
+
+                foreach (int MaidNo in visMaidNo)
+                {
+                    Maid tempMaid;
+                    if (sceneLevel == 27)
+                    {
+                        //公式撮影モード
+                        tempMaid = GameMain.Instance.CharacterMgr.GetMaid(MaidNo);
+                    }
+                    else
+                    {
+                        //複数撮影モード
+                        tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(MaidNo);
+                    }
+                    tempMaid.Visible = true;
+                }
+                
+                this.currentMaidNo = tempCurrentNo;
 
 
                 //作成した新しいポーズをロードできるようにする処理
@@ -1602,183 +1747,12 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 uiPSTable.Reposition();
             }
-            //右クリックしたとき、anmファイル出力
+            //右クリックしたとき、anmファイル出力用のパネルを展開
             else if (UICamera.currentTouchID == -2)
             {
-                string dateName = DateTime.Now.ToString("yyyyMMddHHmmssfff");
-                string anmFileName = settingIni.OutputAnmDirectory + @"\" + dateName + ".anm";
+                goPNamePanel.SetActive(true);
 
-                // バイナリ形式でファイルに書き出し。
-
-                using (BinaryWriter w = new BinaryWriter(File.OpenWrite(anmFileName)))
-                {
-
-                    //string 10文字+"CM3D2_ANIM"
-                    w.Write(new byte[] { (byte)0x0A, (byte)0x43, (byte)0x4D, (byte)0x33, (byte)0x44, (byte)0x32, (byte)0x5F, (byte)0x41, (byte)0x4E, (byte)0x49, (byte)0x4D });
-                    //int Version 100
-                    w.Write(new byte[] { (byte)0xE8, (byte)0x03, (byte)0x00, (byte)0x00 });
-
-                    for (int i = 0; i < mp.BoneCount; i++)
-                    {
-                        string bone = mp.sBone[i];
-
-                        if (mp.sPath[bone] == "")
-                        {
-                            Debuginfo.Log(LogLabel + ":bone skip");
-                            continue;
-                        }
-
-                        // char「01」[1byte]
-                        w.Write((byte)0x01);
-
-                        //String ボーンのパス＋ボーン名[サイズ可変]
-                        byte[] bBonePath = System.Text.Encoding.UTF8.GetBytes(mp.sPath[bone]);
-                        if (bBonePath.Length < 128)
-                        {
-                            w.Write((byte)bBonePath.Length);
-                        }
-                        else
-                        {
-                            w.Write(new byte[] { (byte)(bBonePath.Length % 128 + 128), (byte)(bBonePath.Length / 128) });
-                        }
-                        w.Write(bBonePath);
-
-                        for (int j = 100; j < 104; j++)
-                        {
-                            //(Char)ボーンのローカル軸(LocaLRotation x,y,z,w LocalPosition X,Y,Z 100~106)[1byte]
-                            w.Write((byte)j);
-                            //(int)合計キーフレーム数 [4byte]
-                            int keyframe = 2;
-                            w.Write(keyframe);
-
-                            //trBone[bone].localRotation.x
-                            for (int k = 0; k < keyframe; k++)
-                            {
-                                //(float)キーフレームのタイミング(1フレーム＝1/60)[4byte]
-                                w.Write((float)(2.0f * (float)k / ((float)keyframe - 1)));
-                                //(float)各軸の数値[4byte]
-                                switch (j)
-                                {
-                                    case 100:
-                                        w.Write((float)trBone[bone].localRotation.x);
-                                        break;
-                                    case 101:
-                                        w.Write((float)trBone[bone].localRotation.y);
-                                        break;
-                                    case 102:
-                                        w.Write((float)trBone[bone].localRotation.z);
-                                        break;
-                                    case 103:
-                                        w.Write((float)trBone[bone].localRotation.w);
-                                        break;
-                                    default:
-                                        break;
-                                }
-                                //(float)inTangent(前の数値からの接線)[4byte]
-                                w.Write((float)0);
-                                //(float)outTangent(後の数値への接線)[4byte]
-                                w.Write((float)0);
-                            }
-                        }
-                    }
-
-
-                    for (int i = 0; i < mp.BoneCount; i++)
-                    {
-                        string bone = mp.sBone[i];
-
-                        if (mp.sPath[bone] == "")
-                        {
-                            Debuginfo.Log(LogLabel + ":bone skip");
-                            continue;
-                        }
-
-                        // char「01」[1byte]
-                        w.Write((byte)0x01);
-
-                        //String ボーンのパス＋ボーン名[サイズ可変]
-                        byte[] bBonePath = System.Text.Encoding.UTF8.GetBytes(mp.sPath[bone]);
-                        if (bBonePath.Length < 128)
-                        {
-                            w.Write((byte)bBonePath.Length);
-                        }
-                        else
-                        {
-                            w.Write(new byte[] { (byte)(bBonePath.Length % 128 + 128), (byte)(bBonePath.Length / 128) });
-                        }
-                        w.Write(bBonePath);
-
-                        for (int j = 104; j < 107; j++)
-                        {
-                            //(Char)ボーンのローカル軸(LocaLRotation x,y,z,w LocalPosition X,Y,Z 100~106)[1byte]
-                            w.Write((byte)j);
-                            //(int)合計キーフレーム数 [4byte]
-                            int keyframe = 2;
-                            w.Write(keyframe);
-
-                            //trBone[bone].localRotation.x
-                            for (int k = 0; k < keyframe; k++)
-                            {
-                                //(float)キーフレームのタイミング(1フレーム＝1/60)[4byte]
-                                w.Write((float)(2.0f * (float)k / ((float)keyframe - 1)));
-                                //(float)各軸の数値[4byte]
-                                switch (j)
-                                {
-                                    case 104:
-                                        w.Write((float)trBone[bone].localPosition.x);
-                                        break;
-                                    case 105:
-                                        w.Write((float)trBone[bone].localPosition.y);
-                                        break;
-                                    case 106:
-                                        w.Write((float)trBone[bone].localPosition.z);
-                                        break;
-                                    default:
-                                        break;
-                                }
-                                //(float)inTangent(前の数値からの接線)[4byte]
-                                w.Write((float)0);
-                                //(float)outTangent(後の数値への接線)[4byte]
-                                w.Write((float)0);
-                            }
-                        }
-                    }
-
-
-                    for (int i = 0; i < mp.BoneCount; i++)
-                    {
-                        string bone = mp.sBone[i];
-
-                        if (mp.sPath[bone] == "")
-                        {
-                            Debuginfo.Log(LogLabel + ":bone skip");
-                            continue;
-                        }
-
-                        // char「01」[1byte]
-                        w.Write((byte)0x01);
-
-                        //String ボーンのパス＋ボーン名[サイズ可変]
-                        byte[] bBonePath = System.Text.Encoding.UTF8.GetBytes(mp.sPath[bone]);
-                        if (bBonePath.Length < 128)
-                        {
-                            w.Write((byte)bBonePath.Length);
-                        }
-                        else
-                        {
-                            w.Write(new byte[] { (byte)(bBonePath.Length % 128 + 128), (byte)(bBonePath.Length / 128) });
-                        }
-                        w.Write(bBonePath);
-                    }
-
-
-                    // char「00」[1byte]
-                    w.Write((byte)0x00);
-
-
-                }
-
-
+                
             }
         }
 
@@ -1815,8 +1789,10 @@ namespace CM3D2.AddBoneSlider.Plugin
                 setButtonColor(UIButton.current, b);
                 activeHandleName = b ? bone : "";
 
+                posHandle.setVisible(b);
 
-                posHandle.Visible = b;
+                //posHandle.Visible = b;
+
 
             }
             catch (Exception ex) { Debug.LogError(LogLabel + "OnClickHandleButton() " + ex); return; }
@@ -1851,6 +1827,22 @@ namespace CM3D2.AddBoneSlider.Plugin
         public void OnClickResetButton()
         {
             resetSliderValue(getTag(UIButton.current, 1));
+        }
+
+        public void OnClickOutputOkANM()
+        {
+            Debuginfo.Log(LogLabel +FindChild(goPNamePanel, "NameStringValue").GetComponent<UIInput>().value);
+
+            outputANMPose(FindChild(goPNamePanel, "NameStringValue").GetComponent<UIInput>().value);
+            
+            goPNamePanel.SetActive(false);
+
+        }
+
+        public void OnClickOutputCancelANM()
+        {
+         
+            goPNamePanel.SetActive(false);
         }
 
         public void OnChangeSlider()
@@ -1952,6 +1944,21 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         }
 
+        public void OnSubmitPoseName()
+        {
+            try
+            {
+                Debuginfo.Log(LogLabel + UIInput.current.value);
+
+                outputANMPose(UIInput.current.value);
+
+                goPNamePanel.SetActive(false);
+                
+            }
+            catch (Exception ex) { Debug.LogError(LogLabel + "OnSubmitPoseName() " + ex); return; }
+
+        }
+
         public void OnClickBoneCategory()
         {
             //カテゴリーを選択
@@ -2014,6 +2021,12 @@ namespace CM3D2.AddBoneSlider.Plugin
 
 
         #region Private methods
+        /*
+        private IEnumerator waitTime(float waitTime)
+        {
+            yield return new WaitForSeconds(waitTime);
+        }
+        */
 
         private IEnumerator initCoroutine()
         {
@@ -2033,13 +2046,18 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 //ここでiniファイル読み込み処理
                 //Sybaris環境かどうかチェック
+                bool bExistSybaris;
                 if (File.Exists(Directory.GetCurrentDirectory() + @"\opengl32.dll") && Directory.Exists(Directory.GetCurrentDirectory() + @"\Sybaris"))
                 {
                     currentDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\Plugins";
+                    bExistSybaris = true;
+ 
                 }
                 else
                 {
                     currentDirectory = Directory.GetCurrentDirectory();
+                    bExistSybaris = false;
+
                 }
 
 
@@ -2050,15 +2068,74 @@ namespace CM3D2.AddBoneSlider.Plugin
                     settingIni = new SettingIni();
                     settingIni.PoseXmlDirectory = currentDirectory + @"\UnityInjector\Config";
                     settingIni.PoseImgDirectory = currentDirectory + @"\UnityInjector\Config\PoseImg";
+                    if(bExistSybaris)
+                    {
+                        settingIni.AnmOutputmode = "sybaris";
+                        settingIni.OutputJsonDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\Poses";
+                        settingIni.OutputAnmSybarisDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\GameData\Samples";
+                    }
+                    else
+                    {
+                        settingIni.AnmOutputmode = "photomode";
+                        settingIni.OutputJsonDirectory = "none";
+                        settingIni.OutputAnmSybarisDirectory = "none";
+                    }
+
+
                 }
                 else
                 {
+                    //iniファイルがある場合は設定されてない項目を補完
+
                     settingIni = IniFileHelper.Read<SettingIni>("setting", iniFileName);
                     if (settingIni.PoseXmlDirectory == "")
                         settingIni.PoseXmlDirectory = currentDirectory + @"\UnityInjector\Config";
                     if (settingIni.PoseImgDirectory == "")
                         settingIni.PoseImgDirectory = currentDirectory + @"\UnityInjector\Config\PoseImg";
+
+                    settingIni.AnmOutputmode = settingIni.AnmOutputmode.ToLower();
+                    if (settingIni.AnmOutputmode != "both" && settingIni.AnmOutputmode != "photomode"&& settingIni.AnmOutputmode != "sybaris")
+                    {
+                        if(bExistSybaris)
+                        {
+                            settingIni.AnmOutputmode = "sybaris";
+                        }
+                        else
+                        {
+                            settingIni.AnmOutputmode = "photomode";
+                        }
+                    }
+
+                    if (settingIni.OutputJsonDirectory == "")
+                    {
+                        if (bExistSybaris)
+                        {
+                            settingIni.OutputJsonDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\Poses";
+                        }
+                        else
+                        {
+                            settingIni.OutputJsonDirectory = "none";
+                        }
+                    }
+
+                    if (settingIni.OutputAnmSybarisDirectory == "")
+                    {
+                        if (bExistSybaris)
+                        {
+                            settingIni.OutputAnmSybarisDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\GameData\Samples";
+                        }
+                        else
+                        {
+                            settingIni.OutputAnmSybarisDirectory = "none";
+                        }
+                    }
+
+
                     settingIni.ToggleKey = settingIni.ToggleKey.ToLower();
+
+
+
+
 
                 }
                 IniFileHelper.Write<SettingIni>("setting", settingIni, iniFileName);
@@ -2075,8 +2152,22 @@ namespace CM3D2.AddBoneSlider.Plugin
                 //メイド情報取得
 
                 //公式撮影モードでも複数メイドでもここの処理の結果は同じはずだからこのまま
+                
                 currentMaidNo = 0;
                 maid = GameMain.Instance.CharacterMgr.GetMaid(currentMaidNo);
+
+                //じゃまずいから複数メイド撮影のときだけcurrentMaidNoの値をここで同期しとく
+                if(sceneLevel == 5)
+                {
+                    List<Maid> maidList = GameMain.Instance.CharacterMgr.GetStockMaidList();
+                    for (int i = 0; i < maidList.Count; i++)
+                    {
+                        if (maidList[i] == maid)
+                        {
+                            currentMaidNo = i;
+                        }
+                    }
+                }
                 //if (maid == null) return false;
 
                 Debuginfo.Log(LogLabel + "GetMaid complete.", 1);
@@ -2223,16 +2314,37 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 }
 
+                //丸いボタンは（どっかの）Cancelからコピー
+                GameObject goCancelCopy = null;
+
+                Transform tempOkCancel = goUIRoot.transform.Find("OkCancel");
+                if (tempOkCancel != null)
+                {
+                    Debuginfo.Log(LogLabel + "EditMode2");
+                    goCancelCopy = UnityEngine.Object.Instantiate(FindChild(tempOkCancel.gameObject, "Cancel")) as GameObject;
+                }
+                else
+                {
+                    Debuginfo.Log(LogLabel + "PhotoMode2");
+                    goCancelCopy = UnityEngine.Object.Instantiate(FindChild(goUIRoot.transform.Find("MainScreen").Find("SaveAndLoadPanel").gameObject, "Cancel")) as GameObject;
+                    
+                }
+               
+                
+
                 UILabel uiLabelTabCopy = FindChild(goProfileTabCopy, "Name").GetComponent<UILabel>();
                 uiLabelTabCopy.text = "";
 
-                Debuginfo.Log(LogLabel + "SpriteSet complete.");
+                
 
                 //EventDelegate.Remove(goProfileTabCopy.GetComponent<UIButton>().onClick, new EventDelegate.Callback(ProfileMgr.Instance.ChangeCommentTab));
                 EventDelegate.Remove(goProfileTabCopy.GetComponent<UIButton>().onClick, goProfileTabCopy.GetComponent<UIButton>().onClick.First());
 
-
                 goProfileTabCopy.SetActive(false);
+                goCancelCopy.SetActive(false);
+
+                Debuginfo.Log(LogLabel + "SpriteSet complete.");
+
                 #region createPanel
 
                 Debuginfo.Log(LogLabel + " goProfileTabCopy complete.");
@@ -2766,11 +2878,11 @@ namespace CM3D2.AddBoneSlider.Plugin
                 {
 
                     getMaidBonetransform();
-                    posHandle = new AngleHandle(maid);
+                    posHandle = new AngleHandle(settingIni.HandleLegacymode, maid);
                 }
                 else
                 {
-                    posHandle = new AngleHandle();
+                    posHandle = new AngleHandle(settingIni.HandleLegacymode);
                 }
                 posHandle.Visible = false;
 
@@ -2953,6 +3065,116 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 #endregion
 
+                #region AddInputANMNamePanel
+
+                ///////////////////////////////////////////////
+                //ポーズ名入力用パネル作成
+                uiPNamePanel = NGUITools.AddChild<UIPanel>(goSystemUnit);
+                uiPNamePanel.name = "PoseSelectPanel";
+                uiPNamePanel.transform.localPosition = new Vector3(0f, 250f, 0f);//-ScrollViewWidth / 2f - 140f / 2f - 10f, 0f, 0f); 
+
+
+                uiPNamePanel.depth = basedepth + 2;
+                goPNamePanel = uiPNamePanel.gameObject;
+
+
+                UISprite uiPNameBGSprite = NGUITools.AddChild<UISprite>(goPNamePanel);
+                uiPNameBGSprite.name = "PoseNameBG";
+                uiPNameBGSprite.atlas = uiAtlasDialog;
+                uiPNameBGSprite.spriteName = "cm3d2_dialog_frame";
+                uiPNameBGSprite.type = UIBasicSprite.Type.Sliced;
+                uiPNameBGSprite.SetDimensions(ScrollViewWidth, 300);
+                uiPNameBGSprite.gameObject.AddComponent<BoxCollider>();
+                NGUITools.UpdateWidgetCollider(uiPNameBGSprite.gameObject);
+
+
+                // インプット作成
+                GameObject goInputUnit = new GameObject("PoseNameInputUnit");
+                SetChild(goPNamePanel, goInputUnit);
+
+                UILabel uiPoseNameInput = NGUITools.AddChild<UILabel>(goPNamePanel);
+                uiPoseNameInput.name = "PoseNameInputLabel";
+                uiPoseNameInput.trueTypeFont = font;
+                uiPoseNameInput.fontSize = 25;
+                uiPoseNameInput.text = "ポーズ名";
+                uiPoseNameInput.width = 110;
+                uiPoseNameInput.color = Color.white;
+                uiPoseNameInput.depth = basedepth + 2;
+                uiPoseNameInput.overflowMethod = UILabel.Overflow.ShrinkContent;
+                uiPoseNameInput.transform.localPosition = new Vector3(-150, 100f, 0f);
+
+                UISprite uiPNameStringBase = NGUITools.AddChild<UISprite>(goInputUnit);
+                uiPNameStringBase.name = "NameStringBase";
+                uiPNameStringBase.atlas = uiAtlasSceneEdit;
+                uiPNameStringBase.spriteName = "cm3d2_edit_slidernumberframe";
+                uiPNameStringBase.type = UIBasicSprite.Type.Sliced;
+                uiPNameStringBase.SetDimensions(ScrollViewWidth-100, 60);
+                uiPNameStringBase.depth = basedepth + 2;
+                uiPNameStringBase.transform.localPosition = new Vector3(0f, 50f, 0f);
+
+                
+                UILabel uiPNameStringLabel = NGUITools.AddChild<UILabel>(uiPNameStringBase.gameObject);
+                uiPNameStringLabel.name = "NameStringValue";
+                uiPNameStringLabel.depth = uiPNameStringBase.depth + 1;
+                uiPNameStringLabel.width = uiPNameStringBase.width;
+                uiPNameStringLabel.trueTypeFont = font;
+                uiPNameStringLabel.fontSize = 35;
+                uiPNameStringLabel.text = "";
+                uiPNameStringLabel.color = Color.black;
+
+                UIInput uiPNameStringInput =  uiPNameStringLabel.gameObject.AddComponent<UIInput>();
+                uiPNameStringInput.label = uiPNameStringLabel;
+                uiPNameStringInput.onReturnKey = UIInput.OnReturnKey.Submit;
+                uiPNameStringInput.validation = UIInput.Validation.None;
+                uiPNameStringInput.activeTextColor = Color.black;
+                uiPNameStringInput.caretColor = new Color(0.1f, 0.1f, 0.3f, 1f);
+                uiPNameStringInput.selectionColor = new Color(0.3f, 0.3f, 0.6f, 0.8f);
+                EventDelegate.Set(uiPNameStringInput.onSubmit, this.OnSubmitPoseName);
+                uiPNameStringInput.value = "";
+
+                uiPNameStringInput.gameObject.AddComponent<BoxCollider>();
+                NGUITools.UpdateWidgetCollider(uiPNameStringInput.gameObject);
+                
+
+                //出力OKボタン
+                GameObject goOutputOkANM = SetCloneChild(goPNamePanel, goCancelCopy, "OutputOkANM");
+                goOutputOkANM.transform.localPosition = new Vector3(-150f, -50f, 0f);
+
+                goOutputOkANM.GetComponent<UISprite>().spriteName = "cm3d2_edit_okbutton";
+                goOutputOkANM.GetComponent<UISprite>().MakePixelPerfect();
+                goOutputOkANM.GetComponent<UISprite>().SetDimensions(100,100);
+                Destroy(goOutputOkANM.GetComponent<UIPlayAnimation>());
+
+                UIButton uiOutputOkANM = goOutputOkANM.GetComponent<UIButton>();
+                uiOutputOkANM.defaultColor = new Color(1f, 1f, 1f, 0.8f);
+                EventDelegate.Set(uiOutputOkANM.onClick, new EventDelegate.Callback(this.OnClickOutputOkANM));
+
+                NGUITools.UpdateWidgetCollider(goOutputOkANM);
+                goOutputOkANM.SetActive(true);
+
+                Debuginfo.Log(LogLabel + " goOutputOkANM complete.");
+
+                //出力Cancelボタン
+                GameObject goOutputCancelANM = SetCloneChild(goPNamePanel, goCancelCopy, "OutputCancelANM");
+                goOutputCancelANM.transform.localPosition = new Vector3(150f, -50f, 0f);
+
+                goOutputCancelANM.GetComponent<UISprite>().SetDimensions(100, 100);
+                Destroy(goOutputCancelANM.GetComponent<UIPlayAnimation>());
+
+                UIButton uiOutputCancelANM = goOutputCancelANM.GetComponent<UIButton>();
+                uiOutputCancelANM.defaultColor = new Color(1f, 1f, 1f, 0.8f);
+                EventDelegate.Set(uiOutputCancelANM.onClick, new EventDelegate.Callback(this.OnClickOutputCancelANM));
+
+                NGUITools.UpdateWidgetCollider(goOutputCancelANM);
+                goOutputCancelANM.SetActive(true);
+
+                Debuginfo.Log(LogLabel + " goOutputCancelANM complete.");
+
+                goPNamePanel.SetActive(false);
+
+                Debuginfo.Log(LogLabel + " goPNamePanel complete.");
+                #endregion
+
 
                 for (int i = 0; i < mp.BoneCount; i++)
                 {
@@ -2975,6 +3197,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                     ut.Reposition();
                 }
                 goAMSPanel.SetActive(false);
+
 
 
                 Debuginfo.Log(LogLabel + " goAMSPanel complete.");
@@ -3216,7 +3439,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         private void windowTweenFinished()
         {
-            Debuginfo.Log(LogLabel + "test");
+            //Debuginfo.Log(LogLabel + "test");
             goScrollView.SetActive(true);
         }
 
@@ -3399,6 +3622,22 @@ namespace CM3D2.AddBoneSlider.Plugin
             }
 
         }
+        private void setParentAllOffset()
+        {
+
+            int stockNo = FindVisibleMaidStockNo(this.currentMaidNo + 1, 1);
+            while(stockNo != this.currentMaidNo)
+            { 
+                Maid tempmaid = GameMain.Instance.CharacterMgr.GetStockMaid(stockNo);
+                if (tempmaid.transform.parent != GameMain.Instance.CharacterMgr.GetMaid(0).transform.parent)
+                {
+                    Debuginfo.Log(LogLabel + "stockNo:" + stockNo + " parent change");
+                    tempmaid.transform.parent = GameMain.Instance.CharacterMgr.GetMaid(0).transform.parent;
+                }
+                stockNo = FindVisibleMaidStockNo(stockNo + 1, 1);
+            }
+        }
+       
 
         //メイドのボーン情報の取得
         private void getMaidBonetransform()
@@ -3465,8 +3704,12 @@ namespace CM3D2.AddBoneSlider.Plugin
 
             if (bone == "allpos")
             {
+
                 GameMain.Instance.CharacterMgr.SetCharaAllPos(new Vector3(mp.fValue[bone][bone + ".px"] + mp.fVzero[bone][bone + ".px"], mp.fValue[bone][bone + ".py"] + mp.fVzero[bone][bone + ".py"], mp.fValue[bone][bone + ".pz"] + mp.fVzero[bone][bone + ".pz"]));
                 GameMain.Instance.CharacterMgr.SetCharaAllRot(new Vector3(mp.fValue[bone][bone + ".x"] + mp.fVzero[bone][bone + ".x"], mp.fValue[bone][bone + ".y"] + mp.fVzero[bone][bone + ".y"], mp.fValue[bone][bone + ".z"] + mp.fVzero[bone][bone + ".z"]));
+
+             
+
             }
             else if (bone == "offset")
             {
@@ -3709,8 +3952,12 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                     if (bone == "allpos")
                     {
-                        Vector3 tmpAllPos = GameMain.Instance.CharacterMgr.GetCharaAllPos();
-                        Vector3 tmpAllRot = GameMain.Instance.CharacterMgr.GetCharaAllRot();
+                        Vector3 tmpAllPos;
+                        Vector3 tmpAllRot;
+
+
+                        tmpAllPos = GameMain.Instance.CharacterMgr.GetCharaAllPos();
+                        tmpAllRot = GameMain.Instance.CharacterMgr.GetCharaAllRot();
 
                         if (
                             tmpAllPos.x != mp.fValue[bone][bone + ".px"] + mp.fVzero[bone][bone + ".px"] ||
@@ -4065,15 +4312,728 @@ namespace CM3D2.AddBoneSlider.Plugin
             }
 
         }
+        private void outputANMPose(string poseName)
+        {
+            if(poseName == "")
+            {
+                poseName = "ポーズ"; 
+            }
+            //しばりすさんは半角英数字以外のファイル名も読み込んでくれるため
+            //わかりやすくするためにファイル名とポーズ名を統一しようと思う
+            //string dateName = DateTime.Now.ToString("yyyyMMddHHmmssfff");
 
-        #endregion
+            string masterName = poseName;// dateName;
+            
+            string posetextname = masterName;//"この項目は人間用なので適当に分かりやすい名前を書いて下さい(処理上は不要)";
+
+            //公式撮影モード用フォルダに出力
+            if (settingIni.AnmOutputmode == "both" || settingIni.AnmOutputmode == "photomode")
+            {
+                Debuginfo.Log(LogLabel + "outputANM for photomode");
+                string anmFilePath = settingIni.OutputAnmDirectory + @"\" + masterName + ".anm";
+                //同名のファイルがある場合は最後に(連番)をつける
+                int fileno = 1;
+                while( File.Exists(anmFilePath) )
+                {
+                    anmFilePath = settingIni.OutputAnmDirectory + @"\" + masterName + "(" + fileno + ").anm";
+                    ++fileno;
+                }
+
+                // バイナリ形式でファイルに書き出し。
+                outputANMFile(anmFilePath);
+            }
+
+            //しばりす用フォルダに出力
+            if (settingIni.AnmOutputmode == "both" || settingIni.AnmOutputmode == "sybaris")
+            {
+                Debuginfo.Log(LogLabel + "outputANM for sybaris");
+                string anmSybarisFilePath = settingIni.OutputAnmSybarisDirectory + @"\" + masterName + ".anm";
+                string pngfilename = masterName + ".png";
+                string texfilename = masterName + "_icon.tex";
+                string text = settingIni.OutputAnmSybarisDirectory + @"\" + texfilename;
+
+                string jsontext = settingIni.OutputJsonDirectory + @"\" + masterName + ".json";
+
+                //同名のファイルがある場合は最後に(連番)をつける
+                int fileno = 1;
+                string mastercopy = masterName;
+                while (File.Exists(anmSybarisFilePath)|| File.Exists(text) || File.Exists(jsontext))
+                {
+
+                    masterName = mastercopy + "("+ fileno +")";
+                    posetextname = masterName;
+                    pngfilename = masterName + ".png";
+                    texfilename = masterName + "_icon.tex";
+                    anmSybarisFilePath = settingIni.OutputAnmSybarisDirectory + @"\" + masterName + ".anm";
+                    text = settingIni.OutputAnmSybarisDirectory + @"\" + texfilename;
+                    jsontext = settingIni.OutputJsonDirectory + @"\" + masterName + ".json";
+                    ++fileno;
+                }
+
+
+                // バイナリ形式でファイルに書き出し。
+                outputANMFile(anmSybarisFilePath);
+
+
+                //しばりす用アイコンtex作成処理
+                if (!Directory.Exists(settingIni.OutputAnmSybarisDirectory))
+                {
+                    Directory.CreateDirectory(settingIni.OutputAnmSybarisDirectory);
+
+                }
+                if (!Directory.Exists(settingIni.OutputJsonDirectory))
+                {
+                    Directory.CreateDirectory(settingIni.OutputJsonDirectory);
+
+                }
+
+                setParentAllOffset();
+
+                ThumShot posethumshot = GameMain.Instance.ThumCamera.GetComponent<ThumShot>();
+
+                //posethumshot.MoveTargetCard(maid);
+                Transform transform = CMT.SearchObjName(maid.transform, "Bip01", true);
+                if (transform != null)
+                {
+                    posethumshot.transform.position = transform.position + 3.2f*transform.parent.forward;//transform.TransformPoint(transform.up * 3.5f); // + new Vector3(0.84f, 2.25f, 0f));
+                    posethumshot.transform.rotation = transform.parent.rotation * Quaternion.Euler(0f, 180f, 0f);
+                    Debuginfo.Log(LogLabel + "posethumshot.transform.position" + posethumshot.transform.position);
+                    Debuginfo.Log(LogLabel + "transform.position" + transform.position);
+
+                    Debuginfo.Log(LogLabel + "transform.parent.up" + transform.parent.up);
+                    Debuginfo.Log(LogLabel + "transform.parent.forward" + transform.parent.forward);
+                    Debuginfo.Log(LogLabel + "transform.parent.right" + transform.parent.right);
+
+                    Debuginfo.Log(LogLabel + "posethumshot.transform.rotation" + posethumshot.transform.rotation.eulerAngles);
+                    Debuginfo.Log(LogLabel + "transform.parent.rotation" + transform.parent.rotation.eulerAngles);
+                }
+                else
+                {
+                    Debug.LogError(LogLabel + "：サムネイルを取ろうとしましたがメイドが居ません。");
+                    return;
+                }
+
+                Camera poseshotthumCamera = posethumshot.gameObject.GetComponent<Camera>();
+                poseshotthumCamera.fieldOfView = 35f;
+                //ここの間で他のメイドがいたら消す処理を加える
+
+                //メイドの表示状態を記録しておく
+
+                //ここで消す
+                bool otherMaid = true;
+                int tempCurrentNo = this.currentMaidNo;
+                List<int> visMaidNo = new List<int>();
+                int stockNo = FindVisibleMaidStockNo(this.currentMaidNo + 1, 1);
+                while (otherMaid)
+                {
+
+                    if (stockNo != -1)
+                    {
+
+                        if (this.currentMaidNo == stockNo)
+                        {
+                            otherMaid = false;
+                            break;
+                        }
+                        else
+                        {
+                            Maid tempMaid;
+                            if (sceneLevel == 27)
+                            {
+                                //公式撮影モード
+                                tempMaid = GameMain.Instance.CharacterMgr.GetMaid(stockNo);
+                            }
+                            else
+                            {
+                                //複数撮影モード
+                                tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(stockNo);
+                            }
+
+                            visMaidNo.Add(stockNo);
+                            tempMaid.Visible = !tempMaid.Visible;
+                            //GameMain.Instance.CharacterMgr.BanishmentMaid(maid);
+
+                            stockNo = FindVisibleMaidStockNo(stockNo + 1, 1);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogError(LogLabel + ":maid is Lost!");
+                        break;
+                    }
+                }
+
+                //ここでメイドさんを裸＆丸坊主にさせる
+                //加えてbodyのマスク状況も全て表示させる
+                //その際、SAN値保護のため暗転処理を加えるかもしれない
+                //※追記 一瞬だったので暗転いらんかった
+
+                List<bool> visibleList = new List<bool>();
+
+                List<string> slotList = new List<string>();
+                slotList.Add("hairF");
+                slotList.Add("hairR");
+                slotList.Add("hairS");
+                slotList.Add("hairT");
+                slotList.Add("wear");
+                slotList.Add("skirt");
+                slotList.Add("onepiece");
+                slotList.Add("mizugi");
+                slotList.Add("panz");
+                slotList.Add("bra");
+                slotList.Add("stkg");
+                slotList.Add("shoes");
+                slotList.Add("headset");
+                slotList.Add("glove");
+                slotList.Add("accHead");
+                slotList.Add("hairAho");
+                //slotList.Add("accHana");
+                //slotList.Add("accHa");
+                slotList.Add("accKami_1_");
+                slotList.Add("accMiMiR");
+                slotList.Add("accKamiSubR");
+                slotList.Add("accNipR");
+                slotList.Add("HandItemR");
+                slotList.Add("accKubi");
+                slotList.Add("accKubiwa");
+                //slotList.Add("accHeso");
+                slotList.Add("accUde");
+                slotList.Add("accAshi");
+                slotList.Add("accSenaka");
+                slotList.Add("accShippo");
+                //slotList.Add("accAnl");
+                //slotList.Add("accVag");
+                slotList.Add("kubiwa");
+                slotList.Add("megane");
+                //slotList.Add("accXXX");
+                slotList.Add("chikubi");
+                slotList.Add("accHat");
+                slotList.Add("kousoku_upper");
+                slotList.Add("kousoku_lower");
+                slotList.Add("accNipL");
+                slotList.Add("accMiMiL");
+                slotList.Add("accKamiSubL");
+                slotList.Add("accKami_2_");
+                slotList.Add("accKami_3_");
+                slotList.Add("HandItemL");
+
+                //↓の時用
+                List<TBodySkin> existGoSlot = new List<TBodySkin>();
+
+                //エディットモードかつメイドさんが2人以上いて対象が1人目じゃない場合
+                //bool bVisBra = maid.body0.goSlot[i].AttachName
+                if (sceneLevel == 5 )
+                {
+
+                    foreach (TBodySkin goSlotID in maid.body0.goSlot)
+                    {
+                        //複数メイドの2人目はアイテムスロットIDが一致しないらしいので
+                        //中のカテゴリ名を調べて消すかどうか判断する
+                        if (slotList.Contains(goSlotID.Category))
+                        {
+                            existGoSlot.Add(goSlotID);
+                            visibleList.Add(goSlotID.boVisible);
+                            goSlotID.boVisible = false;
+                            goSlotID.Update();
+                        }
+                    }
+                }
+                else
+                {
+                    //それ以外の場合
+
+                    foreach (string slotID in slotList)
+                    {
+                        visibleList.Add(maid.body0.goSlot[(int)TBody.hashSlotName[slotID]].boVisible);
+                        maid.body0.goSlot[(int)TBody.hashSlotName[slotID]].boVisible = false;
+                        maid.body0.goSlot[(int)TBody.hashSlotName[slotID]].Update();
+                    }
+                }
+                //maid.body0.FixMaskFlag();
+                maid.body0.FixVisibleFlag(false);
+
+                //メイドさんの体型を撮影用に合わせる
+
+                int tHeadX = maid.GetProp(MPN.HeadX).value;
+                int tHeadY = maid.GetProp(MPN.HeadY).value;
+
+                int tDouPer = maid.GetProp(MPN.DouPer).value;
+                int tsintyou = maid.GetProp(MPN.sintyou).value;
+
+                int tMuneL = maid.GetProp(MPN.MuneL).value;
+                int tMuneTare = maid.GetProp(MPN.MuneTare).value;
+                int tMuneUpDown = maid.GetProp(MPN.MuneUpDown).value;
+                int tMuneYori = maid.GetProp(MPN.MuneYori).value;
+
+                int twest = maid.GetProp(MPN.west).value;
+                int tHara = maid.GetProp(MPN.Hara).value;
+                int tkata = maid.GetProp(MPN.kata).value;
+                int tUdeScl = maid.GetProp(MPN.UdeScl).value;
+                int tArmL = maid.GetProp(MPN.ArmL).value;
+                int tKubiScl = maid.GetProp(MPN.KubiScl).value;
+
+                int tkoshi = maid.GetProp(MPN.koshi).value;
+                int tRegMeet = maid.GetProp(MPN.RegMeet).value;
+                int tRegFat = maid.GetProp(MPN.RegFat).value;
+
+                maid.SetProp(MPN.HeadX,100);
+                maid.SetProp(MPN.HeadY,100);
+
+                maid.SetProp(MPN.DouPer,20);
+                maid.SetProp(MPN.sintyou,20);
+
+                maid.SetProp(MPN.MuneL,50);
+                maid.SetProp(MPN.MuneTare,0);
+                maid.SetProp(MPN.MuneUpDown,0);
+                maid.SetProp(MPN.MuneYori,0);
+
+                maid.SetProp(MPN.west,50);
+                maid.SetProp(MPN.Hara,20);
+                maid.SetProp(MPN.kata,0);
+                maid.SetProp(MPN.UdeScl,50);
+                maid.SetProp(MPN.ArmL,20);
+                maid.SetProp(MPN.KubiScl,20);
+
+                maid.SetProp(MPN.koshi,50);
+                maid.SetProp(MPN.RegMeet,30);
+                maid.SetProp(MPN.RegFat,30);
+                maid.AllProcProp();
+
+                //撮影までに脱衣が終わらない場合があるので何ミリ秒か待つ
+                //waitTime(1.0f);
+
+                //撮影
+
+                RenderTexture m_rtThumCard = new RenderTexture(80, 80, 24, RenderTextureFormat.ARGB32);
+                m_rtThumCard.filterMode = FilterMode.Bilinear;
+                m_rtThumCard.antiAliasing = 8;
+                RenderTexture m_rtThumCard2 = new RenderTexture(80, 80, 0, RenderTextureFormat.ARGB32);
+
+                Texture2D posetex = posethumshot.RenderThum(poseshotthumCamera, m_rtThumCard, m_rtThumCard2, new Size<int>(80, 80));
+                //できた画像は一旦全部α値そのままでグレーColor(128,128,128)にする
+                //白背景と重ねる
+                //やり方がよくわからないので直に計算する
+                Color[] pixels = posetex.GetPixels();
+
+                for (int i = 0; i < pixels.Length; ++i)
+                {
+                    if (pixels[i] != Color.clear)
+                    {
+                        pixels[i].r = 1 - 0.5f * pixels[i].a;
+                        pixels[i].g = 1 - 0.5f * pixels[i].a;
+                        pixels[i].b = 1 - 0.5f * pixels[i].a;
+                        pixels[i].a = 1;
+                    }
+                    else
+                    {
+                        pixels[i] = Color.white;
+                    }
 
 
 
-        #region Utility methods
+                }
+                posetex.SetPixels(pixels);
+
+                Color clear1 = new Color(1, 1, 1, 239f / 255f);
+                Color clear2 = new Color(1, 1, 1, 207f / 255f);
+                Color clear3 = new Color(1, 1, 1, 128f / 255f);
+
+                //角を削る
+                posetex.SetPixel(0, 0, Color.clear);
+                posetex.SetPixel(0, 1, Color.clear);
+                posetex.SetPixel(1, 0, Color.clear);
+                posetex.SetPixel(1, 1, clear2);
+                posetex.SetPixel(2, 0, clear3);
+                posetex.SetPixel(0, 2, clear3);
+                posetex.SetPixel(3, 0, clear1);
+                posetex.SetPixel(0, 3, clear1);
+
+                posetex.SetPixel(79, 0, Color.clear);
+                posetex.SetPixel(79, 1, Color.clear);
+                posetex.SetPixel(78, 0, Color.clear);
+                posetex.SetPixel(78, 1, clear2);
+                posetex.SetPixel(77, 0, clear3);
+                posetex.SetPixel(79, 2, clear3);
+                posetex.SetPixel(76, 0, clear1);
+                posetex.SetPixel(79, 3, clear1);
+
+                posetex.SetPixel(0, 79, Color.clear);
+                posetex.SetPixel(0, 78, Color.clear);
+                posetex.SetPixel(1, 79, Color.clear);
+                posetex.SetPixel(1, 78, clear2);
+                posetex.SetPixel(2, 79, clear3);
+                posetex.SetPixel(0, 77, clear3);
+                posetex.SetPixel(3, 79, clear1);
+                posetex.SetPixel(0, 76, clear1);
+
+                posetex.SetPixel(79, 79, Color.clear);
+                posetex.SetPixel(79, 78, Color.clear);
+                posetex.SetPixel(78, 79, Color.clear);
+                posetex.SetPixel(78, 78, clear2);
+                posetex.SetPixel(77, 79, clear3);
+                posetex.SetPixel(79, 77, clear3);
+                posetex.SetPixel(76, 79, clear1);
+                posetex.SetPixel(79, 76, clear1);
+
+                posetex.Apply();
+
+                byte[] bytes = posetex.EncodeToPNG();
 
 
-        internal static Transform FindParent(Transform tr, string s) { return FindParent(tr.gameObject, s).transform; }
+                //撮影が終わったらメイドさんを元に戻す
+
+                maid.SetProp(MPN.HeadX, tHeadX);
+                maid.SetProp(MPN.HeadY, tHeadY);
+
+                maid.SetProp(MPN.DouPer, tDouPer);
+                maid.SetProp(MPN.sintyou, tsintyou);
+
+                maid.SetProp(MPN.MuneL, tMuneL);
+                maid.SetProp(MPN.MuneTare, tMuneTare);
+                maid.SetProp(MPN.MuneUpDown, tMuneUpDown);
+                maid.SetProp(MPN.MuneYori, tMuneYori);
+
+                maid.SetProp(MPN.west, twest);
+                maid.SetProp(MPN.Hara, tHara);
+                maid.SetProp(MPN.kata, tkata);
+                maid.SetProp(MPN.UdeScl, tUdeScl);
+                maid.SetProp(MPN.ArmL, tArmL);
+                maid.SetProp(MPN.KubiScl, tKubiScl);
+
+                maid.SetProp(MPN.koshi, tkoshi);
+                maid.SetProp(MPN.RegMeet, tRegMeet);
+                maid.SetProp(MPN.RegFat, tRegFat);
+
+                maid.AllProcProp();
+
+
+                if (sceneLevel == 5 && maid != GameMain.Instance.CharacterMgr.GetMaid(0))//bVisivle.Count > 0)
+                {
+                    foreach (var exSlotVisiblePair in existGoSlot.Select((pairSlotIDList, index) => new { pairSlotIDList, index }))
+                    {
+                        TBodySkin exslotIDTBodySkin = exSlotVisiblePair.pairSlotIDList;
+                        bool slotVisible = visibleList[exSlotVisiblePair.index];
+
+                        exslotIDTBodySkin.boVisible = slotVisible;
+                        exslotIDTBodySkin.Update();
+                    }
+
+                }
+                else
+                {
+                    foreach (var slotVisiblePair in slotList.Select((pairSlotIDList, index) => new { pairSlotIDList, index }))
+                    {
+                        string slotID = slotVisiblePair.pairSlotIDList;
+                        bool slotVisible = visibleList[slotVisiblePair.index];
+
+                        maid.body0.goSlot[(int)TBody.hashSlotName[slotID]].boVisible = slotVisible;
+                        maid.body0.goSlot[(int)TBody.hashSlotName[slotID]].Update();
+                    }
+                }
+                //maid.body0.FixMaskFlag();
+                maid.body0.FixVisibleFlag(false);
+
+                //ここで消してたメイドを元に戻す
+
+                foreach (int MaidNo in visMaidNo)
+                {
+                    Maid tempMaid;
+                    if (sceneLevel == 27)
+                    {
+                        //公式撮影モード
+                        tempMaid = GameMain.Instance.CharacterMgr.GetMaid(MaidNo);
+                    }
+                    else
+                    {
+                        //複数撮影モード
+                        tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(MaidNo);
+                    }
+                    tempMaid.Visible = true;
+                }
+
+
+
+                this.currentMaidNo = tempCurrentNo;
+
+                //pngの先頭にtexの情報を付加してファイル書き込み
+                using (BinaryWriter w = new BinaryWriter(File.OpenWrite(text)))
+                {
+
+                    //string 9文字+"CM3D2_TEX"
+                    w.Write(new byte[] { (byte)0x09, (byte)0x43, (byte)0x4D, (byte)0x33, (byte)0x44, (byte)0x32, (byte)0x5F, (byte)0x54, (byte)0x45, (byte)0x58 });
+                    //int Version 1000
+                    w.Write(new byte[] { (byte)0xE8, (byte)0x03, (byte)0x00, (byte)0x00 });
+                    //w.Write((byte)bBonePath.Length);
+
+                    string sTexpath = "assets/texture/texture/" + pngfilename;
+
+                    //String texのパス＋ファイル名[サイズ可変]
+                    byte[] bTexpath = System.Text.Encoding.UTF8.GetBytes(sTexpath);
+                    if (sTexpath.Length < 128)
+                    {
+                        w.Write((byte)bTexpath.Length);
+                    }
+                    else
+                    {
+                        w.Write(new byte[] { (byte)(bTexpath.Length % 128 + 128), (byte)(bTexpath.Length / 128) });
+                    }
+                    w.Write(bTexpath);
+
+                    //pngのサイズ
+                    w.Write((int)bytes.Length);
+
+
+                    w.Write(bytes);
+                }
+
+
+                //jsonファイルの生成
+
+                //表情設定2が公式撮影だと「オリジナル」になるので
+                //モーフの値を直に取ってきて判別する
+                //int hohoLv = 0;
+                //int namidaLv = 0;
+
+                string strFace2 = "頬";
+                if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["tear3"]] == 1)
+                {
+                    strFace2 += "３涙";
+                }
+                else if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["tear2"]] == 1)
+                {
+                    strFace2 += "２涙";
+                }
+                else if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["tear1"]] == 1)
+                {
+                    strFace2 += "１涙";
+                }
+                else
+                {
+                    strFace2 += "０涙";
+                }
+
+                if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["hohol"]] == 1)
+                {
+                    strFace2 += "３";
+                }
+                else if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["hoho"]] == 1)
+                {
+                    strFace2 += "２";
+                }
+                else if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["hohos"]] == 1)
+                {
+                    strFace2 += "１";
+                }
+                else
+                {
+                    strFace2 += "０";
+                }
+
+                if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["yodare"]] == 1)
+                {
+                    strFace2 += "よだれ";
+                }
+
+
+                Encoding UTF8BOM = Encoding.GetEncoding("UTF-8");
+
+                StreamWriter writer = new StreamWriter(jsontext, true, UTF8BOM);
+                writer.WriteLine("{");
+                writer.WriteLine("    \"name\":\"" + posetextname + "\",");
+                writer.WriteLine("    \"strFileName\": \"" + masterName + "\",");//anmファイル名前(拡張子無し)
+                writer.WriteLine("    \"strIconFileName\": \"" + texfilename + "\",");
+                writer.WriteLine("    \"bone\": \"Bip01 Pelvis\",");
+                writer.WriteLine("    \"bAutoTwistShoulder\": true,");
+                writer.WriteLine("    \"strFileName2\": \"" + maid.ActiveFace + "\",");
+                writer.WriteLine("    \"strFileName3\": \"" + strFace2 + "\"");//表情その2
+                writer.WriteLine("}");
+                writer.Close();
+            }
+        }
+
+        private void outputANMFile(string anmFilePath)
+        {
+            try {
+                using (BinaryWriter w = new BinaryWriter(File.OpenWrite(anmFilePath)))
+                {
+
+                    //string 10文字+"CM3D2_ANIM"
+                    w.Write(new byte[] { (byte)0x0A, (byte)0x43, (byte)0x4D, (byte)0x33, (byte)0x44, (byte)0x32, (byte)0x5F, (byte)0x41, (byte)0x4E, (byte)0x49, (byte)0x4D });
+                    //int Version 100
+                    w.Write(new byte[] { (byte)0xE8, (byte)0x03, (byte)0x00, (byte)0x00 });
+
+                    for (int i = 0; i < mp.BoneCount; i++)
+                    {
+                        string bone = mp.sBone[i];
+
+                        if (mp.sPath[bone] == "")
+                        {
+                            Debuginfo.Log(LogLabel + ":bone skip");
+                            continue;
+                        }
+
+                        // char「01」[1byte]
+                        w.Write((byte)0x01);
+
+                        //String ボーンのパス＋ボーン名[サイズ可変]
+                        byte[] bBonePath = System.Text.Encoding.UTF8.GetBytes(mp.sPath[bone]);
+                        if (bBonePath.Length < 128)
+                        {
+                            w.Write((byte)bBonePath.Length);
+                        }
+                        else
+                        {
+                            w.Write(new byte[] { (byte)(bBonePath.Length % 128 + 128), (byte)(bBonePath.Length / 128) });
+                        }
+                        w.Write(bBonePath);
+
+                        for (int j = 100; j < 104; j++)
+                        {
+                            //(Char)ボーンのローカル軸(LocaLRotation x,y,z,w LocalPosition X,Y,Z 100~106)[1byte]
+                            w.Write((byte)j);
+                            //(int)合計キーフレーム数 [4byte]
+                            int keyframe = 2;
+                            w.Write(keyframe);
+
+                            //trBone[bone].localRotation.x
+                            for (int k = 0; k < keyframe; k++)
+                            {
+                                //(float)キーフレームのタイミング(1フレーム＝1/60)[4byte]
+                                w.Write((float)(2.0f * (float)k / ((float)keyframe - 1)));
+                                //(float)各軸の数値[4byte]
+                                switch (j)
+                                {
+                                    case 100:
+                                        w.Write((float)trBone[bone].localRotation.x);
+                                        break;
+                                    case 101:
+                                        w.Write((float)trBone[bone].localRotation.y);
+                                        break;
+                                    case 102:
+                                        w.Write((float)trBone[bone].localRotation.z);
+                                        break;
+                                    case 103:
+                                        w.Write((float)trBone[bone].localRotation.w);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                //(float)inTangent(前の数値からの接線)[4byte]
+                                w.Write((float)0);
+                                //(float)outTangent(後の数値への接線)[4byte]
+                                w.Write((float)0);
+                            }
+                        }
+                    }
+
+
+                    for (int i = 0; i < mp.BoneCount; i++)
+                    {
+                        string bone = mp.sBone[i];
+
+                        if (mp.sPath[bone] == "")
+                        {
+                            Debuginfo.Log(LogLabel + ":bone skip");
+                            continue;
+                        }
+
+                        // char「01」[1byte]
+                        w.Write((byte)0x01);
+
+                        //String ボーンのパス＋ボーン名[サイズ可変]
+                        byte[] bBonePath = System.Text.Encoding.UTF8.GetBytes(mp.sPath[bone]);
+                        if (bBonePath.Length < 128)
+                        {
+                            w.Write((byte)bBonePath.Length);
+                        }
+                        else
+                        {
+                            w.Write(new byte[] { (byte)(bBonePath.Length % 128 + 128), (byte)(bBonePath.Length / 128) });
+                        }
+                        w.Write(bBonePath);
+
+                        for (int j = 104; j < 107; j++)
+                        {
+                            //(Char)ボーンのローカル軸(LocaLRotation x,y,z,w LocalPosition X,Y,Z 100~106)[1byte]
+                            w.Write((byte)j);
+                            //(int)合計キーフレーム数 [4byte]
+                            int keyframe = 2;
+                            w.Write(keyframe);
+
+                            //trBone[bone].localRotation.x
+                            for (int k = 0; k < keyframe; k++)
+                            {
+                                //(float)キーフレームのタイミング(1フレーム＝1/60)[4byte]
+                                w.Write((float)(2.0f * (float)k / ((float)keyframe - 1)));
+                                //(float)各軸の数値[4byte]
+                                switch (j)
+                                {
+                                    case 104:
+                                        w.Write((float)trBone[bone].localPosition.x);
+                                        break;
+                                    case 105:
+                                        w.Write((float)trBone[bone].localPosition.y);
+                                        break;
+                                    case 106:
+                                        w.Write((float)trBone[bone].localPosition.z);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                //(float)inTangent(前の数値からの接線)[4byte]
+                                w.Write((float)0);
+                                //(float)outTangent(後の数値への接線)[4byte]
+                                w.Write((float)0);
+                            }
+                        }
+                    }
+
+
+                    for (int i = 0; i < mp.BoneCount; i++)
+                    {
+                        string bone = mp.sBone[i];
+
+                        if (mp.sPath[bone] == "")
+                        {
+                            Debuginfo.Log(LogLabel + ":bone skip");
+                            continue;
+                        }
+
+                        // char「01」[1byte]
+                        w.Write((byte)0x01);
+
+                        //String ボーンのパス＋ボーン名[サイズ可変]
+                        byte[] bBonePath = System.Text.Encoding.UTF8.GetBytes(mp.sPath[bone]);
+                        if (bBonePath.Length < 128)
+                        {
+                            w.Write((byte)bBonePath.Length);
+                        }
+                        else
+                        {
+                            w.Write(new byte[] { (byte)(bBonePath.Length % 128 + 128), (byte)(bBonePath.Length / 128) });
+                        }
+                        w.Write(bBonePath);
+                    }
+
+
+                    // char「00」[1byte]
+                    w.Write((byte)0x00);
+
+                }
+            }
+            catch (Exception ex) { Debug.LogError(LogLabel + "outputANMFile:"+ anmFilePath  + ":" + ex); return; }
+
+
+        }
+
+#endregion
+
+
+
+#region Utility methods
+
+
+internal static Transform FindParent(Transform tr, string s) { return FindParent(tr.gameObject, s).transform; }
         internal static GameObject FindParent(GameObject go, string name)
         {
             if (go == null) return null;
