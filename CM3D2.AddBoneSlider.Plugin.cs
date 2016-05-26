@@ -1750,9 +1750,8 @@ namespace CM3D2.AddBoneSlider.Plugin
             //右クリックしたとき、anmファイル出力用のパネルを展開
             else if (UICamera.currentTouchID == -2)
             {
-                goPNamePanel.SetActive(true);
-
                 
+                goPNamePanel.SetActive(true);
             }
         }
 
@@ -2021,12 +2020,12 @@ namespace CM3D2.AddBoneSlider.Plugin
 
 
         #region Private methods
-        /*
+        
         private IEnumerator waitTime(float waitTime)
         {
             yield return new WaitForSeconds(waitTime);
         }
-        */
+        
 
         private IEnumerator initCoroutine()
         {
@@ -4397,15 +4396,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 {
                     posethumshot.transform.position = transform.position + 3.2f*transform.parent.forward;//transform.TransformPoint(transform.up * 3.5f); // + new Vector3(0.84f, 2.25f, 0f));
                     posethumshot.transform.rotation = transform.parent.rotation * Quaternion.Euler(0f, 180f, 0f);
-                    Debuginfo.Log(LogLabel + "posethumshot.transform.position" + posethumshot.transform.position);
-                    Debuginfo.Log(LogLabel + "transform.position" + transform.position);
-
-                    Debuginfo.Log(LogLabel + "transform.parent.up" + transform.parent.up);
-                    Debuginfo.Log(LogLabel + "transform.parent.forward" + transform.parent.forward);
-                    Debuginfo.Log(LogLabel + "transform.parent.right" + transform.parent.right);
-
-                    Debuginfo.Log(LogLabel + "posethumshot.transform.rotation" + posethumshot.transform.rotation.eulerAngles);
-                    Debuginfo.Log(LogLabel + "transform.parent.rotation" + transform.parent.rotation.eulerAngles);
+                    
                 }
                 else
                 {
@@ -4462,6 +4453,53 @@ namespace CM3D2.AddBoneSlider.Plugin
                         break;
                     }
                 }
+
+                //メイドさんの体型を撮影用に合わせる
+
+                int tHeadX = maid.GetProp(MPN.HeadX).value;
+                int tHeadY = maid.GetProp(MPN.HeadY).value;
+
+                int tDouPer = maid.GetProp(MPN.DouPer).value;
+                int tsintyou = maid.GetProp(MPN.sintyou).value;
+
+                int tMuneL = maid.GetProp(MPN.MuneL).value;
+                int tMuneTare = maid.GetProp(MPN.MuneTare).value;
+                int tMuneUpDown = maid.GetProp(MPN.MuneUpDown).value;
+                int tMuneYori = maid.GetProp(MPN.MuneYori).value;
+
+                int twest = maid.GetProp(MPN.west).value;
+                int tHara = maid.GetProp(MPN.Hara).value;
+                int tkata = maid.GetProp(MPN.kata).value;
+                int tUdeScl = maid.GetProp(MPN.UdeScl).value;
+                int tArmL = maid.GetProp(MPN.ArmL).value;
+                int tKubiScl = maid.GetProp(MPN.KubiScl).value;
+
+                int tkoshi = maid.GetProp(MPN.koshi).value;
+                int tRegMeet = maid.GetProp(MPN.RegMeet).value;
+                int tRegFat = maid.GetProp(MPN.RegFat).value;
+
+                maid.SetProp(MPN.HeadX, 100);
+                maid.SetProp(MPN.HeadY, 100);
+
+                maid.SetProp(MPN.DouPer, 20);
+                maid.SetProp(MPN.sintyou, 20);
+
+                maid.SetProp(MPN.MuneL, 50);
+                maid.SetProp(MPN.MuneTare, 0);
+                maid.SetProp(MPN.MuneUpDown, 0);
+                maid.SetProp(MPN.MuneYori, 0);
+
+                maid.SetProp(MPN.west, 50);
+                maid.SetProp(MPN.Hara, 20);
+                maid.SetProp(MPN.kata, 0);
+                maid.SetProp(MPN.UdeScl, 50);
+                maid.SetProp(MPN.ArmL, 20);
+                maid.SetProp(MPN.KubiScl, 20);
+
+                maid.SetProp(MPN.koshi, 50);
+                maid.SetProp(MPN.RegMeet, 30);
+                maid.SetProp(MPN.RegFat, 30);
+                maid.AllProcProp();
 
                 //ここでメイドさんを裸＆丸坊主にさせる
                 //加えてbodyのマスク状況も全て表示させる
@@ -4522,9 +4560,8 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 //エディットモードかつメイドさんが2人以上いて対象が1人目じゃない場合
                 //bool bVisBra = maid.body0.goSlot[i].AttachName
-                if (sceneLevel == 5 )
+                if (sceneLevel == 5 && maid != GameMain.Instance.CharacterMgr.GetMaid(0))//bVisivle.Count > 0)
                 {
-
                     foreach (TBodySkin goSlotID in maid.body0.goSlot)
                     {
                         //複数メイドの2人目はアイテムスロットIDが一致しないらしいので
@@ -4533,8 +4570,14 @@ namespace CM3D2.AddBoneSlider.Plugin
                         {
                             existGoSlot.Add(goSlotID);
                             visibleList.Add(goSlotID.boVisible);
-                            goSlotID.boVisible = false;
-                            goSlotID.Update();
+
+                            if (goSlotID.boVisible)
+                            {
+                                goSlotID.boVisible = false;
+                                goSlotID.Update();
+                                //Debuginfo.Log(goSlotID.Category);
+
+                            }
                         }
                     }
                 }
@@ -4547,60 +4590,12 @@ namespace CM3D2.AddBoneSlider.Plugin
                         visibleList.Add(maid.body0.goSlot[(int)TBody.hashSlotName[slotID]].boVisible);
                         maid.body0.goSlot[(int)TBody.hashSlotName[slotID]].boVisible = false;
                         maid.body0.goSlot[(int)TBody.hashSlotName[slotID]].Update();
+                        //Debuginfo.Log(maid.body0.goSlot[(int)TBody.hashSlotName[slotID]].Category);
                     }
+                    
                 }
-                //maid.body0.FixMaskFlag();
                 maid.body0.FixVisibleFlag(false);
-
-                //メイドさんの体型を撮影用に合わせる
-
-                int tHeadX = maid.GetProp(MPN.HeadX).value;
-                int tHeadY = maid.GetProp(MPN.HeadY).value;
-
-                int tDouPer = maid.GetProp(MPN.DouPer).value;
-                int tsintyou = maid.GetProp(MPN.sintyou).value;
-
-                int tMuneL = maid.GetProp(MPN.MuneL).value;
-                int tMuneTare = maid.GetProp(MPN.MuneTare).value;
-                int tMuneUpDown = maid.GetProp(MPN.MuneUpDown).value;
-                int tMuneYori = maid.GetProp(MPN.MuneYori).value;
-
-                int twest = maid.GetProp(MPN.west).value;
-                int tHara = maid.GetProp(MPN.Hara).value;
-                int tkata = maid.GetProp(MPN.kata).value;
-                int tUdeScl = maid.GetProp(MPN.UdeScl).value;
-                int tArmL = maid.GetProp(MPN.ArmL).value;
-                int tKubiScl = maid.GetProp(MPN.KubiScl).value;
-
-                int tkoshi = maid.GetProp(MPN.koshi).value;
-                int tRegMeet = maid.GetProp(MPN.RegMeet).value;
-                int tRegFat = maid.GetProp(MPN.RegFat).value;
-
-                maid.SetProp(MPN.HeadX,100);
-                maid.SetProp(MPN.HeadY,100);
-
-                maid.SetProp(MPN.DouPer,20);
-                maid.SetProp(MPN.sintyou,20);
-
-                maid.SetProp(MPN.MuneL,50);
-                maid.SetProp(MPN.MuneTare,0);
-                maid.SetProp(MPN.MuneUpDown,0);
-                maid.SetProp(MPN.MuneYori,0);
-
-                maid.SetProp(MPN.west,50);
-                maid.SetProp(MPN.Hara,20);
-                maid.SetProp(MPN.kata,0);
-                maid.SetProp(MPN.UdeScl,50);
-                maid.SetProp(MPN.ArmL,20);
-                maid.SetProp(MPN.KubiScl,20);
-
-                maid.SetProp(MPN.koshi,50);
-                maid.SetProp(MPN.RegMeet,30);
-                maid.SetProp(MPN.RegFat,30);
-                maid.AllProcProp();
-
-                //撮影までに脱衣が終わらない場合があるので何ミリ秒か待つ
-                //waitTime(1.0f);
+                
 
                 //撮影
 
@@ -4608,8 +4603,10 @@ namespace CM3D2.AddBoneSlider.Plugin
                 m_rtThumCard.filterMode = FilterMode.Bilinear;
                 m_rtThumCard.antiAliasing = 8;
                 RenderTexture m_rtThumCard2 = new RenderTexture(80, 80, 0, RenderTextureFormat.ARGB32);
-
+                
                 Texture2D posetex = posethumshot.RenderThum(poseshotthumCamera, m_rtThumCard, m_rtThumCard2, new Size<int>(80, 80));
+
+
                 //できた画像は一旦全部α値そのままでグレーColor(128,128,128)にする
                 //白背景と重ねる
                 //やり方がよくわからないので直に計算する
@@ -4730,8 +4727,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                         maid.body0.goSlot[(int)TBody.hashSlotName[slotID]].Update();
                     }
                 }
-                //maid.body0.FixMaskFlag();
                 maid.body0.FixVisibleFlag(false);
+
 
                 //ここで消してたメイドを元に戻す
 
