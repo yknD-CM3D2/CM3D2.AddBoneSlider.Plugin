@@ -99,13 +99,19 @@ namespace CM3D2.AddBoneSlider.Plugin
     {
 
         #region Constants
+        
 
         public const string PluginName = "AddBoneSlider";
-        public const string Version = "0.0.1.1";
+        public const string Version = "0.0.1.3";
 
         private readonly string LogLabel = AddBoneSlider.PluginName + " : ";
 
         private readonly float TimePerInit = 1.00f;
+
+        //private readonly int IKCalc = 3;
+
+        private readonly float clickCheckOffsetInit = 40f;
+
 
         //private readonly int UIRootWidth = 1920; 
         //private readonly int UIRootHeight      = 1080; 
@@ -165,6 +171,7 @@ namespace CM3D2.AddBoneSlider.Plugin
         private UI2DSprite uiTextureCurrentMaid;
         private UILabel uiLabelCurrentMaid;
 
+
         private Font font;
         private Dictionary<string, Transform> trBoneUnit = new Dictionary<string, Transform>();
         private Dictionary<string, Dictionary<string, UILabel>> uiValueLable = new Dictionary<string, Dictionary<string, UILabel>>();
@@ -174,15 +181,86 @@ namespace CM3D2.AddBoneSlider.Plugin
         public Vector3 vPastBoneTrans;
 
         public string activeHandleName = "";
-        AngleHandle posHandle;
+        HandleKun posHandle;
 
         public string PoseXmlFileName;
         public string PoseTexDirectoryName;
         public string iniFileName;
         public string PoseName  ="";
 
+        //本体側にIKが使えないのでこちらで用意
+        /*
+        public Dictionary<int, TBody.IKCMO> IKLeftLeg = new Dictionary<int, TBody.IKCMO>();
+        public Dictionary<int, TBody.IKCMO> IKRightLeg = new Dictionary<int, TBody.IKCMO>();
+        public Dictionary<int, TBody.IKCMO> IKLeftArm = new Dictionary<int, TBody.IKCMO>();
+        public Dictionary<int, TBody.IKCMO> IKRightArm = new Dictionary<int, TBody.IKCMO>();
+        */
+        public Dictionary<int, IKCONSTRAINED> IKLeftLeg = new Dictionary<int, IKCONSTRAINED>();
+        public Dictionary<int, IKCONSTRAINED> IKRightLeg = new Dictionary<int, IKCONSTRAINED>();
+        public Dictionary<int, IKCONSTRAINED> IKLeftArm = new Dictionary<int, IKCONSTRAINED>();
+        public Dictionary<int, IKCONSTRAINED> IKRightArm = new Dictionary<int, IKCONSTRAINED>();
+
+        //IK脚腕のアタッチ状態判別用
+        public Dictionary<int, bool> bIKAttachLeftLeg = new Dictionary<int, bool>();
+        public Dictionary<int, bool> bIKAttachRightLeg = new Dictionary<int, bool>();
+        public Dictionary<int, bool> bIKAttachLeftArm = new Dictionary<int, bool>();
+        public Dictionary<int, bool> bIKAttachRightArm = new Dictionary<int, bool>();
+
+        //IKターゲット用
+        public Dictionary<int, GameObject> goIKLeftLegTarget = new Dictionary<int, GameObject>();
+        public Dictionary<int, GameObject> goIKRightLegTarget = new Dictionary<int, GameObject>();
+        public Dictionary<int, GameObject> goIKLeftArmTarget = new Dictionary<int, GameObject>();
+        public Dictionary<int, GameObject> goIKRightArmTarget = new Dictionary<int, GameObject>();
+
+        //IK対象ボーンのtransform
+        public Dictionary<int, Transform[]> trIKLeftLegBones = new Dictionary<int, Transform[]>();
+        public Dictionary<int, Transform[]> trIKRightLegBones = new Dictionary<int, Transform[]>();
+        public Dictionary<int, Transform[]> trIKLeftArmBones = new Dictionary<int, Transform[]>();
+        public Dictionary<int, Transform[]> trIKRightArmBones = new Dictionary<int, Transform[]>();
+
+
+        //アタッチ状態が付与されたメイドリスト
+        public Dictionary<int, Maid> attachIKMaidList = new Dictionary<int, Maid>();
+        public List<int> attachIKMaidNo = new List<int>();
+        public HashSet<int> DeleteNoList = new HashSet<int>();
+
+
+        //IKをアタッチする_IK_ボーンのtransform
+        //public Dictionary<int, Transform[]> trTargetIKBones = new Dictionary<int, Transform[]>();
+        public Dictionary<int, Transform[]> trTargetIKBones = new Dictionary<int, Transform[] >();
+        public Transform trTargetIKTemp = null;
+        public Dictionary<string, string> sIKBoneName = new Dictionary<string, string>()
+        {
+            {"_IK_handL","左手" },
+            {"_IK_handR","右手" },
+            {"_IK_footL","左足" },
+            {"_IK_footR","右足" },
+            {"_IK_hohoL","左頬" },
+            {"_IK_hohoR","右頬" },
+            {"_IK_muneL","左胸" },
+            {"_IK_muneR","右胸" },
+            {"_IK_hara","お腹" },
+            {"_IK_hipL","左尻" },
+            {"_IK_hipR","右尻" },
+            {"_IK_anal","後穴" },
+            {"_IK_vagina","前穴" },
+            {"Bip01","解除" }
+        };
+
+        //
+        bool bIKTargetGet = false;
+
+        //IKターゲット操作用ハンドル君×4
+        //HandleKun LeftLegHandle;
+        //HandleKun RightLegHandle;
+        //HandleKun LeftArmHandle;
+        //HandleKun RightArmHandle;
+        //リストラ
+
+
 
         SettingIni settingIni;
+        
 
         #endregion
 
@@ -382,108 +460,476 @@ namespace CM3D2.AddBoneSlider.Plugin
                 return true;
             }
         }
+        //制限角度つきIK
+        public class IKCONSTRAINED
+        {
+            private TBody body;
+
+            private float defLENroroot;
+
+            private float defLENroot;
+
+            private float defLENhead;
+
+            private Vector3 mid_old;
+
+            private Quaternion defRorootlocalRotation;
+
+            private Quaternion defRootlocalRotation;
+
+            private Quaternion defMidlocalRotation;
+
+            private Vector3 vechand;
+            //制限角度多段配列
+            //それぞれの添え字は
+            //[ボーンの先端からの順番,xの下限値→zの上限値]
+            private float[,] constrait;
+
+            public void Init(Transform initRoot, Transform initMid, Transform initHead, TBody b, float[,] initConstrait, Transform initRoroot = null)
+            {
+
+                this.body = b;
+                this.defLENroot = (initRoot.position - initMid.position).magnitude;
+                this.defLENhead = (initHead.position - initMid.position).magnitude;                
+                this.mid_old = initMid.position;                
+                this.defRootlocalRotation = initRoot.localRotation;
+                this.defMidlocalRotation = initMid.localRotation;
+                this.vechand = Vector3.zero;
+
+                if (initRoroot != null)
+                {
+                    this.defLENroroot = (initRoroot.position - initRoot.position).magnitude;
+                    this.defRorootlocalRotation = initRoroot.localRotation;
+                }
+
+                this.constrait = initConstrait;
+                
+            }
+
+            //腕・脚に特化させた肘・膝可動範囲制限付きIK
+            //本体側と関数名をあわせないためにあえてProcにする
+            public void Proc(Transform root, Transform mid, Transform head, Vector3 tgt)
+            {
+                //tgt += this.vechand;
+
+                //先ボーンの曲げる前の回転状態を保持しておく
+                Quaternion oldHeadRotation = head.transform.rotation;
+
+                float LENtgt =  (tgt - root.position).magnitude;
+
+                //中間のボーンのZ軸角度(肘or膝)を一意に決める
+                float midAngle;
+                                
+                //ボーンの合計長さ　<　根元ボーンからターゲットまでの距離　の場合
+                if (LENtgt >= defLENroot + defLENhead)
+                {
+                    midAngle = 0f;//180f;
+                }
+                else 
+                {
+                    float s = (float)Math.Sqrt((-LENtgt + defLENroot + defLENhead) * (LENtgt - defLENroot + defLENhead) * (LENtgt + defLENroot - defLENhead) * (LENtgt + defLENroot + defLENhead)) / 4f;
+                    
+                    //各ボーンの長さ　< 根元ボーンからターゲットまでの距離　の場合
+                    if (LENtgt > ((defLENroot > defLENhead) ? defLENroot : defLENhead))
+                    {
+                        float h = 2 * s / (LENtgt);
+                        //midAngle = 180f - Mathf.Asin(h / defLENhead) * Mathf.Rad2Deg - Mathf.Asin(h / defLENroot) * Mathf.Rad2Deg;
+                        midAngle =  Mathf.Asin(h / defLENhead) * Mathf.Rad2Deg + Mathf.Asin(h / defLENroot) * Mathf.Rad2Deg;
+
+                    }
+                    else //ボーンのどちらか長い方　> 根元ボーンからターゲットまでの距離の場合
+                    {
+                        float h = 2 * s / ((defLENroot > defLENhead) ? defLENroot : defLENhead);
+                        midAngle = 180f - Mathf.Asin(h / ((defLENroot > defLENhead) ? defLENhead :defLENroot) ) * Mathf.Rad2Deg;
+                    }
+                    
+                }
+
+                //角度制限チェック
+                //肘も膝もZ軸周りの角度でしか回らないものとして計算する
+                //他の関節では適用できないので注意
+                
+                if (this.constrait[1, 4] > midAngle)
+                {
+                    midAngle = this.constrait[1, 4];
+                }
+                if (this.constrait[1, 5] < midAngle)
+                {
+                    midAngle = this.constrait[1, 5];
+                }
+
+                //中間のボーンのX・Y軸周りの現在の角度を求める
+                Vector3 pastEuler = calcEulerfromRotation(mid.localRotation);
+
+                //計算結果の角度がずれたときのことを考えて一応チェック
+                //今後の検証次第ではここのチェックをスキップするかも
+                if (kaiten_ichii(pastEuler, this.constrait[1, 0], this.constrait[1, 1], this.constrait[1, 2], this.constrait[1, 3], this.constrait[1, 4], this.constrait[1, 5]))
+                {
+                    //pastEuler.z -= 180f;
+                    pastEuler.y -= 180f;
+                    pastEuler.x = 180f - pastEuler.x ;
+                }
+                
+                //ここで中間のボーンを曲げる
+                mid.localRotation = Quaternion.identity;
+                mid.localRotation *= Quaternion.AngleAxis(midAngle, Vector3.forward);
+                mid.localRotation *= Quaternion.AngleAxis(pastEuler.x, Vector3.right);
+                mid.localRotation *= Quaternion.AngleAxis(pastEuler.y, Vector3.up);
+                
+                
+                if (!this.body.boMAN)
+                {
+
+                    Vector3 zero = Vector3.zero;
+                    Vector3 mid_old = mid.position;
+                    bool flag = this.body.goSlot[0].bonehair.bodyhit.SphereMove_hair(ref mid_old, ref zero, Vector3.zero);
+                    //if (flag)
+                    //{
+                    //    Debug.DrawLine(this.body.Spine0a.position, this.mid_old, Color.white);
+                    //}
+                    //mid.position = mid_old;
+                }
+
+                //中間のボーン(肘or膝)を曲げた状態で
+                //根元のボーン(肩or股)から先端のボーン(手or足)までのベクトルを
+                //根元のボーン(肩or股)からターゲットまでのベクトルに向ける回転を求めて
+                //根元のボーンをターゲットに向けるように回転させる
+                
+                //root.localRotation = this.defRootlocalRotation;
+                root.transform.rotation = Quaternion.FromToRotation(head.transform.position - root.transform.position, tgt - root.transform.position) * root.transform.rotation;
+                //↑のタイミングで根元のボーンが回転する
+
+                //ボーンの角度範囲チェック＆超えてたら範囲内に収める
+                root.localRotation = constrainIK(root,  2);
+
+
+                //最後に先ボーンを元の回転になるように曲げる
+                head.transform.rotation = oldHeadRotation;
+                //ボーンの角度範囲チェック＆超えてたら範囲内に収める
+                head.localRotation = constrainIK(head, 0 , head.name.Contains("Hand"));
+
+
+                //Debug.DrawLine(root.position, this.mid_old, Color.yellow);
+                //Debug.DrawLine(head.position, this.mid_old, Color.yellow);
+                //this.vechand = head.rotation * vechand_offset;
+            }
+
+            public Vector3 calcEulerfromRotation(Quaternion tr)
+            {
+                float qx = tr.x;
+                float qy = tr.y;
+                float qz = tr.z;
+                float qw = tr.w;
+
+                float m02 = 2 * (qx * qz - qw * qy);
+                float m10 = 2 * (qx * qy - qw * qz);
+                float m11 = 1 - 2 * (qx * qx + qz * qz);
+                float m12 = 2 * (qy * qz + qw * qx);
+                //float m20 = 2 * (qx * qz + qw * qy);
+                //float m21 = 2 * (qy * qz - qw * qx);
+                float m22 = 1 - 2 * (qx * qx + qy * qy);
+
+                if (m12 > 1.0f) m12 = 1.0f;
+                if (m12 < -1.0f) m12 = -1.0f;
+                if (m11 > 1.0f) m11 = 1.0f;
+                if (m11 < -1.0f) m11 = -1.0f;
+                if (m10 > 1.0f) m10 = 1.0f;
+                if (m10 < -1.0f) m10 = -1.0f;
+                if (m22 > 1.0f) m22 = 1.0f;
+                if (m22 < -1.0f) m22 = -1.0f;
+
+                float rotate_x = Mathf.Asin(m12) * Mathf.Rad2Deg;
+                float rotate_y = 0f;
+                float rotate_z = 0f;
+
+                if (System.Math.Floor(Mathf.Cos(rotate_x * Mathf.Deg2Rad) * 10000) / 10000 != 0f)
+                {
+
+                    rotate_z = Mathf.Atan2(-m10, m11) * Mathf.Rad2Deg;
+                    float before = -m02 / Mathf.Cos(rotate_x * Mathf.Deg2Rad);
+                    if (before > 1.0f) before = 1.0f;
+                    if (before < -1.0f) before = -1.0f;
+
+                    rotate_y = Mathf.Asin(before) * Mathf.Rad2Deg;
+                    if (m22 < 0)
+                    {
+                        rotate_y = 180 - rotate_y;
+                    }
+
+                }
+                if (System.Math.Floor(Mathf.Cos(rotate_x * Mathf.Deg2Rad) * 10000) / 10000 == 0f || Double.IsNaN(rotate_y))
+                {
+                    float m00 = 1 - 2 * (qy * qy + qz * qz);
+                    float m01 = 2 * (qx * qy + qw * qz);
+
+                    if (m01 > 1.0f) m01 = 1.0f;
+                    if (m01 < -1.0f) m01 = -1.0f;
+                    if (m00 > 1.0f) m00 = 1.0f;
+                    if (m00 < -1.0f) m00 = -1.0f;
+
+                    rotate_y = 0f;
+                    //rotate_x = (tr.x > 0) ? 90f : -90f;
+                    rotate_z = Mathf.Atan2(m01, m00) * Mathf.Rad2Deg;
+
+                }
+                
+                return new Vector3(rotate_x,rotate_y,rotate_z);
+            }
+
+            public Vector3 calcEulerfromRotation_hand(Quaternion tr)
+            {
+                float qx = tr.x;
+                float qy = tr.y;
+                float qz = tr.z;
+                float qw = tr.w;
+
+                float m02 = 2 * (qx * qz - qw * qy);
+                if (m02 > 1.0f) m02 = 1.0f;
+                if (m02 < -1.0f) m02 = -1.0f;
+
+                float rotate_x = 0f;
+                float rotate_y = Mathf.Asin(-m02) * Mathf.Rad2Deg;
+                float rotate_z = 0f;
+                
+
+                if (System.Math.Floor(Mathf.Cos(rotate_y * Mathf.Deg2Rad) * 10000) / 10000 != 0f)
+                {
+                    float m00 = 1 - 2 * (qy * qy + qz * qz);
+                    float m01 = 2 * (qx * qy + qw * qz);
+                    float m12 = 2 * (qy * qz + qw * qx);
+                    float m22 = 1 - 2 * (qx * qx + qy * qy);
+
+                    if (m00 > 1.0f) m00 = 1.0f;
+                    if (m00 < -1.0f) m00 = -1.0f;
+                    if (m01 > 1.0f) m01 = 1.0f;
+                    if (m01 < -1.0f) m01 = -1.0f;
+
+                    if (m12 > 1.0f) m12 = 1.0f;
+                    if (m12 < -1.0f) m12 = -1.0f;
+                    if (m22 > 1.0f) m22 = 1.0f;
+                    if (m22 < -1.0f) m22 = -1.0f;
+
+                    rotate_z = Mathf.Atan2(m01, m00) * Mathf.Rad2Deg;
+                    float before = m12 / Mathf.Cos(rotate_y * Mathf.Deg2Rad);
+                    if (before > 1.0f) before = 1.0f;
+                    if (before < -1.0f) before = -1.0f;
+                    rotate_x = Mathf.Asin(before) * Mathf.Rad2Deg;
+                    if (m22 < 0)
+                    {
+                        rotate_x = 180 - rotate_x;
+                    }
+                }
+                if (System.Math.Floor(Mathf.Cos(rotate_y * Mathf.Deg2Rad) * 10000) / 10000 == 0f || Double.IsNaN(rotate_x))
+                {
+                    float m10 = 2 * (qx * qy - qw * qz);
+                    float m11 = 1 - 2 * (qx * qx + qz * qz);
+
+                    if (m10 > 1.0f) m10 = 1.0f;
+                    if (m10 < -1.0f) m10 = -1.0f;
+                    if (m11 > 1.0f) m11 = 1.0f;
+                    if (m11 < -1.0f) m11 = -1.0f;
+
+                    rotate_x = 0f;
+                    rotate_z = Mathf.Atan2(-m10, m11) * Mathf.Rad2Deg;
+                }
+
+
+                return new Vector3(rotate_x, rotate_y, rotate_z);
+            }
+
+            //角度が一意に決まらないときの苦肉の策
+            public bool kaiten_ichii(Vector3 rotate,float xmin,float xmax,float ymin,float ymax,float zmin ,float zmax)
+            {
+                return ((180f - rotate.x) > xmin && (180f - rotate.x) < xmax
+                      && (rotate.y - 180f) > ymin && (rotate.y - 180f) < ymax
+                      && (rotate.z - 180f) > zmin && (rotate.z - 180f) < zmax);
+            }
+            public bool kaiten_ichii_hand(Vector3 rotate, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax)
+            {
+                return ((rotate.x - 180f) > xmin && (rotate.x - 180f) < xmax
+                      && (180f - rotate.y) > ymin && (180f - rotate.y) < ymax
+                      && (rotate.z - 180f) > zmin && (rotate.z - 180f) < zmax);
+            }
+
+            public Quaternion constrainIK(Transform tr, int boneOrder, bool isHand = false)
+            {
+                return constrainIK(tr.localRotation,boneOrder,isHand);
+            }
+
+            public Quaternion constrainIK(Quaternion tr, int boneOrder, bool isHand = false)
+            {
+                Vector3 rotate;
+
+                if (!isHand)
+                {
+                    rotate = calcEulerfromRotation(tr);
+                    if (kaiten_ichii(rotate, this.constrait[boneOrder, 0], this.constrait[boneOrder, 1], this.constrait[boneOrder, 2], this.constrait[boneOrder, 3], this.constrait[boneOrder, 4], this.constrait[boneOrder, 5]))
+                    {
+                        //rotate.z -= 180f;
+                        //rotate.y -= 180f;
+                        //rotate.x = 180f - rotate.x ;
+
+                        return tr;
+                    }
+                }
+                else
+                {
+                    rotate = calcEulerfromRotation_hand(tr);
+                    if (kaiten_ichii_hand(rotate, this.constrait[boneOrder, 0], this.constrait[boneOrder, 1], this.constrait[boneOrder, 2], this.constrait[boneOrder, 3], this.constrait[boneOrder, 4], this.constrait[boneOrder, 5]))
+                    {
+                        return tr;
+                    }
+                }
+
+                bool bOver = false;
+
+                if (this.constrait[boneOrder, 0] > rotate.x)
+                {
+                    if (this.constrait[boneOrder, 0] > rotate.x + 360f || this.constrait[boneOrder, 1] < rotate.x + 360f)
+                    {
+                        rotate.x = this.constrait[boneOrder, 0];
+                        bOver = true;
+                    }
+                }
+                if (this.constrait[boneOrder, 1] < rotate.x)
+                {
+                    if (this.constrait[boneOrder, 1] < rotate.x - 360f || this.constrait[boneOrder, 0] > rotate.x - 360f)
+                    {
+                        rotate.x = this.constrait[boneOrder, 1];
+                        bOver = true;
+                    }
+                }
+                if (this.constrait[boneOrder, 2] > rotate.y)
+                {
+                    if (this.constrait[boneOrder, 2] > rotate.y + 360f || this.constrait[boneOrder, 3] < rotate.y + 360f)
+                    {
+                        rotate.y = this.constrait[boneOrder, 2];
+                        bOver = true;
+                    }
+                }
+                if (this.constrait[boneOrder, 3] < rotate.y)
+                {
+                    if (this.constrait[boneOrder, 3] < rotate.y - 360f || this.constrait[boneOrder, 2] > rotate.y - 360f)
+                    {
+                        rotate.y = this.constrait[boneOrder, 3];
+                        bOver = true;
+                    }
+                }
+                if (this.constrait[boneOrder, 4] > rotate.z)
+                {
+                    if (this.constrait[boneOrder, 4] > rotate.z + 360f || this.constrait[boneOrder, 5] < rotate.z + 360f)
+                    {
+                        rotate.z = this.constrait[boneOrder, 4];
+                        bOver = true;
+                    }
+                }
+                if (this.constrait[boneOrder, 5] < rotate.z)
+                {
+                    if (this.constrait[boneOrder, 5] < rotate.z - 360f || this.constrait[boneOrder, 4] > rotate.z - 360f)
+                    {
+                        rotate.z = this.constrait[boneOrder, 5];
+                        bOver = true;
+                    }
+                }
+
+                if (bOver)
+                {
+                    if (!isHand)
+                    {
+                        
+                        tr = Quaternion.identity;
+                        tr *= Quaternion.AngleAxis(rotate.z, Vector3.forward);
+                        tr *= Quaternion.AngleAxis(rotate.x, Vector3.right);
+                        tr *= Quaternion.AngleAxis(rotate.y, Vector3.up);
+                    }
+                    else
+                    {
+                        //苦肉の策のツケ
+                        tr = Quaternion.identity;
+                        tr *= Quaternion.AngleAxis(rotate.z, Vector3.forward);
+                        tr *= Quaternion.AngleAxis(rotate.y, Vector3.up);
+                        tr *= Quaternion.AngleAxis(rotate.x, Vector3.right);
+                        
+                    }
+                }
+
+                return tr;
+            }
+                
+        }
 
         //ハンドル君
-        private class AngleHandle
+        private class HandleKun
         {
+            private readonly int BaseRenderQueue = 3500;
+
+
             private bool initComplete = false;
 
             private Maid maid = null;
-            private Transform parentBone;
+            private Transform trParentBone;
 
-            private GameObject gameObject;
+            private GameObject goHandleMasterObject;
+            private GameObject goAngleHandle;
+            private GameObject goPositionHandle;
+
+            private GameObject goIKBoneTarget;
 
             private ControllOnMouse controllOnMouseX;
             private ControllOnMouse controllOnMouseY;
             private ControllOnMouse controllOnMouseZ;
 
+            private ControllOnMouse controllOnMousePX;
+            private ControllOnMouse controllOnMousePY;
+            private ControllOnMouse controllOnMousePZ;
+
+            private ControllOnMouse controllOnMouseC;
+
+            private ClickOnlyControll CoC;
+
             private int Legacymode;
 
-            Texture2D m_texture_red;
-            Texture2D m_texture_green;
-            Texture2D m_texture_blue;
-            Texture2D m_texture_red_2;
-            Texture2D m_texture_green_2;
-            Texture2D m_texture_blue_2;
-            Texture2D m_texture_white;
-            Texture2D m_texture_yellow;
+            private bool bIKAttached = false;
 
+            public bool bHandlePositionMode;
+
+            public bool rightClicked = false;
+            
+            
+
+            Texture2D m_texture_red = new Texture2D(16, 16, TextureFormat.ARGB32, false);
+            Texture2D m_texture_green = new Texture2D(16, 16, TextureFormat.ARGB32, false);
+            Texture2D m_texture_blue = new Texture2D(16, 16, TextureFormat.ARGB32, false);
+            Texture2D m_texture_red_2 = new Texture2D(16, 16, TextureFormat.ARGB32, false);
+            Texture2D m_texture_green_2 = new Texture2D(16, 16, TextureFormat.ARGB32, false);
+            Texture2D m_texture_blue_2 = new Texture2D(16, 16, TextureFormat.ARGB32, false);
+            Texture2D m_texture_white = new Texture2D(16, 16, TextureFormat.ARGB32, false);
+            Texture2D m_texture_yellow = new Texture2D(16, 16, TextureFormat.ARGB32, false);
+            Texture2D m_texture_cyan = new Texture2D(16, 16, TextureFormat.ARGB32, false);
+            Texture2D m_texture_magenta = new Texture2D(16, 16, TextureFormat.ARGB32, false);
 
             GameObject redring;
             GameObject bluering;
             GameObject greenring;
+            GameObject redvector;
+            GameObject bluevector;
+            GameObject greenvector;
+            GameObject whitecenter;
 
             GizmoRender gizmoRender;
 
-            //ハンドルのドラッグ状態取得
-            public bool controllDragged()
+            private UILabel uiLabelIKBoneName;
+
+            public enum IKMODE
             {
-                if (!initComplete)
-                    return false;
-
-
-                if (controllOnMouseX.DragFinished || controllOnMouseY.DragFinished || controllOnMouseZ.DragFinished)
-                {
-                    Visible = false;
-                    controllOnMouseX.DragFinished = false;
-                    controllOnMouseY.DragFinished = false;
-                    controllOnMouseZ.DragFinished = false;
-
-                    redring.renderer.material.mainTexture = m_texture_red_2;
-                    greenring.renderer.material.mainTexture = m_texture_green_2;
-                    bluering.renderer.material.mainTexture = m_texture_blue_2;
-
-                    redring.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
-                    greenring.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
-                    bluering.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
-
-
-
-                    SetParentBone(parentBone);
-                    Visible = true;
-
-                }
-
-                if (!controllOnMouseX.Dragged && !controllOnMouseY.Dragged && !controllOnMouseZ.Dragged)
-                {
-                    if (controllOnMouseX.mouseOver)
-                    {
-                        redring.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
-                        redring.renderer.material.mainTexture = m_texture_yellow;
-                    }
-                    else
-                    {
-                        redring.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
-                        redring.renderer.material.mainTexture = m_texture_red_2;
-
-                    }
-
-                    if (controllOnMouseY.mouseOver)
-                    {
-                        greenring.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
-                        greenring.renderer.material.mainTexture = m_texture_yellow;
-                    }
-                    else
-                    {
-                        greenring.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
-                        greenring.renderer.material.mainTexture = m_texture_green_2;
-
-                    }
-
-                    if (controllOnMouseZ.mouseOver)
-                    {
-                        bluering.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
-                        bluering.renderer.material.mainTexture = m_texture_yellow;
-                    }
-                    else
-                    {
-                        bluering.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
-                        bluering.renderer.material.mainTexture = m_texture_blue_2;
-                    }
-                }
-
-                return (controllOnMouseX.Dragged || controllOnMouseY.Dragged || controllOnMouseZ.Dragged);
+                None,
+                LeftLeg,
+                RightLeg,
+                LeftArm,
+                RightArm
             }
+
+            private IKMODE ikmode = IKMODE.None; 
 
             private float handleScale = 1.0f;
 
@@ -491,47 +937,165 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 get
                 {
-                    return (initComplete) ? this.gameObject.transform : null;
+                    return (initComplete) ? this.goHandleMasterObject.transform : null;
                 }
             }
             public Vector3 Pos
             {
-                get { return (initComplete) ? this.gameObject.transform.position : default(Vector3); }
-                set { if (initComplete) this.gameObject.transform.position = value; }
+                get { return (initComplete) ? this.goHandleMasterObject.transform.position : default(Vector3); }
+                set { if (initComplete) this.goHandleMasterObject.transform.position = value; }
             }
             public Quaternion Rot
             {
-                get { return (initComplete) ? this.gameObject.transform.rotation : default(Quaternion); }
-                set { if (initComplete) this.gameObject.transform.rotation = value; }
+                get { return (initComplete) ? this.goHandleMasterObject.transform.rotation : default(Quaternion); }
+                set { if (initComplete) this.goHandleMasterObject.transform.rotation = value; }
+            }
+
+            public float Scale
+            {
+                get { return (initComplete) ? this.handleScale : 0; }
+                set
+                {
+                    if (initComplete)
+                    {
+                        this.handleScale = value;
+                        this.goHandleMasterObject.transform.localScale = Vector3.one * handleScale;
+                    }
+                }
+
+                
             }
             public bool Visible
             {
                 get
                 {
-                    return (initComplete && this.gameObject != null) ? this.gameObject.activeSelf : default(bool);
+                    return (initComplete && this.goHandleMasterObject != null) ? this.goHandleMasterObject.activeSelf : default(bool);
                 }
                 set
                 {
-                    if (initComplete && this.gameObject != null) this.gameObject.SetActive(value);
+                    if (initComplete && this.goHandleMasterObject != null) this.goHandleMasterObject.SetActive(value);
                 }
             }
 
-            public AngleHandle(int _Legacymode ,Maid _maid = null)
+            public IKMODE IKmode
+            {
+                get{ return (initComplete) ? this.ikmode: IKMODE.None; }
+                set
+                {
+                    //Debuginfo.Log("IKmode set");
+                    //if (initComplete)
+                    //{
+                    //Debuginfo.Log("IKmode:" + (int)value);
+                        this.ikmode = value;
+                        if(value == IKMODE.None)
+                        {
+                            //Rot = Quaternion.identity;
+                            controllOnMouseC.ikmode = false;
+                        }
+                        else
+                        {
+                        //Rot = Quaternion.Euler(-90, 0, 90);
+                        
+                            controllOnMouseC.ikmode = true;
+                        }
+                    //}
+                }
+            }
+
+            public bool IKTargetVisible
+            {
+                get { return (initComplete) ? this.goIKBoneTarget.activeSelf : false; }
+                set
+                {
+                    if (initComplete)
+                    {
+                        this.uiLabelIKBoneName.gameObject.SetActive(value);
+                        this.goIKBoneTarget.SetActive(value);
+                        goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
+                        goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
+
+                    }
+
+                }
+            }
+            public Vector3 IKTargetPos
+            {
+                get { return (initComplete) ? this.goIKBoneTarget.transform.position : default(Vector3); }
+                set { if (initComplete) this.goIKBoneTarget.transform.position = value; }
+            }
+
+            public Vector3 IKBoneLabelPos
+            {
+                set { if (initComplete) this.uiLabelIKBoneName.gameObject.transform.localPosition = value; }
+            }
+
+            public String IKTargetLabelString
+            {
+                set { if (initComplete) this.uiLabelIKBoneName.text = value; }
+            }
+
+            public HandleKun(int _Legacymode ,Maid _maid = null,Transform _transform = null)
             {
                 this.Legacymode = _Legacymode;
+
+                SetMaterial(m_texture_red, new Color(1f, 0f, 0f, 0.5f), "red");
+                SetMaterial(m_texture_green, new Color(0f, 1f, 0f, 0.5f), "green");
+                SetMaterial(m_texture_blue, new Color(0f, 0f, 1f, 0.5f), "blue");
+
+                SetMaterial(m_texture_red_2, new Color(1f, 0f, 0f, 0.5f), "red_2");
+                SetMaterial(m_texture_green_2, new Color(0f, 1f, 0f, 0.5f), "green_2");
+                SetMaterial(m_texture_blue_2, new Color(0f, 0f, 1f, 0.5f), "blue_2");
+
+                SetMaterial(m_texture_white, new Color(1f, 1f, 1f, 0.5f), "white");
+                SetMaterial(m_texture_yellow, new Color(1f, 0.92f, 0.016f, 0.3f), "yellow");
+                SetMaterial(m_texture_cyan, new Color(0f, 1f, 1f, 0.5f), "cyan");
+                SetMaterial(m_texture_magenta, new Color(1f, 0f, 1f, 0.5f), "magenta");
+
                 Init();
+
+                //IKボーン表示用ラベル
+                UIPanel uiPanelIKBoneName = NGUITools.AddChild<UIPanel>(GameObject.Find("UI Root"));
+
+                UISprite uiIKBNSprite = uiPanelIKBoneName.gameObject.AddComponent<UISprite>();
+                //uiIKBNSprite.depth = uiBGSprite.depth - 1;
+                uiIKBNSprite.atlas = FindAtlas("SystemDialog");
+                uiIKBNSprite.spriteName = "cm3d2_dialog_frame";
+                uiIKBNSprite.type = UIBasicSprite.Type.Sliced;
+                uiIKBNSprite.SetDimensions(150, 70);
+
+                uiLabelIKBoneName = uiIKBNSprite.gameObject.AddComponent<UILabel>();
+                uiLabelIKBoneName.name = "IKBoneLabel";
+                uiLabelIKBoneName.trueTypeFont = GameObject.Find("SystemUI Root").GetComponentsInChildren<UILabel>()[0].trueTypeFont;
+                uiLabelIKBoneName.fontSize = 20;
+                uiLabelIKBoneName.text = "未設定";
+                //uiLabelIKBoneName.width = 110;
+                uiLabelIKBoneName.fontStyle = FontStyle.Bold;
+                uiLabelIKBoneName.depth = uiIKBNSprite.depth + 1;
+                //uiLabelIKBoneName.overflowMethod = UILabel.Overflow.ShrinkContent;
+
+                uiLabelIKBoneName.gameObject.SetActive(false);
 
                 if (_maid != null)
                 {
-                    SetMaid(_maid);
+                    SetMaid(_maid,_transform);
                 }
 
-                this.gameObject.SetActive(false);
+                this.goHandleMasterObject.SetActive(false);
+
+
             }
 
-            public void Init()
+            //ハンドル君初期化生成処理
+            public void Init(bool isPositionMode = false)
             {
-                this.gameObject = new GameObject();
+                #region Init
+                this.goHandleMasterObject = new GameObject();
+
+                this.goAngleHandle = new GameObject();
+                this.goPositionHandle = new GameObject();
+                goAngleHandle.transform.parent = this.goHandleMasterObject.transform;
+                goPositionHandle.transform.parent = this.goHandleMasterObject.transform;
+                
 
                 //SSでハンドル君を消すために
                 //公式のハンドルを線の太さ0にして所持しとく
@@ -539,221 +1103,155 @@ namespace CM3D2.AddBoneSlider.Plugin
                 //ここまでやるなら公式のハンドル流用しろよとは思うけどなんとなく
                 if (Legacymode == 0)
                 {
-                    gizmoRender = this.gameObject.AddComponent<GizmoRender>();
+                    gizmoRender = this.goHandleMasterObject.AddComponent<GizmoRender>();
                     gizmoRender.Visible = true;
                     gizmoRender.offsetScale = 0;
                 }
 
-                Color alpha_red = Color.red;
-                alpha_red.a = 0.5f;
-                m_texture_red = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-                for (int y = 0; y < m_texture_red.height; y++)
-                {
-                    for (int x = 0; x < m_texture_red.width; x++)
-                    {
-                        m_texture_red.SetPixel(x, y, alpha_red);
-                    }
-                }
-                m_texture_red.Apply();
-                m_texture_red.name = "red";
-
-                Color alpha_green = Color.green;
-                alpha_green.a = 0.5f;
-                m_texture_green = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-                for (int y = 0; y < m_texture_green.height; y++)
-                {
-                    for (int x = 0; x < m_texture_green.width; x++)
-                    {
-                        m_texture_green.SetPixel(x, y, alpha_green);
-                    }
-                }
-                m_texture_green.Apply();
-                m_texture_green.name = "green";
 
 
-                Color alpha_blue = Color.blue;
-                alpha_blue.a = 0.5f;
-                m_texture_blue = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-                for (int y = 0; y < m_texture_blue.height; y++)
-                {
-                    for (int x = 0; x < m_texture_blue.width; x++)
-                    {
-                        m_texture_blue.SetPixel(x, y, alpha_blue);
-                    }
-                }
-                m_texture_blue.Apply();
-                m_texture_blue.name = "blue";
+                SetHandleObject(PrimitiveType.Sphere, m_texture_white, new Vector3(0.125f, 0.125f, 0.125f), new Vector3(0f, 0f, 0f), 0);
 
-                Color alpha_red_2 = new Color(0, 1, 1, 0.5f);
-                m_texture_red_2 = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-                for (int y = 0; y < m_texture_red_2.height; y++)
-                {
-                    for (int x = 0; x < m_texture_red.width; x++)
-                    {
-                        m_texture_red.SetPixel(x, y, alpha_red);
-                    }
+                SetHandleObject(PrimitiveType.Cylinder, m_texture_blue, new Vector3(0.025f, 1f, 0.025f), new Vector3(0f, 0f, 0f), 1);
+                SetHandleObject(PrimitiveType.Cylinder, m_texture_red, new Vector3(0.025f, 1f, 0.025f), new Vector3(90f, 0f, 0f), 2);
+                SetHandleObject(PrimitiveType.Cylinder, m_texture_green, new Vector3(0.025f, 1f, 0.025f), new Vector3(0f, 0f, 90f), 3);
 
-                }
-                m_texture_red_2.Apply();
-                m_texture_red_2.name = "red_2";
-
-                Color alpha_green_2 = new Color(1, 0, 1, 0.5f);
-                m_texture_green_2 = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-                for (int y = 0; y < m_texture_green_2.height; y++)
-                {
-                    for (int x = 0; x < m_texture_green.width; x++)
-                    {
-                        m_texture_green.SetPixel(x, y, alpha_green);
-                    }
-                }
-                m_texture_green_2.Apply();
-                m_texture_green_2.name = "green_2";
-
-
-                Color alpha_blue_2 = new Color(1, 1, 0, 0.5f);
-                m_texture_blue_2 = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-                for (int y = 0; y < m_texture_blue_2.height; y++)
-                {
-                    for (int x = 0; x < m_texture_blue.width; x++)
-                    {
-                        m_texture_blue.SetPixel(x, y, alpha_blue);
-                    }
-                }
-                m_texture_blue_2.Apply();
-                m_texture_blue_2.name = "blue_2";
-
-
-
-
-                Color alpha_white = Color.white;
-                alpha_white.a = 0.5f;
-                m_texture_white = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-                for (int y = 0; y < m_texture_white.height; y++)
-                {
-                    for (int x = 0; x < m_texture_white.width; x++)
-                    {
-                        m_texture_white.SetPixel(x, y, alpha_white);
-                    }
-                }
-                m_texture_white.Apply();
-                m_texture_white.name = "white";
-
-                Color alpha_yellow = Color.yellow;
-                alpha_yellow.a = 0.3f;
-                m_texture_yellow = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-                for (int y = 0; y < m_texture_yellow.height; y++)
-                {
-                    for (int x = 0; x < m_texture_yellow.width; x++)
-                    {
-                        m_texture_yellow.SetPixel(x, y, alpha_yellow);
-                    }
-                }
-                m_texture_yellow.Apply();
-                m_texture_yellow.name = "yellow";
-
-                GameObject boneCenter = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-
-                boneCenter.renderer.receiveShadows = false;
-                boneCenter.renderer.castShadows = false;
-                boneCenter.renderer.useLightProbes = false;
-                boneCenter.renderer.material.mainTexture = m_texture_white;
-                if (Legacymode == 0)
-                {
-                    boneCenter.renderer.material.shader = Shader.Find("Custom/GizmoShader");
-                    boneCenter.renderer.material.SetInt("unity_GUIZTestMode", 6);
-                }
-                else
-                {
-                    boneCenter.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
-                }
-                boneCenter.transform.localScale = new Vector3(0.125f, 0.125f, 0.125f);
-                boneCenter.transform.localEulerAngles = new Vector3(0f, 0f, 0f);
-
-
-                boneCenter.transform.parent = this.gameObject.transform;
-
-
-
-
-                this.controllOnMouseZ = setHandleObject(m_texture_blue_2, new Vector3(0f, 0f, 0f), new Color(0, 0, 1, 0.5f));//Z
+                this.controllOnMouseZ = SetHandleRingObject(m_texture_blue_2, new Vector3(0f, 0f, 0f), new Color(0, 0, 1, 0.5f), 4);//Z
                 this.controllOnMouseZ.wheelType = ControllOnMouse.WheelType.Angle;
                 this.controllOnMouseZ.axisType = ControllOnMouse.AxisType.RZ;
 
-                this.controllOnMouseX = setHandleObject(m_texture_red_2, new Vector3(90f, 0f, 0f), new Color(1, 0, 0, 0.5f));//X
+                this.controllOnMouseX = SetHandleRingObject(m_texture_red_2, new Vector3(90f, 0f, 0f), new Color(1, 0, 0, 0.5f), 5);//X
                 this.controllOnMouseX.wheelType = ControllOnMouse.WheelType.Angle;
                 this.controllOnMouseX.axisType = ControllOnMouse.AxisType.RX;
 
-                this.controllOnMouseY = setHandleObject(m_texture_green_2, new Vector3(0f, 0f, 90f), new Color(0, 1, 0, 0.5f));//Y
+                this.controllOnMouseY = SetHandleRingObject(m_texture_green_2, new Vector3(0f, 0f, 90f), new Color(0, 1, 0, 0.5f), 6);//Y
                 this.controllOnMouseY.wheelType = ControllOnMouse.WheelType.Angle;
                 this.controllOnMouseY.axisType = ControllOnMouse.AxisType.RY;
 
+                this.controllOnMousePZ = SetHandleVectorObject(m_texture_blue, new Vector3(0f, 0f, 0f), new Color(0, 0, 1, 0.5f), 4 );//Z
+                this.controllOnMousePZ.wheelType = ControllOnMouse.WheelType.Position;
+                this.controllOnMousePZ.axisType = ControllOnMouse.AxisType.RZ;
 
-                GameObject blueZ = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                this.controllOnMousePX = SetHandleVectorObject(m_texture_red, new Vector3(90f, 0f, 0f), new Color(1, 0, 0, 0.5f), 5);//X
+                this.controllOnMousePX.wheelType = ControllOnMouse.WheelType.Position;
+                this.controllOnMousePX.axisType = ControllOnMouse.AxisType.RX;
 
-                blueZ.renderer.receiveShadows = false;
-                blueZ.renderer.castShadows = false;
-                blueZ.renderer.useLightProbes = false;
-                blueZ.renderer.material.mainTexture = m_texture_blue;
+                this.controllOnMousePY = SetHandleVectorObject(m_texture_green, new Vector3(0f, 0f, 90f), new Color(0, 1, 0, 0.5f), 6);//Y
+                this.controllOnMousePY.wheelType = ControllOnMouse.WheelType.Position;
+                this.controllOnMousePY.axisType = ControllOnMouse.AxisType.RY;
+
+                whitecenter = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                whitecenter.renderer.receiveShadows = false;
+                whitecenter.renderer.castShadows = false;
+                whitecenter.renderer.useLightProbes = false;
+                
+                whitecenter.renderer.material.mainTexture = m_texture_white;
                 if (Legacymode == 0)
                 {
-                    blueZ.renderer.material.shader = Shader.Find("Custom/GizmoShader");
-                    blueZ.renderer.material.SetInt("unity_GUIZTestMode", 6);
+                    whitecenter.renderer.material.shader = Shader.Find("Hidden/Transplant_Internal-Colored");
+                    whitecenter.renderer.material.SetFloat("_ZTest", 6);
+                    whitecenter.renderer.material.SetFloat("_Cull", 2);
+                    whitecenter.renderer.material.SetFloat("_ZWrite", 0);
+
                 }
                 else
                 {
-                    blueZ.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
+                    whitecenter.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
                 }
-                blueZ.transform.localScale = new Vector3(0.025f, 1f, 0.025f);
-                blueZ.transform.localEulerAngles = new Vector3(0f, 0f, 0f);
-                blueZ.transform.parent = this.gameObject.transform;
+                whitecenter.renderer.material.SetColor("_Color", new Color(1,1,1,0.5f));
 
-                GameObject redX = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                whitecenter.renderer.material.renderQueue = BaseRenderQueue+9;
 
-                redX.renderer.receiveShadows = false;
-                redX.renderer.castShadows = false;
-                redX.renderer.useLightProbes = false;
-                redX.renderer.material.mainTexture = m_texture_red;
+                whitecenter.transform.localScale = new Vector3(0.25f, 0.25f, 0.25f);
+                whitecenter.name = "whitecenter";
+                whitecenter.transform.parent = this.goPositionHandle.transform;
+                
+                this.controllOnMouseC = whitecenter.AddComponent<ControllOnMouse>();
+                this.controllOnMouseC.wheelType = ControllOnMouse.WheelType.PosCenter;
+                this.controllOnMouseC.axisType = ControllOnMouse.AxisType.NONE;
+
+
+
+                goIKBoneTarget = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                goIKBoneTarget.renderer.receiveShadows = false;
+                goIKBoneTarget.renderer.castShadows = false;
+                goIKBoneTarget.renderer.useLightProbes = false;
+
+                goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
                 if (Legacymode == 0)
                 {
-                    redX.renderer.material.shader = Shader.Find("Custom/GizmoShader");
-                    redX.renderer.material.SetInt("unity_GUIZTestMode", 6);
+                    goIKBoneTarget.renderer.material.shader = Shader.Find("Hidden/Transplant_Internal-Colored");
+                    goIKBoneTarget.renderer.material.SetFloat("_ZTest", 6);
+                    goIKBoneTarget.renderer.material.SetFloat("_Cull", 2);
+                    goIKBoneTarget.renderer.material.SetFloat("_ZWrite", 0);
+
                 }
                 else
                 {
-                    redX.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
+                    goIKBoneTarget.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
                 }
-                redX.transform.localScale = new Vector3(0.025f, 1f, 0.025f);
-                redX.transform.localEulerAngles = new Vector3(90f, 0f, 0f);
-                redX.transform.parent = this.gameObject.transform;
 
+                goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
+                goIKBoneTarget.renderer.material.renderQueue = BaseRenderQueue+9;
 
-                GameObject greenY = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                goIKBoneTarget.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+                goIKBoneTarget.name = "goIKBoneTarget";
+                goIKBoneTarget.transform.parent = this.goHandleMasterObject.transform;
+                goIKBoneTarget.SetActive(false);
+                                
+                this.CoC = goIKBoneTarget.AddComponent<ClickOnlyControll>();
 
-                greenY.renderer.receiveShadows = false;
-                greenY.renderer.castShadows = false;
-                greenY.renderer.useLightProbes = false;
-                greenY.renderer.material.mainTexture = m_texture_green;
-                greenY.renderer.material.shader = Shader.Find("Custom/GizmoShader");
-                greenY.renderer.material.SetInt("unity_GUIZTestMode", 6);
+                
+                #endregion
+
+                ChangeHandleModePosition(isPositionMode);
+            }
+
+            //テクスチャ設定
+            private void SetMaterial(Texture2D m_texture, Color _color, String name)
+            {
+                
+                for (int y = 0; y < m_texture.height; y++)
+                {
+                    for (int x = 0; x < m_texture.width; x++)
+                    {
+                        m_texture.SetPixel(x, y, _color);
+                    }
+                }
+                m_texture.Apply();
+                m_texture.name = name;
+            }
+
+            //ハンドル君汎用パーツを作る
+            private void SetHandleObject(PrimitiveType _type, Texture2D m_texture,Vector3 _position, Vector3 _angle,int RQ)
+            {
+                GameObject PartsObject = GameObject.CreatePrimitive(_type);
+
+                PartsObject.renderer.receiveShadows = false;
+                PartsObject.renderer.castShadows = false;
+                PartsObject.renderer.useLightProbes = false;
+                PartsObject.renderer.material.mainTexture = m_texture;
                 if (Legacymode == 0)
                 {
-                    greenY.renderer.material.shader = Shader.Find("Custom/GizmoShader");
-                    greenY.renderer.material.SetInt("unity_GUIZTestMode", 6);
+                    PartsObject.renderer.material.shader = Shader.Find("Custom/GizmoShader");
+                    PartsObject.renderer.material.SetInt("unity_GUIZTestMode", 6);
                 }
                 else
                 {
-                    greenY.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
+                    PartsObject.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
                 }
-                greenY.transform.localScale = new Vector3(0.025f, 1f, 0.025f);
-                greenY.transform.localEulerAngles = new Vector3(0f, 0f, 90f);
-                greenY.transform.parent = this.gameObject.transform;
+                PartsObject.renderer.material.renderQueue = BaseRenderQueue + RQ;
+                PartsObject.transform.localScale = _position;
+                PartsObject.transform.localEulerAngles = _angle;
 
 
+                PartsObject.transform.parent = this.goAngleHandle.transform;
             }
 
             //ハンドル君のリング部分を作る
-            private ControllOnMouse setHandleObject(Texture2D m_texture, Vector3 handleAngle, Color m_color)
+            private ControllOnMouse SetHandleRingObject(Texture2D m_texture, Vector3 handleAngle, Color m_color,int RQ)
             {
+                #region createPrimitive
                 GameObject Ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
 
 
@@ -925,6 +1423,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 }
                 
                 Ring.renderer.material.SetColor("_Color", m_color);
+                Ring.renderer.material.renderQueue = BaseRenderQueue + RQ;
 
                 Ring.transform.localScale = new Vector3(2f, 0.05f, 2f);
                 Ring.transform.localEulerAngles = handleAngle;
@@ -935,7 +1434,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 meshCollider.sharedMesh = Ring.GetComponent<MeshFilter>().sharedMesh;
 
                 Ring.name = m_texture.name + "ring";
-                Ring.transform.parent = this.gameObject.transform;
+                Ring.transform.parent = this.goAngleHandle.transform;
 
                 if (Ring.name == "red_2ring")
                 {
@@ -957,9 +1456,142 @@ namespace CM3D2.AddBoneSlider.Plugin
                 {
                     Debug.LogError("ControllOnMouse: material name is invalid.");
                 }
-
+                #endregion
                 return Ring.AddComponent<ControllOnMouse>();
 
+            }
+
+            //ハンドル君の矢印部分を作る
+            private ControllOnMouse SetHandleVectorObject(Texture2D m_texture, Vector3 handleAngle, Color m_color,int RQ)
+            {
+                #region createPrimitive
+                GameObject Segare = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+
+                Mesh mesh = Segare.GetComponent<MeshFilter>().mesh;
+
+                //円筒プリミティブを矢印形に修正
+                Vector3[] newMesh = new Vector3[88];
+                Vector2[] newUV = new Vector2[88];
+
+                for(int i =0; i < 88; ++i)
+                {
+                    if(i == 41)
+                    {
+                        newMesh[i] = new Vector3(0f,1.25f,0f);
+                    }
+                    else if(i >=68)
+                    {
+                        newMesh[i] = mesh.vertices[i];
+                        newMesh[i].x *= 2.0f;
+                        newMesh[i].z *= 2.0f;
+                        //newMesh[i].y += 1.0f;
+                    }
+                    else
+                    {
+                        newMesh[i] = mesh.vertices[i];
+                        ///newMesh[i].y += 1.0f;
+                    }
+                        newUV[i] = mesh.uv[i];
+
+                }
+
+                int[] newTri = new int[360];
+                for(int i = 0; i < 240; ++i)
+                {
+                    newTri[i] = mesh.triangles[i];
+                }
+                for (int i = 0; i < 19; ++i)
+                {
+                    newTri[6 * i + 240] = 20 + i;
+                    newTri[6 * i + 241] = 68 + i;
+                    newTri[6 * i + 242] = 21 + i;
+                    newTri[6 * i + 243] = 69 + i;
+                    newTri[6 * i + 244] = 21 + i;
+                    newTri[6 * i + 245] = 68 + i;
+                }
+                {
+                    newTri[354] = 39;
+                    newTri[355] = 87;
+                    newTri[356] = 20;
+                    newTri[357] = 68;
+                    newTri[358] = 20;
+                    newTri[359] = 87;
+                }
+                mesh.Clear();
+                mesh.vertices = newMesh;
+                mesh.uv = newUV;
+                mesh.triangles = newTri;
+
+                Segare.renderer.receiveShadows = false;
+                Segare.renderer.castShadows = false;
+                Segare.renderer.useLightProbes = false;
+                Segare.renderer.material.mainTexture = m_texture;
+
+                if (Legacymode == 0)
+                {
+                    Segare.renderer.material.shader = Shader.Find("Hidden/Transplant_Internal-Colored");
+                    Segare.renderer.material.SetFloat("_ZTest", 6);
+                    Segare.renderer.material.SetFloat("_Cull", 2);
+                    Segare.renderer.material.SetFloat("_ZWrite", 0);
+
+                }
+                else
+                {
+                    Segare.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
+                }
+
+                Segare.renderer.material.SetColor("_Color", m_color);
+                Segare.renderer.material.renderQueue = BaseRenderQueue + RQ;
+
+                Segare.transform.localScale = new Vector3(0.05f, 0.4f, 0.05f);
+                Segare.transform.localEulerAngles = handleAngle;
+                
+
+                UnityEngine.Object.Destroy(Segare.GetComponent<Collider>());
+
+                MeshCollider meshCollider = Segare.AddComponent<MeshCollider>();
+                meshCollider.sharedMesh = Segare.GetComponent<MeshFilter>().sharedMesh;
+
+                Segare.name = m_texture.name + "vector";
+                Segare.transform.parent = this.goPositionHandle.transform;
+
+                if (Segare.name == "redvector")
+                {
+                    redvector = Segare;
+
+                }
+                else if (Segare.name == "greenvector")
+                {
+
+                    greenvector = Segare;
+
+                }
+                else if (Segare.name == "bluevector")
+                {
+                    bluevector = Segare;
+
+                }
+                else
+                {
+                    Debug.LogError("ControllOnMouse: material name is invalid.");
+                }
+                #endregion
+
+                return Segare.AddComponent<ControllOnMouse>();
+
+            }
+
+
+            //ハンドル君変形
+            public void ChangeHandleModePosition(bool isPositionMode)
+            {
+                bHandlePositionMode = isPositionMode;
+                this.goAngleHandle.SetActive(!isPositionMode);
+                this.goPositionHandle.SetActive(isPositionMode);
+
+                //Rot = isPositionMode ? Quaternion.Euler(-90, 0, 90): Quaternion.identity;
+
+                IKTargetVisible = false;
             }
 
             //動かすメイド設定
@@ -967,7 +1599,14 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 if (_maid == this.maid)
                 {
-                    SetParentBone(this.parentBone);
+                    if (_parentBone == null)
+                    {
+                        SetParentBone(this.trParentBone);
+                    }
+                    else
+                    {
+                        SetParentBone(_parentBone);
+                    }
                 }
                 else
                 {
@@ -981,51 +1620,349 @@ namespace CM3D2.AddBoneSlider.Plugin
             //今動かしてるボーンを取得
             public Transform GetParentBone()
             {
-                return (initComplete && this.gameObject != null) ? this.parentBone : null;
+                return (initComplete && this.goHandleMasterObject != null) ? this.trParentBone : null;
             }
 
             //動かすボーン設定
-            public void SetParentBone(Transform _parentBone)
+            public void SetParentBone(Transform _trParentBone)
             {
-                if (this.gameObject == null)
+                
+                if (this.goHandleMasterObject == null)
                 {
+                   
                     Init();
                 }
-                if (_parentBone != null)
+                if (_trParentBone != null )
                 {
-                    this.parentBone = _parentBone;
-                    this.gameObject.transform.parent = _parentBone;//FindParent(maid.transform, "AllOffset");
-                    this.gameObject.transform.localPosition = Vector3.zero;//_parentBone.localPosition;//this.maid.gameObject.transform.localPosition;
-                    this.gameObject.transform.localRotation = Quaternion.identity;//_parentBone.localRotation;//this.maid.gameObject.transform.localRotation;
-
-                    initComplete = true;
-
-                    int childBoneCount = 0;
-                    handleScale = 0.0f;
-                    for (int i = 0; i < parentBone.childCount; ++i)
+                    //現在のボーンが渡されてきたら処理をスキップ
+                    if (_trParentBone != this.trParentBone)
                     {
-                        Transform childBone = _parentBone.GetChild(i);
-                        if (childBone.name.Contains("Bip") && !childBone.name.Contains("SCL"))
+                        this.trParentBone = _trParentBone;
+                        this.goHandleMasterObject.transform.parent = _trParentBone;//FindParent(maid.transform, "AllOffset");
+                        this.goHandleMasterObject.transform.localPosition = Vector3.zero;//_parentBone.localPosition;//this.maid.gameObject.transform.localPosition;
+                        this.goHandleMasterObject.transform.localRotation = Quaternion.identity;//_parentBone.localRotation;//this.maid.gameObject.transform.localRotation;
+                        
+                        initComplete = true;
+                        
+                        //ハンドル君の大きさ調整
+                        if (IKmode == IKMODE.None)
                         {
-                            ++childBoneCount;
-                            handleScale += childBone.localPosition.magnitude;
+                            if (_trParentBone.name == "Bip01" || _trParentBone.name == "AllOffset" || _trParentBone.name.Contains("Maid"))
+                            {
+                                handleScale = 1.0f;
+                                /*
+                                if(bHandlePositionMode)
+                                    Rot = Quaternion.Euler(-90, 0, 90);
+                                else
+                                    Rot = Quaternion.identity;
+                                */
+                            }
+                            else if (_trParentBone.name.Contains("Bip01") || _trParentBone.name.Contains("_IK_"))
+                            {   //ハンドル君の大きさは子ボーンまでの長さに比例させる
+                                int childBoneCount = 0;
+                                handleScale = 0.0f;
+                                for (int i = 0; i < trParentBone.childCount; ++i)
+                                {
+                                    Transform childBone = _trParentBone.GetChild(i);
+                                    if (childBone.name.Contains("Bip") && !childBone.name.Contains("SCL"))
+                                    {
+                                        ++childBoneCount;
+                                        handleScale += childBone.localPosition.magnitude;
+                                    }
+                                }
+                                if (childBoneCount != 0)
+                                {
+                                    handleScale /= (float)childBoneCount;
+                                }
+                                if (handleScale < 0.1) handleScale = 0.1f;
+                            }
+                            else
+                            {
+                                handleScale = 0.2f;
+                            }
                         }
+                        else
+                        {   //ハンドル君がIKモードのときは大きさ固定
+                            //ついでに角度も固定
+                            //Rot = Quaternion.Euler(-90, 0, 90);
+                            Rot = Quaternion.identity;
+                            handleScale = 0.2f;
+                        }
+                        this.goHandleMasterObject.transform.localScale = Vector3.one * handleScale;
                     }
-                    if (childBoneCount != 0)
-                    {
-                        handleScale /= (float)childBoneCount;
-                    }
-                    if (handleScale < 0.1) handleScale = 0.1f;
-                    this.gameObject.transform.localScale = Vector3.one * handleScale;
                 }
                 else
                 {
                     //nullが来たら非表示にしとく
-                    this.gameObject.SetActive(false);
+                    this.goHandleMasterObject.SetActive(false);
                     initComplete = false;
                 }
             }
 
+            //ハンドルのドラッグ状態取得
+            public bool controllDragged()
+            {
+                if (!initComplete)
+                    return false;
+
+                if (bHandlePositionMode == false)
+                {
+                    if (controllOnMouseX.DragFinished || controllOnMouseY.DragFinished || controllOnMouseZ.DragFinished)
+                    {
+                        Visible = false;
+                        controllOnMouseX.DragFinished = false;
+                        controllOnMouseY.DragFinished = false;
+                        controllOnMouseZ.DragFinished = false;
+
+                        redring.renderer.material.mainTexture = m_texture_red_2;
+                        greenring.renderer.material.mainTexture = m_texture_green_2;
+                        bluering.renderer.material.mainTexture = m_texture_blue_2;
+
+                        redring.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
+                        greenring.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
+                        bluering.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
+
+
+
+                        SetParentBone(trParentBone);
+                        Visible = true;
+
+                    }
+
+                    if (!controllOnMouseX.Dragged && !controllOnMouseY.Dragged && !controllOnMouseZ.Dragged)
+                    {
+                        
+
+                        if (controllOnMouseX.mouseOver)
+                        {
+                            redring.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
+                            redring.renderer.material.mainTexture = m_texture_yellow;
+                        }
+                        else
+                        {
+                            redring.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
+                            redring.renderer.material.mainTexture = m_texture_red_2;
+
+                        }
+
+                        if (controllOnMouseY.mouseOver)
+                        {
+                            greenring.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
+                            greenring.renderer.material.mainTexture = m_texture_yellow;
+                        }
+                        else
+                        {
+                            greenring.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
+                            greenring.renderer.material.mainTexture = m_texture_green_2;
+
+                        }
+
+                        if (controllOnMouseZ.mouseOver)
+                        {
+                            bluering.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
+                            bluering.renderer.material.mainTexture = m_texture_yellow;
+                        }
+                        else
+                        {
+                            bluering.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
+                            bluering.renderer.material.mainTexture = m_texture_blue_2;
+                        }
+                    }
+
+                    return (controllOnMouseX.Dragged || controllOnMouseY.Dragged || controllOnMouseZ.Dragged);
+                }
+                else
+                {
+                    if (controllOnMousePX.DragFinished || controllOnMousePY.DragFinished || controllOnMousePZ.DragFinished || controllOnMouseC.DragFinished)
+                    {
+                        Visible = false;
+                        controllOnMousePX.DragFinished = false;
+                        controllOnMousePY.DragFinished = false;
+                        controllOnMousePZ.DragFinished = false;
+                        controllOnMouseC.DragFinished = false;
+
+  
+                        /*
+                        if (this.rightClicked == true)
+                        {
+                            this.rightClicked = false;
+                            Debuginfo.Log("右クリック2終了その2");
+                        }
+                        */
+
+                        redvector.renderer.material.mainTexture = m_texture_red;
+                        greenvector.renderer.material.mainTexture = m_texture_green;
+                        bluevector.renderer.material.mainTexture = m_texture_blue;
+                        whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
+
+                        redvector.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
+                        greenvector.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
+                        bluevector.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
+                        whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
+                        
+                        Visible = true;
+
+                    }
+
+                    //Debuginfo.Log("PX.Dragged" + controllOnMousePX.Dragged + "PY.Dragged" + controllOnMousePY.Dragged + "PZ.Dragged" + controllOnMousePZ.Dragged　+  "C.Dragged" + controllOnMouseC.Dragged);
+
+                    if (!controllOnMousePX.Dragged && !controllOnMousePY.Dragged && !controllOnMousePZ.Dragged && !controllOnMouseC.Dragged)
+                    {
+                        //右クリック情報伝達用
+                        //this.rightClicked |= controllOnMousePX.rightClicked;
+                        //this.rightClicked |= controllOnMousePY.rightClicked;
+                        //this.rightClicked |= controllOnMousePZ.rightClicked;
+                        
+
+                        if (controllOnMousePX.mouseOver)
+                        {
+                            redvector.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
+                            redvector.renderer.material.mainTexture = m_texture_yellow;
+                        }
+                        else
+                        {
+                            redvector.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
+                            redvector.renderer.material.mainTexture = m_texture_red_2;
+
+                        }
+
+                        if (controllOnMousePY.mouseOver)
+                        {
+                            greenvector.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
+                            greenvector.renderer.material.mainTexture = m_texture_yellow;
+                        }
+                        else
+                        {
+                            greenvector.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
+                            greenvector.renderer.material.mainTexture = m_texture_green_2;
+
+                        }
+
+                        if (controllOnMousePZ.mouseOver)
+                        {
+                            bluevector.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
+                            bluevector.renderer.material.mainTexture = m_texture_yellow;
+                        }
+                        else
+                        {
+                            bluevector.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
+                            bluevector.renderer.material.mainTexture = m_texture_blue_2;
+                        }
+
+                        if (controllOnMouseC.mouseOver)
+                        {
+                            /*
+                            if (controllOnMouseC.rightClicked)
+                            {
+                                if (this.rightClicked == false)
+                                {
+                                    this.rightClicked |= controllOnMouseC.rightClicked;
+                                    Debuginfo.Log("右クリック2");
+                                }
+                            }
+                            else
+                            {
+                                if (this.rightClicked == true)
+                                {
+                                    this.rightClicked = false;
+                                    Debuginfo.Log("右クリック2終了");
+                                }                                
+                            }
+                            */
+                            whitecenter.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
+                            whitecenter.renderer.material.mainTexture = m_texture_yellow;
+                        }
+                        else
+                        {
+                            whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0,1,1,0.5f) :new Color(1, 1, 1, 0.5f));
+                            whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
+                        }
+                    }
+
+                    return (controllOnMousePX.Dragged || controllOnMousePY.Dragged || controllOnMousePZ.Dragged || controllOnMouseC.Dragged);
+                }
+            }
+
+            public void resetHandleCoreColor()
+            {
+                whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
+                whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
+            }
+
+            //IKターゲットのクリック終了後に呼び出すよう
+            public void IKTargetClickAfter()
+            {
+                //Debuginfo.Log("IKハンドル君左クリック終了後");
+                CoC.DragFinished = false;
+                CoC.Dragged = false;
+                goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
+                goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
+
+                whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
+                whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
+
+                //一旦再表示させないとハンドル君のコアが消える
+                Visible = false;
+                Visible = true;
+
+                IKTargetVisible = false;
+            }
+
+            //IKターゲットのクリック状態取得
+            public bool IKTargetClicked()
+            {
+                if (!initComplete)
+                {
+                    return false;
+                }
+                else if (CoC.centerClicked == true)
+                {
+                    CoC.centerClicked = false;
+
+                    IKTargetVisible = false;
+
+                    //Debuginfo.Log("IKハンドル君中クリック");
+                    return false;
+                }
+                else
+                {
+                    if (CoC.DragFinished)
+                    {
+                        //Debuginfo.Log("IKハンドル君左クリック終了");
+                        CoC.DragFinished = false;
+
+                        goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
+                        goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
+
+                        IKTargetVisible = false;
+                    }
+                    if (!CoC.Dragged)
+                    {
+                        //Debuginfo.Log("IKハンドル君左クリック");
+                        if (CoC.mouseOver)
+                        {
+                            goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
+                            goIKBoneTarget.renderer.material.mainTexture = m_texture_yellow;
+                        }
+                        else
+                        {
+                            goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
+                            goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
+                        }
+                    }
+                    return CoC.Dragged;
+                }
+            }
+
+            public void IKTargetAttachedColor(bool _attached)
+            {
+                if (!initComplete)
+                {
+                    return;
+                }
+
+                bIKAttached = _attached;
+            }
 
             public void Proc()
             {
@@ -1043,6 +1980,7 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 gizmoRender.Visible = bVisible;
                 Visible = bVisible;
+                
             }
 
             //どの軸がドラッグされてるのか判別してドラッグ回転を返す
@@ -1067,52 +2005,179 @@ namespace CM3D2.AddBoneSlider.Plugin
                 }
             }
 
+            //どの軸がドラッグされてるのか判別してドラッグ移動量を返す
+            public Vector3 DeltaVector()
+            {
+                if (!initComplete) return Vector3.zero;
+                if (controllOnMousePX.Dragged)
+                {
+                    if (IKTargetVisible == true) IKTargetVisible = false;
 
+                    return /*transform.localToWorldMatrix.MultiplyVector*/(controllOnMousePX.dragVector);
+                }
+                else if (controllOnMousePY.Dragged)
+                {
+                    if (IKTargetVisible == true) IKTargetVisible = false;
+
+                    return /*transform.localToWorldMatrix.MultiplyVector*/(controllOnMousePY.dragVector);
+                }
+                else if (controllOnMousePZ.Dragged)
+                {
+                    if (IKTargetVisible == true) IKTargetVisible = false;
+
+                    return /*transform.localToWorldMatrix.MultiplyVector*/(controllOnMousePZ.dragVector);
+                }
+                else if (controllOnMouseC.Dragged)
+                {
+                    if (IKTargetVisible == true) IKTargetVisible = false;
+
+                    return controllOnMouseC.dragVector;
+                }
+                else
+                {
+                    return Vector3.zero;
+                }
+            }
+
+            /*
+            public void setIKmode(bool _IKenable)
+            {
+                controllOnMouseC.ikmode = _IKenable;
+            }
+            */
             public void Destroy()
             {
-                if (this.gameObject)
+                if (this.goHandleMasterObject)
                 {
                     Debuginfo.Log("AngleHandle:Destroy!");
-                    GameObject.Destroy(this.gameObject);
+                    GameObject.Destroy(this.goHandleMasterObject);
 
                 }
                 initComplete = false;
             }
         }
 
+        private class ClickOnlyControll : MonoBehaviour
+        {
+            public bool Dragged = false;
+            public bool DragFinished = false;
+            public bool mouseOver = false;
+            public bool centerClicked = false;
+
+            public void OnMouseDown()
+            {
+                
+            }
+
+            public void OnMouseDrag()
+            {
+                
+                Dragged = true;
+            }
+            public void OnMouseUp()
+            {
+                if (Dragged)
+                {
+                    //
+                    Debuginfo.Log("IKハンドル君左ドラッグ終了");
+                    Dragged = false;
+                    DragFinished = true;
+                }
+            }
+
+            public void OnMouseEnter()
+            {
+                mouseOver = true;
+            }
+
+            public void OnMouseOver()
+            {
+                if (Input.GetMouseButton(2))
+                {
+
+                    
+                    if (centerClicked == false)
+                    {
+                        Debuginfo.Log("中クリック");
+                        centerClicked = true;
+
+                    }
+                    
+                }
+                
+                else if (centerClicked == true)
+                {
+                    Debuginfo.Log("中クリック終了");
+                    centerClicked = false;
+                }
+                
+
+
+            }
+            public void OnMouseExit()
+            {
+                mouseOver = false;
+            }
+
+            public void Update()
+            {
+
+                if (mouseOver)
+                {
+
+                }
+
+            }
+
+            public void OnGui()
+            {
+                if (DragFinished)
+                {
+                    DragFinished = false;
+                }
+            }
+        }
 
         private class ControllOnMouse : MonoBehaviour
         {
             public enum WheelType
             {
                 Angle,
-                Position
+                Position,
+                PosCenter
             }
 
             public enum AxisType
             {
                 RX,
                 RY,
-                RZ
+                RZ,
+                NONE
             }
+
+            public bool rightClicked = false;
 
             public bool mouseOver = false;
 
-            private Vector3 screenPoint = Vector3.zero;
+            private Vector3 objectPoint = Vector3.zero;
 
 
             public WheelType wheelType = WheelType.Angle;
             public AxisType axisType = AxisType.RX;
             public bool ShouldReset = false;
 
+            public bool ikmode = false;
 
             public bool Dragged = false;
             public bool DragFinished = false;
 
             public Vector3 clickPointVector = Vector3.zero;
-            public float oldAngle = 0f;
+            public float oldValue = 0f;
+            Vector3 identitytoScreen = Vector3.zero;
 
             public Quaternion dragQuaternion = Quaternion.identity;
+            public Vector3 dragVector = Vector3.zero;
+
 
             public void Destroy()
             {
@@ -1124,90 +2189,194 @@ namespace CM3D2.AddBoneSlider.Plugin
 
             public void OnMouseDown()
             {
-                //カメラから見たオブジェクトの現在位置を画面位置座標に変換
-                //screenPoint = Camera.main.WorldToScreenPoint(transform.position);
 
-                //リングが直線状になるとき
-                if (Math.Abs(Vector3.Angle(Vector3.forward, Camera.main.worldToCameraMatrix.MultiplyVector(transform.up)) - 90f) < 10f)
+
+                if (wheelType == WheelType.Angle)
                 {
-                    if ((Vector3.Angle(Vector3.forward, Camera.main.worldToCameraMatrix.MultiplyVector(transform.up)) - 90f) < 0f)
-                        screenPoint = Camera.main.WorldToScreenPoint(transform.position + 0.2f * transform.up);
+                    //カメラから見たオブジェクトの現在位置を画面位置座標に変換
+                    //screenPoint = Camera.main.WorldToScreenPoint(transform.position);
+
+                    //リングが直線状になるとき
+                    if (Math.Abs(Vector3.Angle(Vector3.forward, Camera.main.worldToCameraMatrix.MultiplyVector(transform.up)) - 90f) < 10f)
+                    {
+                        if ((Vector3.Angle(Vector3.forward, Camera.main.worldToCameraMatrix.MultiplyVector(transform.up)) - 90f) < 0f)
+                            objectPoint = Camera.main.WorldToScreenPoint(transform.position + 0.2f * transform.up);
+                        else
+                            objectPoint = Camera.main.WorldToScreenPoint(transform.position - 0.2f * transform.up);
+                    }
                     else
-                        screenPoint = Camera.main.WorldToScreenPoint(transform.position - 0.2f * transform.up);
+                    {
+                        objectPoint = Camera.main.WorldToScreenPoint(transform.position);
+                    }
+
+
+                    clickPointVector = Input.mousePosition;
+                    clickPointVector.z = 0;
+                    clickPointVector -= objectPoint;
+
+                    oldValue = 0.0f;
                 }
-                else
+                else if(wheelType == WheelType.Position)
                 {
-                    screenPoint = Camera.main.WorldToScreenPoint(transform.position);
+                    clickPointVector = Input.mousePosition;
+                    //clickPointVector.z = 0;//Camera.main.WorldToScreenPoint(transform.position).z;
+                    
+                    oldValue = 0.0f;
+
+                    identitytoScreen = Camera.main.WorldToScreenPoint(transform.up + transform.position) - Camera.main.WorldToScreenPoint(transform.position);
+                    //identitytoScreen.z = 0;
+
                 }
+                else//wheelType == WheelType.PosCenter
+                {
 
+                    clickPointVector = Input.mousePosition;
+                    clickPointVector.z = Camera.main.WorldToScreenPoint(transform.position).z;
+                    oldValue = Camera.main.WorldToScreenPoint(transform.position).z;
+                    clickPointVector = Camera.main.ScreenToWorldPoint(clickPointVector);
 
-                clickPointVector = Input.mousePosition;
-                clickPointVector.z = 0;
-                clickPointVector -= screenPoint;
-
-                oldAngle = 0.0f;
+                    
+                }
             }
 
             public void OnMouseDrag()
             {
 
-                Vector3 dragPoint = Input.mousePosition;
 
-                dragPoint.z = 0;
-
-                dragPoint -= screenPoint;
-
-                float dragAngle = Vector3.Angle(clickPointVector, dragPoint);
-
-
-                if ((clickPointVector.x * dragPoint.y - clickPointVector.y * dragPoint.x) < 0)
+                if (wheelType == WheelType.Angle)
                 {
-                    dragAngle = -dragAngle;
+                    Vector3 dragPoint = Input.mousePosition;
+
+                    dragPoint.z = 0;
+
+                    dragPoint -= objectPoint;
+
+                    float dragAngle = Vector3.Angle(clickPointVector, dragPoint);
+
+
+                    if ((clickPointVector.x * dragPoint.y - clickPointVector.y * dragPoint.x) < 0)
+                    {
+                        dragAngle = -dragAngle;
+
+                    }
+                    if (Vector3.Angle(Vector3.forward, Camera.main.worldToCameraMatrix.MultiplyVector(transform.up)) < 90)
+                    {
+                        dragAngle = -dragAngle;
+
+                    }
+                    if (axisType == AxisType.RY)
+                    {
+                        dragAngle = -dragAngle;
+                    }
+
+                    float offsetAngle = dragAngle - oldValue;
+
+
+                    switch (axisType)
+                    {
+                        case AxisType.RY:
+
+                            dragQuaternion = Quaternion.AngleAxis(offsetAngle, Vector3.right);
+
+                            break;
+
+                        case AxisType.RZ:
+
+                            dragQuaternion = Quaternion.AngleAxis(offsetAngle, Vector3.up);
+
+                            break;
+
+                        case AxisType.RX:
+
+                            dragQuaternion = Quaternion.AngleAxis(offsetAngle, Vector3.forward);
+
+                            break;
+
+
+                        default:
+                            break;
+
+                    }
+
+
+                    oldValue = dragAngle;
+                    
+                }
+                else if (wheelType == WheelType.Position)
+                {
+
+                    Vector3 dragPointVector = Input.mousePosition;
+                   
+                    float dragLength = (dragPointVector - clickPointVector).magnitude ;
+                    
+                    Vector3 yajirushi = Camera.main.WorldToScreenPoint(transform.up + transform.position) - Camera.main.WorldToScreenPoint(transform.position);//Camera.main.worldToCameraMatrix.MultiplyVector(transform.up);
+
+                    dragLength = dragLength != 0 ? (yajirushi.x * (dragPointVector - clickPointVector).x + yajirushi.y * (dragPointVector - clickPointVector).y) / (yajirushi.magnitude* dragLength) : 0 ;
+
+
+                    clickPointVector.z = Camera.main.WorldToScreenPoint(transform.position).z;
+                    dragPointVector.z = Camera.main.WorldToScreenPoint(transform.position).z;
+                    Vector3 clickPoint = Camera.main.ScreenToWorldPoint(clickPointVector);
+                    Vector3 dragPoint = Camera.main.ScreenToWorldPoint(dragPointVector);
+
+
+                    dragLength = (dragPoint - clickPoint).magnitude * dragLength;
+ 
+
+                    float offsetLength = dragLength - oldValue;
+
+                    switch (axisType)
+                    {
+                        case AxisType.RY:
+
+                            dragVector = offsetLength * transform.up;//(-Vector3.right);
+
+                            break;
+
+                        case AxisType.RZ:
+
+                            dragVector = offsetLength * transform.up;//Vector3.up;
+
+                            break;
+
+                        case AxisType.RX:
+
+                            dragVector = offsetLength *transform.up;// Vector3.forward;
+
+                            break;
+
+
+                        default:
+                            break;
+
+                    }
+                                     
+
+                    oldValue = dragLength;
 
                 }
-                if (Vector3.Angle(Vector3.forward, Camera.main.worldToCameraMatrix.MultiplyVector(transform.up)) < 90)
+                else//wheelType == WheelType.PosCenter
                 {
-                    dragAngle = -dragAngle;
 
+                    Vector3 dragPointVector = Input.mousePosition;
+                    dragPointVector.z = oldValue;//Camera.main.WorldToScreenPoint(transform.position).z;
+                    dragPointVector = Camera.main.ScreenToWorldPoint(dragPointVector);
+
+
+                    switch (axisType)
+                    {
+                        case AxisType.NONE:
+
+                            dragVector = dragPointVector - clickPointVector;
+
+                            break;
+
+                        default:
+                            break;
+
+                    }
+                    clickPointVector = dragPointVector;
                 }
-                if (axisType == AxisType.RY)
-                {
-                    dragAngle = -dragAngle;
-                }
-
-
-
-                float offsetAngle = dragAngle - oldAngle;
-
-
-                switch (axisType)
-                {
-                    case AxisType.RY:
-
-                        dragQuaternion = Quaternion.AngleAxis(offsetAngle, Vector3.right);
-
-                        break;
-
-                    case AxisType.RZ:
-
-                        dragQuaternion = Quaternion.AngleAxis(offsetAngle, Vector3.up);
-
-                        break;
-
-                    case AxisType.RX:
-
-                        dragQuaternion = Quaternion.AngleAxis(offsetAngle, Vector3.forward);
-
-                        break;
-
-
-                    default:
-                        break;
-
-                }
-
-
-                oldAngle = dragAngle;
                 Dragged = true;
             }
             public void OnMouseUp()
@@ -1228,6 +2397,23 @@ namespace CM3D2.AddBoneSlider.Plugin
 
             public void OnMouseOver()
             {
+                /*
+                //ここじゃないと右クリックを検知できないのでここで検知
+                if (ikmode && Input.GetMouseButton(1) )
+                {
+                    if (rightClicked == false)
+                    {
+                        Debuginfo.Log("右クリック");
+                        rightClicked = true;
+                    }
+                }
+                else if(rightClicked == true)
+                {
+                    Debuginfo.Log("右クリック終了");
+                    rightClicked = false;
+                }
+                */
+
             }
             public void OnMouseExit()
             {
@@ -1246,7 +2432,10 @@ namespace CM3D2.AddBoneSlider.Plugin
 
             public void OnGui()
             {
-                if (DragFinished) DragFinished = false;
+                if (DragFinished)
+                {
+                    DragFinished = false;
+                }
             }
 
         }
@@ -1292,11 +2481,14 @@ namespace CM3D2.AddBoneSlider.Plugin
                     }
                     goAMSPanel.SetActive(visible = !visible);
 
-                    posHandle.Visible = visible;
 
+                    //posHandle.Visible = visible;
+
+                 
+                    posHandle.setVisible(visible);
+                    
                     settingIni.WindowPositionX = (int)uiAMSPanel.transform.localPosition.x;
                     settingIni.WindowPositionY = (int)uiAMSPanel.transform.localPosition.y;
-
 
                 }
                 if (maid == null || maid.Visible == false)
@@ -1317,7 +2509,8 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                             visible = false;
                             goAMSPanel.SetActive(false);
-                            posHandle.Visible = false;
+
+                            posHandle.setVisible(false);
                         }
 
                     }
@@ -1331,21 +2524,151 @@ namespace CM3D2.AddBoneSlider.Plugin
                         if (settingIni.HandleLegacymode == 0)
                         {
                             posHandle.Proc();
+                            
                         }
-
                         //複数撮影SS対策用
                         if (Input.GetKeyDown(KeyCode.S))
                         {
                             //Debuginfo.Log(LogLabel +"input S");
                             posHandle.Visible = false;
+                            
+                        }
+
+                        //ハンドル君がIKモードの時、右クリックして
+                        //クリック位置から最も近い_IK_ボーンを探す
+                        if(posHandle.Visible == true && posHandle.IKmode!= HandleKun.IKMODE.None )
+                        {
+                            //カメラ操作の右ドラッグと区別するため
+                            if (Input.GetMouseButtonDown(1) )
+                            {
+                                //Debuginfo.Log("右クリック開始");
+                                bIKTargetGet = true;
+
+                            }
+                            else if(Input.GetAxis("Mouse X") != 0 || Input.GetAxis("Mouse Y") != 0 || Input.mouseScrollDelta !=Vector3.zero )
+                            {
+                                //IKハンドル君表示中にカメラ操作があったらラベルも付随して移動させる
+                                posHandle.IKBoneLabelPos = 1.5f * (Camera.main.WorldToScreenPoint(posHandle.IKTargetPos) - new Vector3(Screen.width * 0.5f, Screen.height * 0.5f - 30f, Camera.main.WorldToScreenPoint(posHandle.IKTargetPos).z));
+
+                                bIKTargetGet = false;
+                            }
+                            else if (Input.GetMouseButtonUp(1) && bIKTargetGet == true)
+                            {
+                                //Debuginfo.Log("右クリック終了");
+                                //ここで画面内オブジェクトの検知を済ませておく
+                                //今表示されているメイドさんの_IK_ボーン情報をコレクションに収納
+                                //settrTargetIKBones();
+
+                                //Debuginfo.Log("mouse:" + Input.mousePosition.ToString());
+                                Vector3 mousePos = Input.mousePosition;
+                                
+                                trTargetIKTemp = null;
+
+                                float clickCheckOffset = clickCheckOffsetInit;
+
+
+                                float magnitude0 = (Camera.main.WorldToScreenPoint(trBone["Bip01 Neck"].position) - mousePos).magnitude;
+                                if (magnitude0 < clickCheckOffset)
+                                {
+                                    clickCheckOffset = magnitude0;
+                                    trTargetIKTemp = trBone["Bip01 Neck"];
+                                }
+
+                                List<int> RemoveNo = new List<int>();
+                                foreach (var trArray in trTargetIKBones)
+                                {
+                                    if(trArray.Value[0] == null)
+                                    {
+                                        RemoveNo.Add(trArray.Key);
+                                        continue;
+                                    }
+                                    foreach (Transform trIK in trArray.Value)
+                                    {
+
+                                        float magnitude = (Camera.main.WorldToScreenPoint(trIK.position) - mousePos).magnitude;
+                                        if (magnitude < clickCheckOffset)
+                                        {
+                                            clickCheckOffset = magnitude;
+                                            trTargetIKTemp = trIK;
+                                            //Debuginfo.Log(trIK.name + ":" + Camera.main.WorldToScreenPoint(trIK.position).ToString());
+                                        }
+                                    }
+                                }
+                                foreach (int t in RemoveNo)
+                                {
+                                    trTargetIKBones.Remove(t);
+                                }
+
+                                if (trTargetIKTemp != null)
+                                {
+                                    //Debuginfo.Log("右クリック何かあった");
+
+                                    posHandle.IKTargetPos = trTargetIKTemp.position;
+
+                                    if (trTargetIKTemp.name == "Bip01 Neck")
+                                    {
+                                        trTargetIKTemp = trBone["Bip01"];
+                                    }
+
+                                    //なぜかNGUIの位置指定と実際のピクセルで1.5倍の違いがあるので1.5倍する
+                                    posHandle.IKBoneLabelPos = 1.5f*(Camera.main.WorldToScreenPoint(posHandle.IKTargetPos) - new Vector3(Screen.width*0.5f, Screen.height*0.5f - 30f, Camera.main.WorldToScreenPoint(posHandle.IKTargetPos).z));
+                                    
+                                    posHandle.IKTargetLabelString = sIKBoneName[trTargetIKTemp.name];
+
+                                    posHandle.IKTargetVisible = true;
+                                }
+                            }
+
                         }
 
                         if (posHandle.Visible == true)
                         {
-                            syncFromHandle();
+                            //syncFromHandle();
+
+                            if (posHandle.IKTargetVisible == true)
+                            {
+                                ikTargetClicked();
+                                
+
+                            }
+                            switch (posHandle.IKmode)
+                            {
+                                case HandleKun.IKMODE.None:
+                                    syncFromHandle();
+                                    break;
+
+                                case HandleKun.IKMODE.LeftLeg:
+                                    bool temp1 = inversekinematicFromHandle(goIKLeftLegTarget[currentMaidNo].transform, bIKAttachLeftLeg[currentMaidNo]);
+                                    bIKAttachLeftLeg[currentMaidNo] |= temp1;
+                                    break;
+
+                                case HandleKun.IKMODE.RightLeg:
+                                    bool temp2 = inversekinematicFromHandle(goIKRightLegTarget[currentMaidNo].transform, bIKAttachRightLeg[currentMaidNo]);
+                                    bIKAttachRightLeg[currentMaidNo] |= temp2;
+                                    break;
+
+                                case HandleKun.IKMODE.LeftArm:
+                                    bool temp3 = inversekinematicFromHandle(goIKLeftArmTarget[currentMaidNo].transform, bIKAttachLeftArm[currentMaidNo]);
+                                    bIKAttachLeftArm[currentMaidNo] |= temp3;
+                                    break;
+
+                                case HandleKun.IKMODE.RightArm:
+                                    bool temp4 = inversekinematicFromHandle(goIKRightArmTarget[currentMaidNo].transform, bIKAttachRightArm[currentMaidNo]);
+                                    bIKAttachRightArm[currentMaidNo] |= temp4;
+                                    break;
+
+                                default:
+
+                                    Debug.Log(LogLabel+"Handle IKmode exception.");
+                                    break;
+                            }
+
+
+
 
                         }
                         syncSlider(false);
+
                     }
 
                     if (settingIni.WindowPositionX != (int)uiAMSPanel.transform.localPosition.x)
@@ -1357,6 +2680,284 @@ namespace CM3D2.AddBoneSlider.Plugin
             }
         }
 
+        //IK機能用
+        public void LateUpdate()
+        {
+            
+            foreach (int m in attachIKMaidNo)
+            {
+                //メイドさんがいなくなっていればスキップして
+                //リストから除外
+                if (attachIKMaidList[m] == null || attachIKMaidList[m].Visible == false)
+                {
+                    Debuginfo.Log(LogLabel + "maid[" + m + "] is LOST");
+                    removeAttachMaidList(m);
+                    DeleteNoList.Add(m);
+                    
+                }
+            }
+
+            //このタイミングでattachIKMaidNoの要素削除しないとInvalidOperationExceptionが出る
+
+            attachIKMaidNo.RemoveAll(DeleteNoList.Contains);
+            DeleteNoList.Clear();
+
+            foreach (int m in attachIKMaidNo)
+            {
+                
+                if (bIKAttachLeftLeg.ContainsKey(m) && bIKAttachLeftLeg[m])
+                {
+                    
+                    //公式撮影でアタッチ対象のメイドさんがいなくなった場合
+                    if (goIKLeftLegTarget[m] == null)
+                    {
+                        Debuginfo.Log(LogLabel + "LeftLegIK is null!");
+
+                        GameObject tempIKTarget = new GameObject();
+                        tempIKTarget.transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
+                        goIKLeftLegTarget[m] = tempIKTarget;
+                        goIKLeftLegTarget[m].transform.position = trIKLeftLegBones[m][2].position;
+
+                        //if(trTargetIKBones.ContainsKey(m))
+                        //   trTargetIKBones.Remove(m);
+
+                        //ハンドル君がIKボーンにアタッチした状態で
+                        //そのIKボーンをもつメイドさんがいなくなると
+                        //ハンドル君もいっしょに死ぬので
+                        //ハンドル君が死んでないかチェック
+
+
+                        if (posHandle.GetParentBone() == null)
+                        {
+                            Debuginfo.Log(LogLabel + "ハンドル君にリザします");
+                            posHandle.Init(true);
+                            posHandle.SetMaid(maid,trBone["Bip01 L Foot"]);
+                            posHandle.IKTargetAttachedColor(false);
+                            posHandle.resetHandleCoreColor();
+                            //posHandle.setVisible(false);
+                            posHandle.setVisible(false);
+
+                            FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
+                            
+                        }
+                    }
+                    else if (goIKLeftLegTarget[m].activeInHierarchy == false)
+                    {
+                        //複数撮影でアタッチ対象のメイドさんがいなくなった場合
+                        Debuginfo.Log(LogLabel + "LeftLegIK is invisible!");
+
+                        goIKLeftLegTarget[m].transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
+                        goIKLeftLegTarget[m].transform.position = trIKLeftLegBones[m][2].position;
+
+                        //ハンドル君がIKボーンにアタッチした状態で
+                        //そのIKボーンをもつメイドさんが消えると
+                        //ハンドル君もいっしょに消えるので
+                        //ハンドル君が消えてないかチェック
+                        if (posHandle.GetParentBone().gameObject.activeInHierarchy == false)
+                        {
+                            Debuginfo.Log(LogLabel + "ハンドル君のバニシュを解除します");
+                            posHandle.SetMaid(maid, trBone["Bip01 L Foot"]);
+                            posHandle.IKTargetAttachedColor(false);
+                            posHandle.resetHandleCoreColor();
+                            posHandle.setVisible(false);
+
+                            FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
+                        }
+
+                    }
+
+                    IKLeftLeg[m].Proc(trIKLeftLegBones[m][0], trIKLeftLegBones[m][1], trIKLeftLegBones[m][2], goIKLeftLegTarget[m].transform.position);
+
+                    //for (int i = 0; i < IKCalc; ++i)
+                    //    IKLeftLeg[m].Porc(trIKLeftLegBones[m][0], trIKLeftLegBones[m][1], trIKLeftLegBones[m][2], goIKLeftLegTarget[m].transform.position, Vector3.zero);
+                }
+
+                if (bIKAttachRightLeg.ContainsKey(m) && bIKAttachRightLeg[m])
+                {
+                    if (goIKRightLegTarget[m] == null)
+                    {
+                        Debuginfo.Log(LogLabel + "RightLegIK is null!");
+
+                        GameObject tempIKTarget = new GameObject();
+                        tempIKTarget.transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
+                        goIKRightLegTarget[m] = tempIKTarget;
+                        goIKRightLegTarget[m].transform.position = trIKRightLegBones[m][2].position;
+
+                        //if(trTargetIKBones.ContainsKey(m))
+                        //   trTargetIKBones.Remove(m);
+
+                        //ハンドル君がIKボーンにアタッチした状態で
+                        //そのIKボーンをもつメイドさんがいなくなると
+                        //ハンドル君もいっしょに死ぬので
+                        //ハンドル君が死んでないかチェック
+                        if (posHandle.GetParentBone() == null)
+                        {
+                            Debuginfo.Log(LogLabel + "ハンドル君にリザします");
+                            posHandle.Init(true);
+                            posHandle.SetMaid(maid, trBone["Bip01 R Foot"]);
+                            posHandle.IKTargetAttachedColor(false);
+                            posHandle.resetHandleCoreColor();
+                            posHandle.setVisible(false);
+
+                            FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").SetActive(false);
+
+                        }
+                        else if (goIKRightLegTarget[m].activeInHierarchy == false)
+                        {
+                            Debuginfo.Log(LogLabel + "RightLegIK is invisible!");
+
+                            goIKRightLegTarget[m].transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
+                            goIKRightLegTarget[m].transform.position = trIKRightLegBones[m][2].position;
+
+                            //ハンドル君がIKボーンにアタッチした状態で
+                            //そのIKボーンをもつメイドさんが消えると
+                            //ハンドル君もいっしょに消えるので
+                            //ハンドル君が消えてないかチェック
+                            if (posHandle.GetParentBone().gameObject.activeInHierarchy == false)
+                            {
+                                Debuginfo.Log(LogLabel + "ハンドル君のバニシュを解除します");
+                                posHandle.SetMaid(maid, trBone["Bip01 R Foot"]);
+                                posHandle.IKTargetAttachedColor(false);
+                                posHandle.setVisible(false);
+
+                                FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").SetActive(false);
+                            }
+
+                        }
+
+                    }
+                    IKRightLeg[m].Proc(trIKRightLegBones[m][0], trIKRightLegBones[m][1], trIKRightLegBones[m][2], goIKRightLegTarget[m].transform.position);
+
+                    //for (int i = 0; i < IKCalc; ++i)
+                    //    IKRightLeg[m].Porc(trIKRightLegBones[m][0], trIKRightLegBones[m][1], trIKRightLegBones[m][2], goIKRightLegTarget[m].transform.position, Vector3.zero);
+                }
+
+                
+                if (bIKAttachLeftArm.ContainsKey(m) && bIKAttachLeftArm[m] )
+                {
+
+                    if (goIKLeftArmTarget[m] == null)
+                    {
+                        Debuginfo.Log(LogLabel + "LeftArmIK　is null!");
+
+                        GameObject tempIKTarget = new GameObject();
+                        tempIKTarget.transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
+                        goIKLeftArmTarget[m] = tempIKTarget;
+                        goIKLeftArmTarget[m].transform.position = trIKLeftArmBones[m][2].position;
+
+                        //if(trTargetIKBones.ContainsKey(m))
+                        //   trTargetIKBones.Remove(m);
+
+                        //ハンドル君がIKボーンにアタッチした状態で
+                        //そのIKボーンをもつメイドさんがいなくなると
+                        //ハンドル君もいっしょに死ぬので
+                        //ハンドル君が死んでないかチェック
+                        if (posHandle.GetParentBone() == null)
+                        {
+                            Debuginfo.Log(LogLabel + "ハンドル君にリザします");
+                            posHandle.Init(true);
+                            posHandle.SetMaid(maid, trBone["Bip01 L Hand"]);
+                            posHandle.IKTargetAttachedColor(false);
+                            posHandle.setVisible(false);
+
+                            FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").SetActive(false);
+
+                        }
+                    }
+                    else if (goIKLeftArmTarget[m].activeInHierarchy == false)
+                    {
+                        Debuginfo.Log(LogLabel + "LeftArmIK is invisible!");
+
+                        goIKLeftArmTarget[m].transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
+                        goIKLeftArmTarget[m].transform.position = trIKLeftArmBones[m][2].position;
+
+                        //ハンドル君がIKボーンにアタッチした状態で
+                        //そのIKボーンをもつメイドさんが消えると
+                        //ハンドル君もいっしょに消えるので
+                        //ハンドル君が消えてないかチェック
+                        if (posHandle.GetParentBone().gameObject.activeInHierarchy == false)
+                        {
+                            Debuginfo.Log(LogLabel + "ハンドル君のバニシュを解除します");
+                            posHandle.SetMaid(maid, trBone["Bip01 L Hand"]);
+                            posHandle.IKTargetAttachedColor(false);
+                            posHandle.resetHandleCoreColor();
+                            posHandle.setVisible(false);
+
+                            FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").SetActive(false);
+                        }
+
+                    }
+                    if (attachIKMaidList[m].body0.tgtHandL == null && attachIKMaidList[m].body0.tgtHandL_AttachName == string.Empty)
+                        IKLeftArm[m].Proc(trIKLeftArmBones[m][0], trIKLeftArmBones[m][1], trIKLeftArmBones[m][2], goIKLeftArmTarget[m].transform.position);
+
+                    //for (int i = 0; i < IKCalc; ++i)
+                    //    IKLeftArm[m].Porc(trIKLeftArmBones[m][0], trIKLeftArmBones[m][1], trIKLeftArmBones[m][2], goIKLeftArmTarget[m].transform.position, Vector3.zero);
+                }
+                if (bIKAttachRightArm.ContainsKey(m) && bIKAttachRightArm[m] )
+                {
+
+                    if (goIKRightArmTarget[m] == null)
+                    {
+                        Debuginfo.Log(LogLabel + "RightArmIK is null!");
+                     
+                        GameObject tempIKTarget = new GameObject();
+                        tempIKTarget.transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
+                        goIKRightArmTarget[m] = tempIKTarget;
+                        goIKRightArmTarget[m].transform.position = trIKRightArmBones[m][2].position;
+
+                        //if(trTargetIKBones.ContainsKey(m))
+                        //   trTargetIKBones.Remove(m);
+
+                        //ハンドル君がIKボーンにアタッチした状態で
+                        //そのIKボーンをもつメイドさんがいなくなると
+                        //ハンドル君もいっしょに死ぬので
+                        //ハンドル君が死んでないかチェック
+                        if (posHandle.GetParentBone() == null)
+                        {
+                            Debuginfo.Log(LogLabel + "ハンドル君にリザします");
+                            posHandle.Init(true);
+                            posHandle.SetMaid(maid, trBone["Bip01 R Hand"]);
+                            posHandle.IKTargetAttachedColor(false);
+                            posHandle.setVisible(false);
+
+                            FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").SetActive(false);
+
+                        }
+                    }
+                    else if (goIKRightArmTarget[m].activeInHierarchy == false)
+                    {
+                        Debuginfo.Log(LogLabel + "RightArmIK is invisible!");
+
+                        goIKRightArmTarget[m].transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
+                        goIKRightArmTarget[m].transform.position = trIKRightArmBones[m][2].position;
+
+                        //ハンドル君がIKボーンにアタッチした状態で
+                        //そのIKボーンをもつメイドさんが消えると
+                        //ハンドル君もいっしょに消えるので
+                        //ハンドル君が消えてないかチェック
+                        if (posHandle.GetParentBone().gameObject.activeInHierarchy == false)
+                        {
+                            Debuginfo.Log(LogLabel + "ハンドル君のバニシュを解除します");
+                            posHandle.SetMaid(maid, trBone["Bip01 R Hand"]);
+                            posHandle.IKTargetAttachedColor(false);
+                            posHandle.resetHandleCoreColor();
+                            posHandle.setVisible(false);
+
+                            FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").SetActive(false);
+                        }
+
+                    }
+                    //腕IKが本体側で何か設定されていればそちらを優先
+                    if (attachIKMaidList[m].body0.tgtHandR == null && attachIKMaidList[m].body0.tgtHandR_AttachName == string.Empty)
+                        IKRightArm[m].Proc(trIKRightArmBones[m][0], trIKRightArmBones[m][1], trIKRightArmBones[m][2], goIKRightArmTarget[m].transform.position);
+
+                    //for (int i = 0; i < IKCalc; ++i)
+                    //    IKRightArm[m].Porc(trIKRightArmBones[m][0], trIKRightArmBones[m][1], trIKRightArmBones[m][2], goIKRightArmTarget[m].transform.position, Vector3.zero);
+                }
+                
+            }
+
+        }
 
 
         #endregion
@@ -1392,7 +2993,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                     setParentAllOffset();
                 }
 
-                setButtonColor(UIButton.current, b);
+                setUnitButtonColor(UIButton.current, b);
 
             }
             catch (Exception ex) { Debug.LogError(LogLabel + "OnClickToggleHeader() " + ex); return; }
@@ -1660,6 +3261,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                         else
                         {
                             Maid tempMaid;
+                            /*
                             if (sceneLevel == 27)
                             {
                                 //公式撮影モード
@@ -1670,7 +3272,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                                 //複数撮影モード
                                 tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(stockNo);
                             }
-
+                            */
+                            tempMaid = GetMaid(stockNo);
                             visMaidNo.Add(stockNo);
                             tempMaid.Visible = !tempMaid.Visible;
                             //GameMain.Instance.CharacterMgr.BanishmentMaid(maid);
@@ -1703,6 +3306,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 foreach (int MaidNo in visMaidNo)
                 {
                     Maid tempMaid;
+                    /*
                     if (sceneLevel == 27)
                     {
                         //公式撮影モード
@@ -1713,6 +3317,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                         //複数撮影モード
                         tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(MaidNo);
                     }
+                    */
+                    tempMaid = GetMaid(MaidNo);
                     tempMaid.Visible = true;
                 }
                 
@@ -1755,42 +3361,886 @@ namespace CM3D2.AddBoneSlider.Plugin
             }
         }
 
-        public void OnClickUndoAll()
+
+        public void OnClickIKLeftLeg()
         {
             try
             {
+                if (UICamera.currentTouchID == -1)
+                {
+                    //GameObject test = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    //test.
+                    //HandleKun testHandle = new HandleKun(settingIni.HandleLegacymode);
+                    //testHandle.SetParentBone(test.transform);
+                    //testHandle.setVisible(true);
+
+                    //TBody.IKCMO ikRightArm = new TBody.IKCMO();
+                    //this.ikRightArm.Init(this.UpperArmR, this.ForearmR, this.HandR, maid.body0);
+
+                    //LateUpdate()
+                    //Vector3 position = this.tgtHandL.position;
+                    //Debug.DrawLine(position, position + this.tgtHandL.rotation * Vector3.forward * 0.2f, Color.cyan);
+                    //for (int i = 0; i < 3; i++)
+                    //{
+                    //    this.ikLeftArm.Porc(this.UpperArmL, this.ForearmL, this.HandL, position, this.tgtHandL_offset);
+                    //}
+
+
+                    //maid.IKTargetToBone("左手", maid, "Bip01 R Hand", new Vector3(0.05f, -0.012f, -0.018f));
+                    //maid.IKTargetToAttachPoint("右手", maid, "body", "乳首左", new Vector3(0.05f, -0.012f,-0.018f));
+
+
+                    //カーソルの状態で判別
+                    //bool bToggle = !(UIButton.current.defaultColor.a == 1f);
+                    bool bToggle = !FindChild(UIButton.current.gameObject, "SelectCursor").activeSelf;
+
+                    //IKターゲットオブジェクトとターゲット操作用ハンドル君表示
+                    if (bToggle)
+                    {
+
+                        //以下、IK用変数初期化処理
+
+                        //プラグイン側のIKが設定されていなければ初期化設定
+                        /*
+                        if (!IKLeftLeg.ContainsKey(currentMaidNo))
+                        {
+                            TBody.IKCMO ikTempLeftLeg = new TBody.IKCMO();
+                            ikTempLeftLeg.Init(trBone["Bip01 L Thigh"], trBone["Bip01 L Calf"], trBone["Bip01 L Foot"], maid.body0);
+                            IKLeftLeg.Add(currentMaidNo, ikTempLeftLeg);
+                        }
+
+                        */
+                        if (!IKLeftLeg.ContainsKey(currentMaidNo))
+                        {
+                            //Debuginfo.Log("init IKLeftLeg");
+                            IKCONSTRAINED ikTempLeftLeg = new IKCONSTRAINED();
+                            float[,] constrait =
+                                {
+                                {
+                                    mp.fVmin["Bip01 L Foot"]["Bip01 L Foot.x"] + mp.fVzero["Bip01 L Foot"]["Bip01 L Foot.x"],
+                                    mp.fVmax["Bip01 L Foot"]["Bip01 L Foot.x"] + mp.fVzero["Bip01 L Foot"]["Bip01 L Foot.x"],
+                                    mp.fVmin["Bip01 L Foot"]["Bip01 L Foot.y"] + mp.fVzero["Bip01 L Foot"]["Bip01 L Foot.y"],
+                                    mp.fVmax["Bip01 L Foot"]["Bip01 L Foot.y"] + mp.fVzero["Bip01 L Foot"]["Bip01 L Foot.y"],
+                                    mp.fVmin["Bip01 L Foot"]["Bip01 L Foot.z"] + mp.fVzero["Bip01 L Foot"]["Bip01 L Foot.z"],
+                                    mp.fVmax["Bip01 L Foot"]["Bip01 L Foot.z"] + mp.fVzero["Bip01 L Foot"]["Bip01 L Foot.z"]
+                                },
+                                {
+                                    mp.fVmin["Bip01 L Calf"]["Bip01 L Calf.x"] + mp.fVzero["Bip01 L Calf"]["Bip01 L Calf.x"],
+                                    mp.fVmax["Bip01 L Calf"]["Bip01 L Calf.x"] + mp.fVzero["Bip01 L Calf"]["Bip01 L Calf.x"],
+                                    mp.fVmin["Bip01 L Calf"]["Bip01 L Calf.y"] + mp.fVzero["Bip01 L Calf"]["Bip01 L Calf.y"],
+                                    mp.fVmax["Bip01 L Calf"]["Bip01 L Calf.y"] + mp.fVzero["Bip01 L Calf"]["Bip01 L Calf.y"],
+                                    mp.fVmin["Bip01 L Calf"]["Bip01 L Calf.z"] + mp.fVzero["Bip01 L Calf"]["Bip01 L Calf.z"],
+                                    mp.fVmax["Bip01 L Calf"]["Bip01 L Calf.z"] + mp.fVzero["Bip01 L Calf"]["Bip01 L Calf.z"]
+                                },
+                                {
+                                    mp.fVmin["Bip01 L Thigh"]["Bip01 L Thigh.x"] + mp.fVzero["Bip01 L Thigh"]["Bip01 L Thigh.x"],
+                                    mp.fVmax["Bip01 L Thigh"]["Bip01 L Thigh.x"] + mp.fVzero["Bip01 L Thigh"]["Bip01 L Thigh.x"],
+                                    mp.fVmin["Bip01 L Thigh"]["Bip01 L Thigh.y"] + mp.fVzero["Bip01 L Thigh"]["Bip01 L Thigh.y"],
+                                    mp.fVmax["Bip01 L Thigh"]["Bip01 L Thigh.y"] + mp.fVzero["Bip01 L Thigh"]["Bip01 L Thigh.y"],
+                                    mp.fVmin["Bip01 L Thigh"]["Bip01 L Thigh.z"] + mp.fVzero["Bip01 L Thigh"]["Bip01 L Thigh.z"],
+                                    mp.fVmax["Bip01 L Thigh"]["Bip01 L Thigh.z"] + mp.fVzero["Bip01 L Thigh"]["Bip01 L Thigh.z"]
+                                }
+                            };
+                            ikTempLeftLeg.Init(trBone["Bip01 L Thigh"], trBone["Bip01 L Calf"], trBone["Bip01 L Foot"], maid.body0, constrait);
+                            IKLeftLeg.Add(currentMaidNo, ikTempLeftLeg);
+                        }
+
+
+                        //IK対象ボーンリストが設定されていなければ初期化
+                        if (!trIKLeftLegBones.ContainsKey(currentMaidNo))
+                        {
+                            //Debuginfo.Log("init trIKLeftLegBones");
+                            Transform[] boneList = { trBone["Bip01 L Thigh"], trBone["Bip01 L Calf"], trBone["Bip01 L Foot"] };
+                            trIKLeftLegBones.Add(currentMaidNo, boneList);
+                        }
+
+                        //IKアタッチ状態が設定されていなければ一時表示[None]で初期化設定
+                        if (!bIKAttachLeftLeg.ContainsKey(currentMaidNo))
+                        {
+                            //Debuginfo.Log("init bIKAttachLeftLeg");
+                            bIKAttachLeftLeg.Add(currentMaidNo, false);
+                        }
+
+                        //IKターゲットが生成されてなければ生成
+                        if (!goIKLeftLegTarget.ContainsKey(currentMaidNo))
+                        {
+                            //Debuginfo.Log("init goIKLeftLegTarget");
+                            GameObject tempIKLeftLegTarget = new GameObject();
+                            tempIKLeftLegTarget.transform.parent = trBone["Bip01"];
+                            goIKLeftLegTarget.Add(currentMaidNo, tempIKLeftLegTarget);
+                            //念のため
+                            bIKAttachLeftLeg[currentMaidNo] = false;
+                        }
+
+                        //IK用ハンドル君のターゲットを今のメイドに設定
+                        posHandle.ChangeHandleModePosition(true);
+                        posHandle.IKmode = HandleKun.IKMODE.LeftLeg;
+                        if (!bIKAttachLeftLeg.ContainsKey(currentMaidNo) || !bIKAttachLeftLeg[currentMaidNo])
+                        {
+                            //Debuginfo.Log("init bIKAttachLeftLeg");
+                            //posHandle.SetParentBone(trBone["Bip01"]);
+
+                            posHandle.SetMaid(maid, trBone["Bip01 L Foot"]);
+                            //posHandle.Rot = Quaternion.Euler(-90, 0, 90) ;
+                            //posHandle.Scale = 0.2f;
+                        }
+                        else
+                        {
+                            posHandle.SetMaid(maid, goIKLeftLegTarget[currentMaidNo].transform);
+                        }
+
+                        //IK用ハンドル君表示
+                        posHandle.setVisible(true);
+
+                        //今表示されているメイドさんの_IK_ボーン情報をコレクションに収納
+                        settrTargetIKBones();
+
+                    }
+                    else
+                    {
+                        //ターゲット操作用ハンドル君非表示
+
+                        posHandle.setVisible(false);
+                    }
+
+                    if (goIKLeftLegTarget.ContainsKey(currentMaidNo)&&(goIKLeftLegTarget[currentMaidNo].transform.parent.name !="Bip01") )
+                    {
+                        posHandle.IKTargetAttachedColor(true);
+                    }
+                    else
+                    {
+                        posHandle.IKTargetAttachedColor(false);
+                    }
+
+                    //IKボタン類の表示状態を一括処理
+
+                    setIKButtonActive(bToggle);
+
+                }
+                else if (UICamera.currentTouchID == -2)
+                {   //右クリックでIK解除
+                    if (bIKAttachLeftLeg.ContainsKey(currentMaidNo))
+                    {
+                        bIKAttachLeftLeg[currentMaidNo] = false;
+                        goIKLeftLegTarget[currentMaidNo].transform.parent = trBone["Bip01"];
+                    }
+                    if (posHandle.IKmode ==HandleKun.IKMODE.LeftLeg)
+                    {
+                        posHandle.SetParentBone(trBone["Bip01 L Foot"]);
+
+                        posHandle.transform.localPosition = Vector3.zero;
+                        posHandle.Scale = 0.2f;
+
+                        posHandle.setVisible(false);
+                    }
+                   
+                    setIKButtonActive(false);
+                    setButtonColor(UIButton.current, false);
+                    posHandle.IKTargetAttachedColor(false);
+                }
+            }
+            catch (Exception ex) { Debug.LogError(LogLabel + "OnClickIKLeftLeg() " + ex); return; }
+        }
+        public void OnClickIKRightLeg()
+        {
+            try
+            {
+                if (UICamera.currentTouchID == -1)
+                {
+                    //カーソルの状態で判別
+                    bool bToggle = !FindChild(UIButton.current.gameObject, "SelectCursor").activeSelf;
+
+                    //IKターゲットオブジェクトとターゲット操作用ハンドル君表示
+                    if (bToggle)
+                    {
+
+                        //以下、IK用変数初期化処理
+
+                        //プラグイン側のIKが設定されていなければ初期化設定
+                        /*
+
+                        if (!IKRightLeg.ContainsKey(currentMaidNo))
+                        {
+                            TBody.IKCMO ikTempRightLeg = new TBody.IKCMO();
+                            ikTempRightLeg.Init(trBone["Bip01 R Thigh"], trBone["Bip01 R Calf"], trBone["Bip01 R Foot"], maid.body0);
+                            IKRightLeg.Add(currentMaidNo, ikTempRightLeg);
+                        }
+
+                        */
+                        if (!IKRightLeg.ContainsKey(currentMaidNo))
+                        {
+                            IKCONSTRAINED ikTempRightLeg = new IKCONSTRAINED();
+                            float[,] constrait =
+                              {
+                                    {
+                                        mp.fVmin["Bip01 R Foot"]["Bip01 R Foot.x"] + mp.fVzero["Bip01 R Foot"]["Bip01 R Foot.x"],
+                                        mp.fVmax["Bip01 R Foot"]["Bip01 R Foot.x"] + mp.fVzero["Bip01 R Foot"]["Bip01 R Foot.x"],
+                                        mp.fVmin["Bip01 R Foot"]["Bip01 R Foot.y"] + mp.fVzero["Bip01 R Foot"]["Bip01 R Foot.y"],
+                                        mp.fVmax["Bip01 R Foot"]["Bip01 R Foot.y"] + mp.fVzero["Bip01 R Foot"]["Bip01 R Foot.y"],
+                                        mp.fVmin["Bip01 R Foot"]["Bip01 R Foot.z"] + mp.fVzero["Bip01 R Foot"]["Bip01 R Foot.z"],
+                                        mp.fVmax["Bip01 R Foot"]["Bip01 R Foot.z"] + mp.fVzero["Bip01 R Foot"]["Bip01 R Foot.z"]
+                                    },
+                                    {
+                                        mp.fVmin["Bip01 R Calf"]["Bip01 R Calf.x"] + mp.fVzero["Bip01 R Calf"]["Bip01 R Calf.x"],
+                                        mp.fVmax["Bip01 R Calf"]["Bip01 R Calf.x"] + mp.fVzero["Bip01 R Calf"]["Bip01 R Calf.x"],
+                                        mp.fVmin["Bip01 R Calf"]["Bip01 R Calf.y"] + mp.fVzero["Bip01 R Calf"]["Bip01 R Calf.y"],
+                                        mp.fVmax["Bip01 R Calf"]["Bip01 R Calf.y"] + mp.fVzero["Bip01 R Calf"]["Bip01 R Calf.y"],
+                                        mp.fVmin["Bip01 R Calf"]["Bip01 R Calf.z"] + mp.fVzero["Bip01 R Calf"]["Bip01 R Calf.z"],
+                                        mp.fVmax["Bip01 R Calf"]["Bip01 R Calf.z"] + mp.fVzero["Bip01 R Calf"]["Bip01 R Calf.z"]
+                                    },
+                                    {
+                                        mp.fVmin["Bip01 R Thigh"]["Bip01 R Thigh.x"] + mp.fVzero["Bip01 R Thigh"]["Bip01 R Thigh.x"],
+                                        mp.fVmax["Bip01 R Thigh"]["Bip01 R Thigh.x"] + mp.fVzero["Bip01 R Thigh"]["Bip01 R Thigh.x"],
+                                        mp.fVmin["Bip01 R Thigh"]["Bip01 R Thigh.y"] + mp.fVzero["Bip01 R Thigh"]["Bip01 R Thigh.y"],
+                                        mp.fVmax["Bip01 R Thigh"]["Bip01 R Thigh.y"] + mp.fVzero["Bip01 R Thigh"]["Bip01 R Thigh.y"],
+                                        mp.fVmin["Bip01 R Thigh"]["Bip01 R Thigh.z"] + mp.fVzero["Bip01 R Thigh"]["Bip01 R Thigh.z"],
+                                        mp.fVmax["Bip01 R Thigh"]["Bip01 R Thigh.z"] + mp.fVzero["Bip01 R Thigh"]["Bip01 R Thigh.z"]
+                                    }
+                                };
+                            ikTempRightLeg.Init(trBone["Bip01 R Thigh"], trBone["Bip01 R Calf"], trBone["Bip01 R Foot"], maid.body0, constrait);
+                            IKRightLeg.Add(currentMaidNo, ikTempRightLeg);
+                        }
+
+                        //IK対象ボーンリストが設定されていなければ初期化
+
+                        if (!trIKRightLegBones.ContainsKey(currentMaidNo))
+                        {
+                            Transform[] boneList = { trBone["Bip01 R Thigh"], trBone["Bip01 R Calf"], trBone["Bip01 R Foot"] };
+                            trIKRightLegBones.Add(currentMaidNo, boneList);
+                        }
+
+                        //IKアタッチ状態が設定されていなければ一時表示[None]で初期化設定
+
+                        if (!bIKAttachRightLeg.ContainsKey(currentMaidNo))
+                        {
+                            bIKAttachRightLeg.Add(currentMaidNo, false);
+                        }
+
+                        //IKターゲットが生成されてなければ生成
+
+                        if (!goIKRightLegTarget.ContainsKey(currentMaidNo))
+                        {
+                            GameObject tempIKRightLegTarget = new GameObject();
+                            tempIKRightLegTarget.transform.parent = trBone["Bip01"];
+                            goIKRightLegTarget.Add(currentMaidNo, tempIKRightLegTarget);
+
+                            bIKAttachRightLeg[currentMaidNo] = false;
+                        }
+
+                        //IK用ハンドル君のターゲットを今のメイドに設定
+                        posHandle.ChangeHandleModePosition(true);
+                        posHandle.IKmode = HandleKun.IKMODE.RightLeg;
+                        if (!bIKAttachRightLeg.ContainsKey(currentMaidNo) || !bIKAttachRightLeg[currentMaidNo])
+                        {
+                            posHandle.SetMaid(maid, trBone["Bip01 R Foot"]);
+                        }
+                        else
+                        {
+                            posHandle.SetMaid(maid, goIKRightLegTarget[currentMaidNo].transform);
+                        }
+
+                        //IK用ハンドル君表示
+                        posHandle.setVisible(true);
+
+                        //今表示されているメイドさんの_IK_ボーン情報をコレクションに収納
+                        settrTargetIKBones();
+
+                    }
+                    else
+                    {
+                        //IK用ハンドル君非表示表示
+                        posHandle.setVisible(false);
+                    }
+
+                    //IKボタン類の表示状態を一括処理
+
+                    setIKButtonActive(bToggle);
+
+                    if (goIKRightLegTarget.ContainsKey(currentMaidNo) && (goIKRightLegTarget[currentMaidNo].transform.parent.name != "Bip01"))
+                    {
+                        posHandle.IKTargetAttachedColor(true);
+                    }
+                    else
+                    {
+                        posHandle.IKTargetAttachedColor(false);
+                    }
+                }
+                else if (UICamera.currentTouchID == -2)
+                {  //右クリックでIK解除
+                    if (bIKAttachRightLeg.ContainsKey(currentMaidNo))
+                    {
+                        bIKAttachRightLeg[currentMaidNo] = false;
+                        goIKRightLegTarget[currentMaidNo].transform.parent = trBone["Bip01"];
+                    }
+                    
+                    if (posHandle.IKmode == HandleKun.IKMODE.RightLeg)
+                    {
+                        posHandle.SetParentBone(trBone["Bip01 R Foot"]);
+
+                        posHandle.transform.localPosition = Vector3.zero;
+                        posHandle.Scale = 0.2f;
+
+                        posHandle.setVisible(false);
+                    }
+
+                    setIKButtonActive(false);
+                    setButtonColor(UIButton.current, false);
+                    posHandle.IKTargetAttachedColor(false);
+                }
 
             }
-            catch (Exception ex) { Debug.LogError(LogLabel + "OnClickUndoAll() " + ex); return; }
+            catch (Exception ex) { Debug.LogError(LogLabel + "OnClickIKRightLeg() " + ex); return; }
+        }
+        public void OnClickIKLeftArm()
+        {
+            try
+            {
+                if (UICamera.currentTouchID == -1)
+                {
+                    //カーソルの状態で判別
+                    bool bToggle = !FindChild(UIButton.current.gameObject, "SelectCursor").activeSelf;
+
+                    //IKターゲットオブジェクトとターゲット操作用ハンドル君表示
+                    if (bToggle)
+                    {
+                        //本体側で腕IKが設定されていれば解除
+                        if (maid.body0.tgtHandL != null || maid.body0.tgtHandL_AttachName != string.Empty)
+                        {
+                            maid.IKTargetToBone("左手", null, "無し", Vector3.zero);
+                        }
+
+
+                        //以下、IK用変数初期化処理
+
+                        //プラグイン側のIKが設定されていなければ初期化設定
+                        /*
+
+                        if (!IKLeftArm.ContainsKey(currentMaidNo))
+                        {
+                            TBody.IKCMO ikTempLeftArm = new TBody.IKCMO();
+                            ikTempLeftArm.Init(trBone["Bip01 L UpperArm"], trBone["Bip01 L Forearm"], trBone["Bip01 L Hand"], maid.body0);
+                            IKLeftArm.Add(currentMaidNo, ikTempLeftArm);
+                        }
+
+                        */
+
+                        if (!IKLeftArm.ContainsKey(currentMaidNo))
+                        {
+                            IKCONSTRAINED ikTempLeftArm = new IKCONSTRAINED();
+                            float[,] constrait =
+                             {
+
+                                    {
+                                        mp.fVmin["Bip01 L Hand"]["Bip01 L Hand.x"] + mp.fVzero["Bip01 L Hand"]["Bip01 L Hand.x"],
+                                        mp.fVmax["Bip01 L Hand"]["Bip01 L Hand.x"] + mp.fVzero["Bip01 L Hand"]["Bip01 L Hand.x"],
+                                        mp.fVmin["Bip01 L Hand"]["Bip01 L Hand.y"] + mp.fVzero["Bip01 L Hand"]["Bip01 L Hand.y"],
+                                        mp.fVmax["Bip01 L Hand"]["Bip01 L Hand.y"] + mp.fVzero["Bip01 L Hand"]["Bip01 L Hand.y"],
+                                        mp.fVmin["Bip01 L Hand"]["Bip01 L Hand.z"] + mp.fVzero["Bip01 L Hand"]["Bip01 L Hand.z"],
+                                        mp.fVmax["Bip01 L Hand"]["Bip01 L Hand.z"] + mp.fVzero["Bip01 L Hand"]["Bip01 L Hand.z"]
+                                    },
+                                    {
+                                        mp.fVmin["Bip01 L Forearm"]["Bip01 L Forearm.x"] + mp.fVzero["Bip01 L Forearm"]["Bip01 L Forearm.x"],
+                                        mp.fVmax["Bip01 L Forearm"]["Bip01 L Forearm.x"] + mp.fVzero["Bip01 L Forearm"]["Bip01 L Forearm.x"],
+                                        mp.fVmin["Bip01 L Forearm"]["Bip01 L Forearm.y"] + mp.fVzero["Bip01 L Forearm"]["Bip01 L Forearm.y"],
+                                        mp.fVmax["Bip01 L Forearm"]["Bip01 L Forearm.y"] + mp.fVzero["Bip01 L Forearm"]["Bip01 L Forearm.y"],
+                                        mp.fVmin["Bip01 L Forearm"]["Bip01 L Forearm.z"] + mp.fVzero["Bip01 L Forearm"]["Bip01 L Forearm.z"],
+                                        mp.fVmax["Bip01 L Forearm"]["Bip01 L Forearm.z"] + mp.fVzero["Bip01 L Forearm"]["Bip01 L Forearm.z"]
+                                    },
+                                    {
+                                        mp.fVmin["Bip01 L UpperArm"]["Bip01 L UpperArm.x"] + mp.fVzero["Bip01 L UpperArm"]["Bip01 L UpperArm.x"],
+                                        mp.fVmax["Bip01 L UpperArm"]["Bip01 L UpperArm.x"] + mp.fVzero["Bip01 L UpperArm"]["Bip01 L UpperArm.x"],
+                                        mp.fVmin["Bip01 L UpperArm"]["Bip01 L UpperArm.y"] + mp.fVzero["Bip01 L UpperArm"]["Bip01 L UpperArm.y"],
+                                        mp.fVmax["Bip01 L UpperArm"]["Bip01 L UpperArm.y"] + mp.fVzero["Bip01 L UpperArm"]["Bip01 L UpperArm.y"],
+                                        mp.fVmin["Bip01 L UpperArm"]["Bip01 L UpperArm.z"] + mp.fVzero["Bip01 L UpperArm"]["Bip01 L UpperArm.z"],
+                                        mp.fVmax["Bip01 L UpperArm"]["Bip01 L UpperArm.z"] + mp.fVzero["Bip01 L UpperArm"]["Bip01 L UpperArm.z"]
+                                    }
+                                };
+                            ikTempLeftArm.Init(trBone["Bip01 L UpperArm"], trBone["Bip01 L Forearm"], trBone["Bip01 L Hand"], maid.body0, constrait);
+                            IKLeftArm.Add(currentMaidNo, ikTempLeftArm);
+                        }
+
+                        //IK対象ボーンリストが設定されていなければ初期化
+
+                        if (!trIKLeftArmBones.ContainsKey(currentMaidNo))
+                        {
+                            Transform[] boneList = { trBone["Bip01 L UpperArm"], trBone["Bip01 L Forearm"], trBone["Bip01 L Hand"] };
+                            trIKLeftArmBones.Add(currentMaidNo, boneList);
+                        }
+
+                        //IKアタッチ状態が設定されていなければ一時表示[None]で初期化設定
+
+                        if (!bIKAttachLeftArm.ContainsKey(currentMaidNo))
+                        {
+                            bIKAttachLeftArm.Add(currentMaidNo, false);
+                        }
+
+                        //IKターゲットが生成されてなければ生成
+
+                        if (!goIKLeftArmTarget.ContainsKey(currentMaidNo))
+                        {
+                            GameObject tempIKLeftArmTarget = new GameObject();
+                            tempIKLeftArmTarget.transform.parent = trBone["Bip01"];
+                            goIKLeftArmTarget.Add(currentMaidNo, tempIKLeftArmTarget);
+
+                            bIKAttachLeftArm[currentMaidNo] = false;
+                        }
+
+
+                        //IK用ハンドル君のターゲットを今のメイドに設定
+                        posHandle.ChangeHandleModePosition(true);
+                        posHandle.IKmode = HandleKun.IKMODE.LeftArm;
+                        if (!bIKAttachLeftArm.ContainsKey(currentMaidNo) || !bIKAttachLeftArm[currentMaidNo])
+                        {
+                            posHandle.SetMaid(maid, trBone["Bip01 L Hand"]);
+                        }
+                        else
+                        {
+                            posHandle.SetMaid(maid, goIKLeftArmTarget[currentMaidNo].transform);
+                        }
+
+                        //IK用ハンドル君表示
+                        posHandle.setVisible(true);
+
+                        //今表示されているメイドさんの_IK_ボーン情報をコレクションに収納
+                        settrTargetIKBones();
+
+                    }
+                    else
+                    {
+                        //IK用ハンドル君非表示表示
+                        posHandle.setVisible(false);
+                    }
+
+                    //IKボタン類の表示状態を一括処理
+
+                    setIKButtonActive(bToggle);
+
+                    if (goIKLeftArmTarget.ContainsKey(currentMaidNo) && (goIKLeftArmTarget[currentMaidNo].transform.parent.name != "Bip01"))
+                    {
+                        posHandle.IKTargetAttachedColor(true);
+                    }
+                    else
+                    {
+                        posHandle.IKTargetAttachedColor(false);
+                    }
+                }
+                else if (UICamera.currentTouchID == -2)
+                {  //右クリックでIK解除
+                    if (bIKAttachLeftArm.ContainsKey(currentMaidNo))
+                    {
+                        bIKAttachLeftArm[currentMaidNo] = false;
+                        goIKLeftArmTarget[currentMaidNo].transform.parent = trBone["Bip01"];
+                    }
+
+                    if (posHandle.IKmode == HandleKun.IKMODE.LeftArm)
+                    {
+                        posHandle.SetParentBone(trBone["Bip01 L Hand"]);
+
+                        posHandle.transform.localPosition = Vector3.zero;
+                        posHandle.Scale = 0.2f;
+
+                        posHandle.setVisible(false);
+                    }
+
+                    setIKButtonActive(false);
+                    setButtonColor(UIButton.current, false);
+                    posHandle.IKTargetAttachedColor(false);
+                }
+
+            }
+            catch (Exception ex) { Debug.LogError(LogLabel + "OnClickIKLefttArm() " + ex); return; }
+        }
+        public void OnClickIKRightArm()
+        {
+            try
+            {
+                if (UICamera.currentTouchID == -1)
+                {
+                    //カーソルの状態で判別
+                    bool bToggle = !FindChild(UIButton.current.gameObject, "SelectCursor").activeSelf;
+
+                    //IKターゲットオブジェクトとターゲット操作用ハンドル君表示
+                    if (bToggle)
+                    {
+                        //本体側で腕IKが設定されていれば解除
+
+                        if (maid.body0.tgtHandR != null || maid.body0.tgtHandR_AttachName != string.Empty)
+                        {
+                            maid.IKTargetToBone("右手", null, "無し", Vector3.zero);
+                        }
+
+                        //以下、IK用変数初期化処理
+
+                        //プラグイン側のIKが設定されていなければ初期化設定
+                        /*
+                        if (!IKLeftLeg.ContainsKey(currentMaidNo))
+                        {
+                            TBody.IKCMO ikTempLeftLeg = new TBody.IKCMO();
+                            ikTempLeftLeg.Init(trBone["Bip01 L Thigh"], trBone["Bip01 L Calf"], trBone["Bip01 L Foot"], maid.body0);
+                            IKLeftLeg.Add(currentMaidNo, ikTempLeftLeg);
+                        }
+                        if (!IKRightLeg.ContainsKey(currentMaidNo))
+                        {
+                            TBody.IKCMO ikTempRightLeg = new TBody.IKCMO();
+                            ikTempRightLeg.Init(trBone["Bip01 R Thigh"], trBone["Bip01 R Calf"], trBone["Bip01 R Foot"], maid.body0);
+                            IKRightLeg.Add(currentMaidNo, ikTempRightLeg);
+                        }
+                        if (!IKLeftArm.ContainsKey(currentMaidNo))
+                        {
+                            TBody.IKCMO ikTempLeftArm = new TBody.IKCMO();
+                            ikTempLeftArm.Init(trBone["Bip01 L UpperArm"], trBone["Bip01 L Forearm"], trBone["Bip01 L Hand"], maid.body0);
+                            IKLeftArm.Add(currentMaidNo, ikTempLeftArm);
+                        }
+                        if (!IKRightArm.ContainsKey(currentMaidNo))
+                        {
+                            TBody.IKCMO ikTempRightArm = new TBody.IKCMO();
+                            ikTempRightArm.Init(trBone["Bip01 R UpperArm"], trBone["Bip01 R Forearm"], trBone["Bip01 R Hand"], maid.body0);
+                            IKRightArm.Add(currentMaidNo, ikTempRightArm);
+                        }
+                        */
+
+                        if (!IKRightArm.ContainsKey(currentMaidNo))
+                        {
+                            IKCONSTRAINED ikTempRightArm = new IKCONSTRAINED();
+                            float[,] constrait =
+                            {
+                                {
+                                    mp.fVmin["Bip01 R Hand"]["Bip01 R Hand.x"] + mp.fVzero["Bip01 R Hand"]["Bip01 R Hand.x"],
+                                    mp.fVmax["Bip01 R Hand"]["Bip01 R Hand.x"] + mp.fVzero["Bip01 R Hand"]["Bip01 R Hand.x"],
+                                    mp.fVmin["Bip01 R Hand"]["Bip01 R Hand.y"] + mp.fVzero["Bip01 R Hand"]["Bip01 R Hand.y"],
+                                    mp.fVmax["Bip01 R Hand"]["Bip01 R Hand.y"] + mp.fVzero["Bip01 R Hand"]["Bip01 R Hand.y"],
+                                    mp.fVmin["Bip01 R Hand"]["Bip01 R Hand.z"] + mp.fVzero["Bip01 R Hand"]["Bip01 R Hand.z"],
+                                    mp.fVmax["Bip01 R Hand"]["Bip01 R Hand.z"] + mp.fVzero["Bip01 R Hand"]["Bip01 R Hand.z"]
+                                },
+                                {
+                                    mp.fVmin["Bip01 R Forearm"]["Bip01 R Forearm.x"] + mp.fVzero["Bip01 R Forearm"]["Bip01 R Forearm.x"],
+                                    mp.fVmax["Bip01 R Forearm"]["Bip01 R Forearm.x"] + mp.fVzero["Bip01 R Forearm"]["Bip01 R Forearm.x"],
+                                    mp.fVmin["Bip01 R Forearm"]["Bip01 R Forearm.y"] + mp.fVzero["Bip01 R Forearm"]["Bip01 R Forearm.y"],
+                                    mp.fVmax["Bip01 R Forearm"]["Bip01 R Forearm.y"] + mp.fVzero["Bip01 R Forearm"]["Bip01 R Forearm.y"],
+                                    mp.fVmin["Bip01 R Forearm"]["Bip01 R Forearm.z"] + mp.fVzero["Bip01 R Forearm"]["Bip01 R Forearm.z"],
+                                    mp.fVmax["Bip01 R Forearm"]["Bip01 R Forearm.z"] + mp.fVzero["Bip01 R Forearm"]["Bip01 R Forearm.z"]
+                                },
+                                {
+                                    mp.fVmin["Bip01 R UpperArm"]["Bip01 R UpperArm.x"] + mp.fVzero["Bip01 R UpperArm"]["Bip01 R UpperArm.x"],
+                                    mp.fVmax["Bip01 R UpperArm"]["Bip01 R UpperArm.x"] + mp.fVzero["Bip01 R UpperArm"]["Bip01 R UpperArm.x"],
+                                    mp.fVmin["Bip01 R UpperArm"]["Bip01 R UpperArm.y"] + mp.fVzero["Bip01 R UpperArm"]["Bip01 R UpperArm.y"],
+                                    mp.fVmax["Bip01 R UpperArm"]["Bip01 R UpperArm.y"] + mp.fVzero["Bip01 R UpperArm"]["Bip01 R UpperArm.y"],
+                                    mp.fVmin["Bip01 R UpperArm"]["Bip01 R UpperArm.z"] + mp.fVzero["Bip01 R UpperArm"]["Bip01 R UpperArm.z"],
+                                    mp.fVmax["Bip01 R UpperArm"]["Bip01 R UpperArm.z"] + mp.fVzero["Bip01 R UpperArm"]["Bip01 R UpperArm.z"]
+                                }
+                            };
+                            ikTempRightArm.Init(trBone["Bip01 R UpperArm"], trBone["Bip01 R Forearm"], trBone["Bip01 R Hand"], maid.body0, constrait);
+                            IKRightArm.Add(currentMaidNo, ikTempRightArm);
+                        }
+
+                        //IK対象ボーンリストが設定されていなければ初期化
+
+                        if (!trIKRightArmBones.ContainsKey(currentMaidNo))
+                        {
+                            Transform[] boneList = { trBone["Bip01 R UpperArm"], trBone["Bip01 R Forearm"], trBone["Bip01 R Hand"] };
+                            trIKRightArmBones.Add(currentMaidNo, boneList);
+                        }
+
+                        //IKアタッチ状態が設定されていなければ一時表示[None]で初期化設定
+
+                        if (!bIKAttachRightArm.ContainsKey(currentMaidNo))
+                        {
+                            bIKAttachRightArm.Add(currentMaidNo, false);
+                        }
+
+                        //IKターゲットが生成されてなければ生成
+                        if (!goIKRightArmTarget.ContainsKey(currentMaidNo))
+                        {
+                            GameObject tempIKRightArmTarget = new GameObject();
+                            tempIKRightArmTarget.transform.parent = trBone["Bip01"];
+                            goIKRightArmTarget.Add(currentMaidNo, tempIKRightArmTarget);
+
+                            bIKAttachRightArm[currentMaidNo] = false;
+                        }
+
+
+                        //IK用ハンドル君のターゲットを今のメイドに設定
+                        posHandle.ChangeHandleModePosition(true);
+                        posHandle.IKmode = HandleKun.IKMODE.RightArm;
+                        if (!bIKAttachRightArm.ContainsKey(currentMaidNo) || !bIKAttachRightArm[currentMaidNo])
+                        {
+                            posHandle.SetMaid(maid, trBone["Bip01 R Hand"]);
+                        }
+                        else
+                        {
+                            posHandle.SetMaid(maid, goIKRightArmTarget[currentMaidNo].transform);
+                        }
+
+                        //IK用ハンドル君表示
+                        posHandle.setVisible(true);
+
+                        //今表示されているメイドさんの_IK_ボーン情報をコレクションに収納
+                        settrTargetIKBones();
+
+                    }
+                    else
+                    {
+                        //IK用ハンドル君非表示
+                        posHandle.setVisible(false);
+                    }
+
+                    //IKボタン類の表示状態を一括処理
+
+                    setIKButtonActive(bToggle);
+
+                    if (goIKRightArmTarget.ContainsKey(currentMaidNo) && (goIKRightArmTarget[currentMaidNo].transform.parent.name != "Bip01"))
+                    {
+                        posHandle.IKTargetAttachedColor(true);
+                    }
+                    else
+                    {
+                        posHandle.IKTargetAttachedColor(false);
+                    }
+
+                }
+                else if (UICamera.currentTouchID == -2)
+                {  //右クリックでIK解除
+                    if (bIKAttachRightArm.ContainsKey(currentMaidNo))
+                    {
+                        bIKAttachRightArm[currentMaidNo] = false;
+                        goIKRightArmTarget[currentMaidNo].transform.parent = trBone["Bip01"];
+                    }
+                    
+                    if (posHandle.IKmode == HandleKun.IKMODE.RightArm)
+                    {
+                        posHandle.SetParentBone(trBone["Bip01 R Hand"]);
+
+                        posHandle.transform.localPosition = Vector3.zero;
+                        posHandle.Scale = 0.2f;
+
+                        posHandle.setVisible(false);
+                    }
+
+                    setIKButtonActive(false);
+                    setButtonColor(UIButton.current, false);
+                    posHandle.IKTargetAttachedColor(false);
+                }
+
+            }
+            catch (Exception ex) { Debug.LogError(LogLabel + "OnClickIKRightArm() " + ex); return; }
+        }
+        //IK全解除
+        public void OnClickIKDetach()
+        {
+            try
+            {
+                //IKを解除
+
+                //ハンドル君の位置を初期化
+                posHandle.SetParentBone(trBone["Bip01"]);
+
+                //現在のメイドのIK情報をコレクションリストから全削除
+                removeAttachMaidList(currentMaidNo);
+                attachIKMaidNo.Remove(currentMaidNo);
+
+                //IK用ハンドル君非表示
+                posHandle.setVisible(false);
+
+                //IKボタンをオフらせる
+                setIKButtonActive(false,true, attachIKMaidNo.Count == 0);
+
+                posHandle.IKTargetAttachedColor(false);
+
+            }
+            catch (Exception ex) { Debug.LogError(LogLabel + "OnClickIKDetach() " + ex); return; }
+
+        }
+        //全メイドさんのIK全解除
+        public void OnClickIKDetachAll()
+        {
+            try
+            {
+                //ハンドル君の位置を初期化
+                posHandle.SetParentBone(trBone["Bip01"]);
+
+
+                //全メイドのIK情報をコレクションリストから全削除
+
+                //全ターゲット用オブジェクトを0.5秒後に消す
+                foreach (int removeNo in attachIKMaidNo)
+                {
+                    /*
+                    GameObject.Destroy(goIKLeftLegTarget[removeNo], 0.5f);
+                    GameObject.Destroy(goIKRightLegTarget[removeNo], 0.5f);
+                    GameObject.Destroy(goIKLeftArmTarget[removeNo], 0.5f);
+                    GameObject.Destroy(goIKRightArmTarget[removeNo], 0.5f);
+                    */
+                    if (goIKLeftLegTarget.ContainsKey(removeNo))
+                    {
+
+                        if (goIKLeftLegTarget[removeNo] != null)
+                        {
+                            goIKLeftLegTarget[removeNo].transform.DetachChildren();
+                            GameObject.Destroy(goIKLeftLegTarget[removeNo], 0.5f);
+                        }
+                    }
+                    if (goIKRightLegTarget.ContainsKey(removeNo))
+                    {
+                        if (goIKRightLegTarget[removeNo] != null)
+                        {
+                            goIKRightLegTarget[removeNo].transform.DetachChildren();
+                            GameObject.Destroy(goIKRightLegTarget[removeNo], 0.5f);
+                        }
+                    }
+                    if (goIKLeftArmTarget.ContainsKey(removeNo))
+                    {
+                        if (goIKLeftArmTarget[removeNo] != null)
+                        {
+                            goIKLeftArmTarget[removeNo].transform.DetachChildren();
+                            GameObject.Destroy(goIKLeftArmTarget[removeNo], 1f);
+                        }
+                    }
+                    if (goIKRightArmTarget.ContainsKey(removeNo))
+                    {
+                        if (goIKRightArmTarget[removeNo] != null)
+                        {
+                            goIKRightArmTarget[removeNo].transform.DetachChildren();
+                            GameObject.Destroy(goIKRightArmTarget[removeNo], 1f);
+                        }
+                    }
+                }
+
+                attachIKMaidNo.Clear();
+                attachIKMaidList.Clear();
+                trTargetIKBones.Clear();
+
+                IKLeftLeg.Clear();
+                IKRightLeg.Clear();
+                IKLeftArm.Clear();
+                IKRightArm.Clear();
+
+                bIKAttachLeftLeg.Clear();
+                bIKAttachRightLeg.Clear();
+                bIKAttachLeftArm.Clear();
+                bIKAttachRightArm.Clear();
+                
+                goIKLeftLegTarget.Clear();
+                goIKRightLegTarget.Clear();
+                goIKLeftArmTarget.Clear();
+                goIKRightArmTarget.Clear();
+
+                trIKLeftLegBones.Clear();
+                trIKRightLegBones.Clear();
+                trIKLeftArmBones.Clear();
+                trIKRightArmBones.Clear();
+
+
+
+                //IK用ハンドル君非表示
+                posHandle.setVisible(false);
+                posHandle.IKTargetAttachedColor(false);
+
+                //IKボタンを全部オフらせる
+                setIKButtonActive(false, true, true);
+
+            }
+            catch (Exception ex) { Debug.LogError(LogLabel + "OnClickIKDetachAll() " + ex); return; }
         }
 
         public void OnClickHandleButton()
         {
             try
             {
+                posHandle.IKmode = HandleKun.IKMODE.None;
+
                 string bone = getTag(UIButton.current, 1);
 
-                if (bone == "secret" || bone == "eye" || bone == "camera" || bone == "offset" || bone == "allpos")
-                    return;
-
-                if (activeHandleName != bone)
+                if (sceneLevel == 5 && bone == "allpos")
                 {
-                    if (activeHandleName != "")
-                    {
-                        visibleHandle(activeHandleName);
-                        setButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "Handle:" + activeHandleName).GetComponent<UIButton>(), false);
-
-                    }
-                    posHandle.SetParentBone(trBone[bone]);
+                    setParentAllOffset();
                 }
 
+                //IKハンドルモードからの切り替え処理も書く
+
+                if (UICamera.currentTouchID == -1)
+                {
+                    if (bone == "secret" || bone == "eye" || bone == "camera" )//|| bone == "offset" || bone == "allpos")
+                        return;
+
+                    if (activeHandleName != bone)
+                    {
+                        if (activeHandleName != "")
+                        {
+                            visibleHandle(activeHandleName);
+                            setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "Handle:" + activeHandleName).GetComponent<UIButton>(), false);
+
+                        }
+
+
+                        if(bone == "allpos")
+                            posHandle.SetParentBone(maid.gameObject.transform.parent);
+                        else if(bone == "offset")
+                            posHandle.SetParentBone(maid.gameObject.transform);
+                        else
+                            posHandle.SetParentBone(trBone[bone]);
+                    }
+
+                    if (posHandle.bHandlePositionMode == true)
+                    {
+                        posHandle.ChangeHandleModePosition(false);
+
+                        if (posHandle.Visible == true && activeHandleName == bone)
+                        {
+                            return;
+                        }
+                    }
+                    
+                    //posHandle.Visible = b;
+                }
+                else if (UICamera.currentTouchID == -2)
+                {
+                    if (bone != "Bip01" && bone !="allpos" && bone !="offset" )
+                        return;
+
+
+                    if (activeHandleName != bone)
+                    {
+                        if (activeHandleName != "")
+                        {
+                            visibleHandle(activeHandleName);
+                            setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "Handle:" + activeHandleName).GetComponent<UIButton>(), false);
+
+                        }
+
+                        if (bone == "allpos")
+                            posHandle.SetParentBone(maid.gameObject.transform.parent);
+                        else if (bone == "offset")
+                            posHandle.SetParentBone(maid.gameObject.transform);
+                        else
+                            posHandle.SetParentBone(trBone[bone]);
+
+
+                    }
+
+                    if (posHandle.bHandlePositionMode == false )
+                    {
+                        posHandle.ChangeHandleModePosition(true);
+                        if (posHandle.Visible == true && activeHandleName == bone)
+                        {
+                            return;
+                        }
+                    }
+                    
+                }
                 bool b = visibleHandle(bone);
-                setButtonColor(UIButton.current, b);
+                setUnitButtonColor(UIButton.current, b);
                 activeHandleName = b ? bone : "";
 
+                posHandle.IKTargetAttachedColor(false);
                 posHandle.setVisible(b);
+                
 
-                //posHandle.Visible = b;
+                //IKボタンのカーソルだけをオフらせる
+                //setIKButtonActive(true, true);
+                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").SetActive(false);
 
 
             }
@@ -1806,7 +4256,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                     if (mp.IsToggle(bone))
                     {
                         mp.bEnabled[bone] = false;
-                        setButtonColor(bone, mp.bEnabled[bone]);
+                        setUnitButtonColor(bone, mp.bEnabled[bone]);
                     }
 
                     if (mp.IsSlider(bone))
@@ -1874,8 +4324,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 maid.body0.boEyeToCam = false;
                 //maid.body0.MuneYureL(0f);
                 //maid.body0.MuneYureR(0f);
-
-
+                
                 rotateBone(bone, prop);
 
                 //捻りボーンのオート調整
@@ -1924,7 +4373,6 @@ namespace CM3D2.AddBoneSlider.Plugin
 
 
                 }
-
                 rotateBone(bone, prop);
 
                 if (bone != "secret" && bone != "eye" && bone != "allpos" && bone != "offset" && bone != "camera")
@@ -1961,14 +4409,13 @@ namespace CM3D2.AddBoneSlider.Plugin
         public void OnClickBoneCategory()
         {
             //カテゴリーを選択
-            GameObject goSystemUnit = FindChild(goAMSPanel, "System:Undo");
-            GameObject goBoneCategory0 = FindChild(goSystemUnit, "BoneCategory0");
-            GameObject goBoneCategory1 = FindChild(goSystemUnit, "BoneCategory1");
-            GameObject goBoneCategory2 = FindChild(goSystemUnit, "BoneCategory2");
-            GameObject goBoneCategory3 = FindChild(goSystemUnit, "BoneCategory3");
-            GameObject goBoneCategory4 = FindChild(goSystemUnit, "BoneCategory4");
-            GameObject goBoneCategory5 = FindChild(goSystemUnit, "BoneCategory5");
 
+            GameObject goBoneCategory0 = FindChild(goAMSPanel, "BoneCategory0");
+            GameObject goBoneCategory1 = FindChild(goAMSPanel, "BoneCategory1");
+            GameObject goBoneCategory2 = FindChild(goAMSPanel, "BoneCategory2");
+            GameObject goBoneCategory3 = FindChild(goAMSPanel, "BoneCategory3");
+            GameObject goBoneCategory4 = FindChild(goAMSPanel, "BoneCategory4");
+            GameObject goBoneCategory5 = FindChild(goAMSPanel, "BoneCategory5");
 
             UIButton uiButtonBoneCategory0 = goBoneCategory0.GetComponent<UIButton>();
             UIButton uiButtonBoneCategory1 = goBoneCategory1.GetComponent<UIButton>();
@@ -2021,10 +4468,12 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         #region Private methods
         
+        /*
         private IEnumerator waitTime(float waitTime)
         {
             yield return new WaitForSeconds(waitTime);
         }
+        */
         
 
         private IEnumerator initCoroutine()
@@ -2368,6 +4817,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 uiBGSprite.spriteName = "cm3d2_edit_window_l";
                 uiBGSprite.type = UIBasicSprite.Type.Sliced;
                 uiBGSprite.SetDimensions(ScrollViewWidth, ScrollViewHeight);
+                
                 //////////////////////////////////////////////////////////////////////////////////
                 // ScrollViewPanel
                 uiScrollPanel = NGUITools.AddChild<UIPanel>(goAMSPanel);
@@ -2377,8 +4827,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                 uiScrollPanel.depth = uiAMSPanel.depth + 1;
 
                 uiScrollPanel.clipping = UIDrawCall.Clipping.SoftClip;
-                uiScrollPanel.SetRect(0f, 0f, uiBGSprite.width, uiBGSprite.height - 130 - systemUnitHeight * 6);
-                uiScrollPanel.transform.localPosition = new Vector3(-25f, -systemUnitHeight * 4, 0f);
+                uiScrollPanel.SetRect(0f, 0f, uiBGSprite.width, uiBGSprite.height - 130 - systemUnitHeight * 6.5f);
+                uiScrollPanel.transform.localPosition = new Vector3(-25f, -systemUnitHeight * 4.5f, 0f);
                 goScrollView = uiScrollPanel.gameObject;
 
                 uiScrollView = goScrollView.AddComponent<UIScrollView>();
@@ -2397,7 +4847,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 uiScrollBar.value = 0f;
 
                 uiScrollBar.gameObject.AddComponent<BoxCollider>();
-                uiScrollBar.transform.localPosition = new Vector3(uiBGSprite.width / 2f - 10, -systemUnitHeight * 4, 0f);
+                uiScrollBar.transform.localPosition = new Vector3(uiBGSprite.width / 2f - 10, -systemUnitHeight * 4.5f, 0f);
                 uiScrollBar.transform.localRotation *= Quaternion.Euler(0f, 0f, -90f);
 
                 UIWidget uiScrollBarFore = NGUITools.AddChild<UIWidget>(uiScrollBar.gameObject);
@@ -2763,50 +5213,147 @@ namespace CM3D2.AddBoneSlider.Plugin
                 goNextMaid.SetActive(true);
 
 
-                // Undoボタン
-                GameObject goUndoAll = SetCloneChild(goSystemUnit, goProfileTabCopy, "UndoAll");
-                goUndoAll.transform.localPosition = new Vector3(-conWidth * 0.25f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 4 - 6f, 0f);
+                // 全IK解除ボタン
+                GameObject goIKDetachAll = SetCloneChild(goSystemUnit, goProfileTabCopy, "IKDetachAll");
+                goIKDetachAll.transform.localPosition = new Vector3(-conWidth * 0.375f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 4 - 6f, 0f);
 
-                UISprite uiSpriteUndoAll = goUndoAll.GetComponent<UISprite>();
-                uiSpriteUndoAll.SetDimensions((int)(conWidth * 0.5f) - 2, systemUnitHeight);
+                UISprite uiSpriteIKDetachAll = goIKDetachAll.GetComponent<UISprite>();
+                uiSpriteIKDetachAll.SetDimensions((int)(conWidth * 0.25f) - 4, systemUnitHeight);
 
-                UILabel uiLabelUndoAll = FindChild(goUndoAll, "Name").GetComponent<UILabel>();
-                uiLabelUndoAll.width = uiSpriteUndoAll.width - 10;
-                uiLabelUndoAll.fontSize = 22;
-                uiLabelUndoAll.spacingX = 0;
-                uiLabelUndoAll.supportEncoding = true;
-                uiLabelUndoAll.text = "[111111]*未使用*";
+                UILabel uiLabelIKDetachAll = FindChild(goIKDetachAll, "Name").GetComponent<UILabel>();
+                uiLabelIKDetachAll.width = uiSpriteIKDetachAll.width - 10;
+                uiLabelIKDetachAll.fontSize = 22;
+                uiLabelIKDetachAll.spacingX = 0;
+                uiLabelIKDetachAll.supportEncoding = true;
+                uiLabelIKDetachAll.text = "[111111]全IK解除";
 
-                UIButton uiButtonUndoAll = goUndoAll.GetComponent<UIButton>();
-                uiButtonUndoAll.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonUndoAll.onClick, new EventDelegate.Callback(this.OnClickUndoAll));
+                UIButton uiButtonIKDetachAll = goIKDetachAll.GetComponent<UIButton>();
+                uiButtonIKDetachAll.defaultColor = new Color(1f, 1f, 1f, 0.8f);
+                EventDelegate.Set(uiButtonIKDetachAll.onClick, new EventDelegate.Callback(this.OnClickIKDetachAll));
 
-                FindChild(goUndoAll, "SelectCursor").GetComponent<UISprite>().SetDimensions(16, 16);
-                FindChild(goUndoAll, "SelectCursor").SetActive(false);
+                FindChild(goIKDetachAll, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.25f) - 10, systemUnitHeight - 4);
+                FindChild(goIKDetachAll, "SelectCursor").SetActive(false);
 
-                NGUITools.UpdateWidgetCollider(goUndoAll);
-                goUndoAll.SetActive(true);
+                NGUITools.UpdateWidgetCollider(goIKDetachAll);
+                goIKDetachAll.SetActive(true);
+
+
+                // IKアタッチ解除ボタン
+                GameObject goIKDetach = SetCloneChild(goSystemUnit, goIKDetachAll, "IKDetach");
+                goIKDetach.transform.localPosition = new Vector3(-conWidth * 0.125f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 4 - 6f, 0f);
+
+                UILabel uiLabelIKDetach = FindChild(goIKDetach, "Name").GetComponent<UILabel>();
+                uiLabelIKDetach.text = "[111111]IK解除";
+
+                UIButton uiButtonIKDetach = goIKDetach.GetComponent<UIButton>();
+                uiButtonIKDetach.defaultColor = new Color(1f, 1f, 1f, 0.8f);
+                EventDelegate.Set(uiButtonIKDetach.onClick, new EventDelegate.Callback(this.OnClickIKDetach));
+
+                FindChild(goIKDetach, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.25f) - 10, systemUnitHeight - 4);
+                FindChild(goIKDetach, "SelectCursor").SetActive(false);
+
+                NGUITools.UpdateWidgetCollider(goIKDetach);
+                goIKDetach.SetActive(true);
 
                 // Resetボタン
-                GameObject goResetAll = SetCloneChild(goSystemUnit, goUndoAll, "ResetAll");
+                GameObject goResetAll = SetCloneChild(goSystemUnit, goProfileTabCopy, "ResetAll");
                 goResetAll.transform.localPosition = new Vector3(conWidth * 0.25f - 4, baseTop - systemUnitHeight / 2f - systemUnitHeight * 4 - 6f, 0f);
 
+                UISprite uiSpriteResetAll = goResetAll.GetComponent<UISprite>();
+                uiSpriteResetAll.SetDimensions((int)(conWidth * 0.5f) - 2, systemUnitHeight);
+
                 UILabel uiLabelResetAll = FindChild(goResetAll, "Name").GetComponent<UILabel>();
+                uiLabelResetAll.width = uiSpriteResetAll.width - 10;
+                uiLabelResetAll.fontSize = 22;
+                uiLabelResetAll.spacingX = 0;
+                uiLabelResetAll.supportEncoding = true;
                 uiLabelResetAll.text = "[111111]ResetAll";
 
                 UIButton uiButtonResetAll = goResetAll.GetComponent<UIButton>();
                 uiButtonResetAll.defaultColor = new Color(1f, 1f, 1f, 0.8f);
                 EventDelegate.Set(uiButtonResetAll.onClick, new EventDelegate.Callback(this.OnClickResetAll));
 
+                FindChild(goResetAll, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.5f) - 6, systemUnitHeight - 4);
+                FindChild(goResetAll, "SelectCursor").SetActive(false);
+
                 NGUITools.UpdateWidgetCollider(goResetAll);
                 goResetAll.SetActive(true);
 
                 Debuginfo.Log(LogLabel + " goResetAll complete.");
 
+
+                // 左足IKボタン
+                GameObject goIKLeftLeg = SetCloneChild(goSystemUnit, goIKDetachAll, "IKLeftLeg");
+                goIKLeftLeg.transform.localPosition = new Vector3(-conWidth * 0.375f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
+
+                UILabel uiLabelIKLeftLeg = FindChild(goIKLeftLeg, "Name").GetComponent<UILabel>();
+                uiLabelIKLeftLeg.text = "[111111]左足IK";
+
+                UIButton uiButtonIKLeftLeg = goIKLeftLeg.GetComponent<UIButton>();
+                uiButtonIKLeftLeg.defaultColor = new Color(1f, 1f, 1f, 0.8f);
+                EventDelegate.Set(uiButtonIKLeftLeg.onClick, new EventDelegate.Callback(this.OnClickIKLeftLeg));
+
+                FindChild(goIKLeftLeg, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.25f) - 10, systemUnitHeight - 4);
+                FindChild(goIKLeftLeg, "SelectCursor").SetActive(false);
+
+                NGUITools.UpdateWidgetCollider(goIKLeftLeg);
+                goIKLeftLeg.SetActive(true);
+
+                // 右足IKボタン
+                GameObject goIKRightLeg = SetCloneChild(goSystemUnit, goIKDetachAll, "IKRightLeg");
+                goIKRightLeg.transform.localPosition = new Vector3(-conWidth * 0.125f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
+
+                UILabel uiLabelIKRightLeg = FindChild(goIKRightLeg, "Name").GetComponent<UILabel>();
+                uiLabelIKRightLeg.text = "[111111]右足IK";
+
+                UIButton uiButtonIKRightLeg = goIKRightLeg.GetComponent<UIButton>();
+                uiButtonIKRightLeg.defaultColor = new Color(1f, 1f, 1f, 0.8f);
+                EventDelegate.Set(uiButtonIKRightLeg.onClick, new EventDelegate.Callback(this.OnClickIKRightLeg));
+
+                FindChild(goIKRightLeg, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.25f) - 10, systemUnitHeight - 4);
+                FindChild(goIKRightLeg, "SelectCursor").SetActive(false);
+
+                NGUITools.UpdateWidgetCollider(goIKRightLeg);
+                goIKRightLeg.SetActive(true);
+
+                // 左手IKボタン
+                GameObject goIKLeftArm = SetCloneChild(goSystemUnit, goIKDetachAll, "IKLeftArm");
+                goIKLeftArm.transform.localPosition = new Vector3(conWidth * 0.125f - 3, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
+
+                UILabel uiLabelIKLeftArm = FindChild(goIKLeftArm, "Name").GetComponent<UILabel>();
+                uiLabelIKLeftArm.text = "[111111]左手IK";
+
+                UIButton uiButtonIKLeftArm = goIKLeftArm.GetComponent<UIButton>();
+                uiButtonIKLeftArm.defaultColor = new Color(1f, 1f, 1f, 0.8f);
+                EventDelegate.Set(uiButtonIKLeftArm.onClick, new EventDelegate.Callback(this.OnClickIKLeftArm));
+
+                FindChild(goIKLeftArm, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.25f) - 10, systemUnitHeight - 4);
+                FindChild(goIKLeftArm, "SelectCursor").SetActive(false);
+
+                NGUITools.UpdateWidgetCollider(goIKLeftArm);
+                goIKLeftArm.SetActive(true);
+
+                // 右手IKボタン
+                GameObject goIKRightArm = SetCloneChild(goSystemUnit, goIKDetachAll, "IKRightArm");
+                goIKRightArm.transform.localPosition = new Vector3(conWidth * 0.375f - 3, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
+
+                UILabel uiLabelIKRightArm = FindChild(goIKRightArm, "Name").GetComponent<UILabel>();
+                uiLabelIKRightArm.text = "[111111]右手IK";
+
+                UIButton uiButtonIKRightArm = goIKRightArm.GetComponent<UIButton>();
+                uiButtonIKRightArm.defaultColor = new Color(1f, 1f, 1f, 0.8f);
+                EventDelegate.Set(uiButtonIKRightArm.onClick, new EventDelegate.Callback(this.OnClickIKRightArm));
+
+                FindChild(goIKRightArm, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.25f) - 10, systemUnitHeight - 4);
+                FindChild(goIKRightArm, "SelectCursor").SetActive(false);
+
+                NGUITools.UpdateWidgetCollider(goIKRightArm);
+                goIKRightArm.SetActive(true);
+
                 //ボーンカテゴリー切り替えボタン
 
                 GameObject goBoneCategory0 = SetCloneChild(goSystemUnit, goLoadPose, "BoneCategory0");
-                goBoneCategory0.transform.localPosition = new Vector3(-conWidth * 0.4167f - 7, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
+                goBoneCategory0.transform.localPosition = new Vector3(-conWidth * 0.4167f - 7, baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 14f, 0f);
                 UISprite uiSpriteBoneCategory0 = goBoneCategory0.GetComponent<UISprite>();
                 uiSpriteBoneCategory0.SetDimensions((int)(conWidth * 0.1667f) - 5, systemUnitHeight);
                 UILabel uiLabelBoneCategory0 = FindChild(goBoneCategory0, "Name").GetComponent<UILabel>();
@@ -2821,7 +5368,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
 
                 GameObject goBoneCategory1 = SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory1");
-                goBoneCategory1.transform.localPosition = new Vector3(-conWidth * 0.25f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
+                goBoneCategory1.transform.localPosition = new Vector3(-conWidth * 0.25f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 14f, 0f);
                 UILabel uiLabelBoneCategory1 = FindChild(goBoneCategory1, "Name").GetComponent<UILabel>();
                 uiLabelBoneCategory1.text = "[111111]上半身";
                 UIButton uiButtonBoneCategory1 = goBoneCategory1.GetComponent<UIButton>();
@@ -2830,7 +5377,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 goBoneCategory1.SetActive(true);
 
                 GameObject goBoneCategory2 = SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory2");
-                goBoneCategory2.transform.localPosition = new Vector3(-conWidth * 0.08333f - 5, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
+                goBoneCategory2.transform.localPosition = new Vector3(-conWidth * 0.08333f - 5, baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 14f, 0f);
                 UILabel uiLabelBoneCategory2 = FindChild(goBoneCategory2, "Name").GetComponent<UILabel>();
                 uiLabelBoneCategory2.text = "[111111]下半身";
                 UIButton uiButtonBoneCategory2 = goBoneCategory2.GetComponent<UIButton>();
@@ -2839,7 +5386,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 goBoneCategory2.SetActive(true);
 
                 GameObject goBoneCategory3 = SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory3");
-                goBoneCategory3.transform.localPosition = new Vector3(conWidth * 0.08333f - 4, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
+                goBoneCategory3.transform.localPosition = new Vector3(conWidth * 0.08333f - 4, baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 14f, 0f);
                 UILabel uiLabelBoneCategory3 = FindChild(goBoneCategory3, "Name").GetComponent<UILabel>();
                 uiLabelBoneCategory3.text = "[111111]足指";
                 UIButton uiButtonBoneCategory3 = goBoneCategory1.GetComponent<UIButton>();
@@ -2848,7 +5395,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 goBoneCategory3.SetActive(true);
 
                 GameObject goBoneCategory4 = SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory4");
-                goBoneCategory4.transform.localPosition = new Vector3(conWidth * 0.25f - 3, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
+                goBoneCategory4.transform.localPosition = new Vector3(conWidth * 0.25f - 3, baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 14f, 0f);
                 UILabel uiLabelBoneCategory4 = FindChild(goBoneCategory4, "Name").GetComponent<UILabel>();
                 uiLabelBoneCategory4.text = "[111111]左手指";
                 UIButton uiButtonBoneCategory4 = goBoneCategory4.GetComponent<UIButton>();
@@ -2857,7 +5404,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 goBoneCategory4.SetActive(true);
 
                 GameObject goBoneCategory5 = SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory5");
-                goBoneCategory5.transform.localPosition = new Vector3(conWidth * 0.4167f - 2, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
+                goBoneCategory5.transform.localPosition = new Vector3(conWidth * 0.4167f - 2, baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 14f, 0f);
                 UILabel uiLabelBoneCategory5 = FindChild(goBoneCategory5, "Name").GetComponent<UILabel>();
                 uiLabelBoneCategory5.text = "[111111]右手指";
                 UIButton uiButtonBoneCategory5 = goBoneCategory5.GetComponent<UIButton>();
@@ -2877,13 +5424,15 @@ namespace CM3D2.AddBoneSlider.Plugin
                 {
 
                     getMaidBonetransform();
-                    posHandle = new AngleHandle(settingIni.HandleLegacymode, maid);
+                    posHandle = new HandleKun(settingIni.HandleLegacymode, maid);
+
                 }
                 else
                 {
-                    posHandle = new AngleHandle(settingIni.HandleLegacymode);
+                    posHandle = new HandleKun(settingIni.HandleLegacymode);
+
                 }
-                posHandle.Visible = false;
+                posHandle.setVisible(false);
 
                 Debuginfo.Log(LogLabel + " getMaidBonetransform complete.");
 
@@ -2926,7 +5475,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                     goHeaderButton.AddComponent<UIDragScrollView>().scrollView = uiScrollView;
                     UIButton uiHeaderButton = goHeaderButton.GetComponent<UIButton>();
                     EventDelegate.Set(uiHeaderButton.onClick, new EventDelegate.Callback(this.OnClickHeaderButton));
-                    setButtonColor(uiHeaderButton, mp.IsToggle(bone) ? mp.bEnabled[bone] : false);
+                    setUnitButtonColor(uiHeaderButton, mp.IsToggle(bone) ? mp.bEnabled[bone] : false);
 
                     NGUITools.UpdateWidgetCollider(goHeaderButton);
 
@@ -3201,7 +5750,6 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 Debuginfo.Log(LogLabel + " goAMSPanel complete.");
 
-
             }
             catch (Exception ex) { Debug.LogError(LogLabel + "initialize()" + ex); return false; }
 
@@ -3235,6 +5783,30 @@ namespace CM3D2.AddBoneSlider.Plugin
             goPSScrollView = null;
             goPSScrollViewTable = null;
 
+            attachIKMaidNo.Clear();
+            attachIKMaidList.Clear();
+            trTargetIKBones.Clear();
+
+            IKLeftLeg.Clear();
+            IKRightLeg.Clear();
+            IKLeftArm.Clear();
+            IKRightArm.Clear();
+
+            bIKAttachLeftLeg.Clear();
+            bIKAttachRightLeg.Clear();
+            bIKAttachLeftArm.Clear();
+            bIKAttachRightArm.Clear();
+
+            goIKLeftLegTarget.Clear();
+            goIKRightLegTarget.Clear();
+            goIKLeftArmTarget.Clear();
+            goIKRightArmTarget.Clear();
+
+            trIKLeftLegBones.Clear();
+            trIKRightLegBones.Clear();
+            trIKLeftArmBones.Clear();
+            trIKRightArmBones.Clear();
+
 
             uiValueLable.Clear();
         }
@@ -3261,7 +5833,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                         UIButton uiButton = t.GetComponentsInChildren<UIButton>()[0];
                         uiButton.isEnabled = b;
-                        if (!(b && mp.IsSlider(goBone))) setButtonColor(uiButton, b);
+                        if (!(b && mp.IsSlider(goBone))) setUnitButtonColor(uiButton, b);
 
                         if (!b)
                         {
@@ -3277,6 +5849,80 @@ namespace CM3D2.AddBoneSlider.Plugin
 
             }
             catch (Exception ex) { Debug.LogError(LogLabel + "toggleActiveOnWideSlider() " + ex); }
+        }
+
+        //いなくなったメイドさんのIKアタッチ情報の要素をコレクションリストから削除
+        private void removeAttachMaidList(int removeNo)
+        {
+            if (attachIKMaidNo.Contains(removeNo))
+            {
+                //attachIKMaidNo.Remove(removeNo);
+                attachIKMaidList.Remove(removeNo);
+                trTargetIKBones.Remove(removeNo);
+                
+
+                IKLeftLeg.Remove(removeNo);
+                IKRightLeg.Remove(removeNo);
+                IKLeftArm.Remove(removeNo);
+                IKRightArm.Remove(removeNo);
+                
+
+                bIKAttachLeftLeg.Remove(removeNo);
+                bIKAttachRightLeg.Remove(removeNo);
+                bIKAttachLeftArm.Remove(removeNo);
+                bIKAttachRightArm.Remove(removeNo);
+
+                
+
+                //ターゲット用オブジェクトを1秒後に消す
+                if (goIKLeftLegTarget.ContainsKey(removeNo))
+                {
+                    if (goIKLeftLegTarget[removeNo] != null)
+                    {
+                        goIKLeftLegTarget[removeNo].transform.DetachChildren();
+
+                        GameObject.Destroy(goIKLeftLegTarget[removeNo], 1f);
+                    }
+                }
+                if (goIKRightLegTarget.ContainsKey(removeNo))
+                {
+                    if (goIKRightLegTarget[removeNo] != null)
+                    {
+                        goIKRightLegTarget[removeNo].transform.DetachChildren();
+                        GameObject.Destroy(goIKRightLegTarget[removeNo], 1f);
+                    }
+                }
+                if (goIKLeftArmTarget.ContainsKey(removeNo))
+                {
+                    if (goIKLeftArmTarget[removeNo] != null)
+                    {
+                        goIKLeftArmTarget[removeNo].transform.DetachChildren();
+                        GameObject.Destroy(goIKLeftArmTarget[removeNo], 1f);
+                    }
+                }
+                if (goIKRightArmTarget.ContainsKey(removeNo))
+                {
+                    if (goIKRightArmTarget[removeNo] != null)
+                    {
+                        goIKRightArmTarget[removeNo].transform.DetachChildren();
+                        GameObject.Destroy(goIKRightArmTarget[removeNo], 1f);
+                    }
+                }
+                
+
+                goIKLeftLegTarget.Remove(removeNo);
+                goIKRightLegTarget.Remove(removeNo);
+                goIKLeftArmTarget.Remove(removeNo);
+                goIKRightArmTarget.Remove(removeNo);
+                
+
+                trIKLeftLegBones.Remove(removeNo);
+                trIKRightLegBones.Remove(removeNo);
+                trIKLeftArmBones.Remove(removeNo);
+                trIKRightArmBones.Remove(removeNo);
+                
+
+            }
         }
 
         private bool visibleHandle(string bone)
@@ -3370,6 +6016,136 @@ namespace CM3D2.AddBoneSlider.Plugin
             catch (Exception ex) { Debug.LogError(LogLabel + "resetSliderValue() " + ex); bLocked = false; return; }
         }
 
+        //IKボタンの表示一括処理
+
+        //IKボタンの挙動について
+        //IKが設定されていない場合(0)：灰色、カーソル無し
+        //  この状態でクリック：(1)に移行
+        //  この状態で他をクリック：変化なし
+        //IKが設定されていて現在操作中の場合(1)：白、カーソルあり
+        //  この状態でクリック：(2)に移行
+        //  この状態で他をクリック：(2)に移行
+        //IKが設定されていれ現在操作中でない場合(2)：白、カーソル無し
+        //　この状態でクリック：(1)に移行
+        //  この状態で他をクリック：変化なし
+        //
+        //結論 
+        //カーソル無しの場合　→ボタン白、カーソル有りにする
+        //カーソル有りの場合　→ボタン白、カーソル無しにする
+
+        private void setIKButtonActive(/*GameObject _ButtonObj,*/　bool _enableCursor, bool _allikdisable = false ,bool _allmaiddisable = false)
+        {
+            //ハンドルボタンが表示されてたら消す
+            if (activeHandleName != "")
+            {
+                visibleHandle(activeHandleName);
+                setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "Handle:" + activeHandleName).GetComponent<UIButton>(), false);
+                activeHandleName = "";
+            }
+            
+            
+            UIButton uiButton0 = FindChild(goAMSPanel, "IKDetach").GetComponent<UIButton>();
+            UIButton uiButton1 = FindChild(goAMSPanel, "IKDetachAll").GetComponent<UIButton>();
+
+            UIButton uiButton2 = FindChild(goAMSPanel, "IKLeftLeg").GetComponent<UIButton>();
+            UIButton uiButton3 = FindChild(goAMSPanel, "IKRightLeg").GetComponent<UIButton>();
+            UIButton uiButton4 = FindChild(goAMSPanel, "IKLeftArm").GetComponent<UIButton>();
+            UIButton uiButton5 = FindChild(goAMSPanel, "IKRightArm").GetComponent<UIButton>();
+
+
+            //Color color = UIButton.current.defaultColor;
+            Color color = uiButton0.defaultColor;
+
+            if (!_allikdisable)
+            { 
+                //押されたボタンと解除関係のボタンを白にする。カーソルの状態は問わない
+                color.a = 1.0f;
+
+                uiButton0.defaultColor = color;
+                uiButton1.defaultColor = color;
+
+
+                UIButton.current.defaultColor = color;// new Color(color.r, color.g, color.b, _enableColor ? 1f : 0.8f);
+
+
+            }
+            else
+            {
+                //IK解除のときはIK解除以外のボタンを灰色にする
+                //全IK解除とIK解除をどうするかは引数で指定
+                color.a = 0.8f;
+
+                uiButton0.defaultColor = new Color(color.r, color.g, color.b, !_enableCursor ? 0.8f : 1.0f);
+                uiButton1.defaultColor = new Color(color.r, color.g, color.b, _allmaiddisable ? 0.8f : 1.0f);
+
+                uiButton2.defaultColor = color;
+                uiButton3.defaultColor = color;
+                uiButton4.defaultColor = color;
+                uiButton5.defaultColor = color;
+            }
+
+            FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").SetActive(false);
+
+            //カーソルは今操作中のIKボタンのものだけ表示
+            if (!_allikdisable)
+            {
+                FindChild(UIButton.current.gameObject, "SelectCursor").SetActive(_enableCursor);
+            }
+
+
+            //ついでにIKボーンアタッチ用オブジェクトも消す
+            posHandle.IKTargetVisible = false;
+        }
+
+        //現在のメイドのIKアタッチ情報に合わせてIKボタンの状態を再設定
+        private void resetIKButtonActive()
+        {
+
+            UIButton uiButton0 = FindChild(goAMSPanel, "IKDetach").GetComponent<UIButton>();
+            UIButton uiButton1 = FindChild(goAMSPanel, "IKDetachAll").GetComponent<UIButton>();
+
+            UIButton uiButton2 = FindChild(goAMSPanel, "IKLeftLeg").GetComponent<UIButton>();
+            UIButton uiButton3 = FindChild(goAMSPanel, "IKRightLeg").GetComponent<UIButton>();
+            UIButton uiButton4 = FindChild(goAMSPanel, "IKLeftArm").GetComponent<UIButton>();
+            UIButton uiButton5 = FindChild(goAMSPanel, "IKRightArm").GetComponent<UIButton>();
+
+            Color colorActive = uiButton0.defaultColor;
+            colorActive.a = 1.0f;
+            Color colorOff = new Color(colorActive.r, colorActive.g, colorActive.b, 0.8f);
+
+
+            //IKアタッチ状態を調べてそれに合わせてボタンの色を変更
+
+            bool b2 = (bIKAttachLeftLeg.ContainsKey(currentMaidNo) && bIKAttachLeftLeg[currentMaidNo]);
+            bool b3 = (bIKAttachRightLeg.ContainsKey(currentMaidNo) && bIKAttachRightLeg[currentMaidNo]);
+            bool b4 = (bIKAttachLeftArm.ContainsKey(currentMaidNo) && bIKAttachLeftArm[currentMaidNo]);
+            bool b5 = (bIKAttachRightArm.ContainsKey(currentMaidNo) && bIKAttachRightArm[currentMaidNo]);
+
+
+            uiButton2.defaultColor =  b2 ? colorActive : colorOff;
+            uiButton3.defaultColor =  b3 ? colorActive : colorOff;
+            uiButton4.defaultColor =  b4 ? colorActive : colorOff;
+            uiButton5.defaultColor =  b5 ? colorActive : colorOff;
+
+            uiButton0.defaultColor = ( b2||b3||b4||b5) ? colorActive : colorOff;
+            uiButton1.defaultColor = (attachIKMaidNo.Count != 0)? colorActive : colorOff;
+
+
+            
+
+            //カーソル全非表示
+            FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").SetActive(false);
+
+
+            //ついでにIKボーンアタッチ用オブジェクトも消す
+            posHandle.IKTargetVisible = false;
+        }
 
         private int sortGridByXMLOrder(Transform t1, Transform t2)
         {
@@ -3417,11 +6193,20 @@ namespace CM3D2.AddBoneSlider.Plugin
             }
         }
 
-        private void setButtonColor(string bone, bool b)
+        //汎用ボタン色変え
+        private void setButtonColor(UIButton button, bool _enableColor)
         {
-            setButtonColor(FindChild(trBoneUnit[bone], "Header:" + bone).GetComponent<UIButton>(), b);
+            Color color = button.defaultColor;
+
+            button.defaultColor = new Color(color.r, color.g, color.b, _enableColor ? 1f : 0.8f);
+
         }
-        private void setButtonColor(UIButton button, bool b)
+
+        private void setUnitButtonColor(string bone, bool b)
+        {
+            setUnitButtonColor(FindChild(trBoneUnit[bone], "Header:" + bone).GetComponent<UIButton>(), b);
+        }
+        private void setUnitButtonColor(UIButton button, bool b)
         {
             Color color = button.defaultColor;
 
@@ -3485,8 +6270,43 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         private int FindVisibleMaidStockNo(int startNo, int add)
         {
+            if (add == 0)
+            {
+                Maid maid = GetMaid(startNo);
+                if (maid.Visible)
+                    return startNo;
+                else
+                    return -1;
+            }
+
+            add /= Math.Abs(add);
 
 
+            int MaidCount = GetMaidCount();
+            int maidNo = startNo;
+            for (int i = 0; i < MaidCount; i += Math.Abs(add))
+            {
+                if (maidNo >= MaidCount)
+                {
+                    maidNo = 0;
+                }
+                else if (maidNo < 0)
+                {
+                    maidNo = MaidCount - 1;
+                }
+
+                Maid maid = GetMaid(maidNo);
+                if (maid != null && maid.Visible)
+                {
+                    return maidNo;
+                }
+
+                maidNo += add;
+            }
+            return -1;
+            
+
+            /*
             if (sceneLevel == 27)
             {
                 //公式撮影モード（メイド最大12人）
@@ -3563,14 +6383,33 @@ namespace CM3D2.AddBoneSlider.Plugin
                     maidNo += add;
                 }
                 return -1;
-            }
+            }*/
 
         }
 
+        //公式撮影と複数撮影でメイドさんやメイドさんの数の取得方法が違うので
+        //ここで差異を吸収する
+        private Maid GetMaid(int _No)
+        {
+            if(sceneLevel == 27)
+                return GameMain.Instance.CharacterMgr.GetMaid(_No);
+            else
+                return GameMain.Instance.CharacterMgr.GetStockMaid(_No);
+        }
+
+        private int GetMaidCount()
+        {
+            if(sceneLevel == 27)
+                return GameMain.Instance.CharacterMgr.GetMaidCount();
+            else
+                return GameMain.Instance.CharacterMgr.GetStockMaidCount();
+        }
 
         private void currentMaidChange()
         {
 
+            maid = GetMaid(currentMaidNo);
+            /*
             if (sceneLevel == 27)
             {
                 //公式撮影モード
@@ -3581,7 +6420,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 //複数撮影モード
                 maid = GameMain.Instance.CharacterMgr.GetStockMaid(currentMaidNo);
             }
-
+            */
 
 
             if (maid != null && maid.Visible == true && maid.body0.m_Bones != null)
@@ -3605,15 +6444,29 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 posHandle.SetMaid(maid);
 
+                //LeftLegHandle.SetMaid(maid);
+                //RightLegHandle.SetMaid(maid);
+                //LeftArmHandle.SetMaid(maid);
+                //RightArmHandle.SetMaid(maid);
+
+
+                //ikLeftLeg = new TBody.IKCMO();
+                //ikRightLeg = new TBody.IKCMO();
+
                 syncSlider(true);
 
                 if (activeHandleName != "")
                 {
                     visibleHandle(activeHandleName);
-                    setButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "Handle:" + activeHandleName).GetComponent<UIButton>(), false);
+                    setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "Handle:" + activeHandleName).GetComponent<UIButton>(), false);
                     activeHandleName = "";
                 }
 
+                //いったんIKボタンをオフらせる
+                //setIKButtonActive(false, true, attachIKMaidNo.Count == 0);
+                //現在のメイドのIKアタッチ状態を調べてボタンの色を変える
+                posHandle.IKTargetAttachedColor(false);
+                resetIKButtonActive();
             }
             else
             {
@@ -3621,13 +6474,76 @@ namespace CM3D2.AddBoneSlider.Plugin
             }
 
         }
+
+        private void settrTargetIKBones()
+        {
+            if (!trTargetIKBones.ContainsKey(currentMaidNo))
+            {
+                Transform[] tempTransformList =
+                {
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_handL", true),
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_handR", true),
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_footL", true),
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_footR", true),
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_hohoL", true),
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_hohoR", true),
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_muneL", true),
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_muneR", true),
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_hara", true),
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_hipL", true),
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_hipR", true),
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_anal", true),
+                        CMT.SearchObjName(maid.body0.m_Bones.transform, "_IK_vagina", true),
+                    };
+
+                trTargetIKBones.Add(currentMaidNo, tempTransformList);
+            }
+
+            int stockNo = FindVisibleMaidStockNo(this.currentMaidNo + 1, 1);
+            while (stockNo != this.currentMaidNo)
+            {
+                if(!trTargetIKBones.ContainsKey(stockNo))
+                {
+                    Maid tempmaid = GetMaid(stockNo);
+                    //Debuginfo.Log("IKBones");
+                    Transform[] tempTransformList = 
+                    {
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "_IK_handL", true),
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "_IK_handR", true),
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "_IK_footL", true),
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "_IK_footR", true),
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "_IK_hohoL", true),
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "_IK_hohoR", true),
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "_IK_muneL", true),
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "_IK_muneR", true),
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "_IK_hipL", true),
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "_IK_hipR", true),
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "_IK_anal", true),
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "_IK_vagina", true),
+                    };
+
+                    trTargetIKBones.Add(stockNo, tempTransformList);
+                }
+                                
+                stockNo = FindVisibleMaidStockNo(stockNo + 1, 1);
+            }
+        }
+
+
+        //この関数は複数撮影対策なのでメイドさん取得関数はそのままでおｋ
         private void setParentAllOffset()
         {
+
+            if (maid.transform.parent != GameMain.Instance.CharacterMgr.GetMaid(0).transform.parent)
+            {
+                Debuginfo.Log(LogLabel + "stockNo:" + currentMaidNo + " parent change");
+                maid.transform.parent = GameMain.Instance.CharacterMgr.GetMaid(0).transform.parent;
+            }
 
             int stockNo = FindVisibleMaidStockNo(this.currentMaidNo + 1, 1);
             while(stockNo != this.currentMaidNo)
             { 
-                Maid tempmaid = GameMain.Instance.CharacterMgr.GetStockMaid(stockNo);
+                Maid tempmaid = GameMain.Instance.CharacterMgr.GetMaid(stockNo);
                 if (tempmaid.transform.parent != GameMain.Instance.CharacterMgr.GetMaid(0).transform.parent)
                 {
                     Debuginfo.Log(LogLabel + "stockNo:" + stockNo + " parent change");
@@ -3693,7 +6609,6 @@ namespace CM3D2.AddBoneSlider.Plugin
         }
         private void rotateBone(string bone, string prop)
         {
-
             if (bone == "Bip01")
             {
                 trBone[bone].localPosition = new Vector3(0, 0, 0);
@@ -3783,119 +6698,322 @@ namespace CM3D2.AddBoneSlider.Plugin
                 maid.body0.boHeadToCam = false;
                 maid.body0.boEyeToCam = false;
 
-
                 Transform parentBone = posHandle.GetParentBone();
                 string bone = parentBone.name;
 
+                if (posHandle.bHandlePositionMode == false)
+                {
+                    if (bone == "AllOffset")
+                    {
 
-                float past_x = mp.fValue[bone][bone + ".x"];
-                float past_y = mp.fValue[bone][bone + ".y"];
-                float past_z = mp.fValue[bone][bone + ".z"];
-                //先にボーンを回転させておく
-                trBone[bone].rotation *= posHandle.DeltaQuaternion();
-                //回転結果をプラグイン側の数値に反映
-                calc_trBone2Param(bone);
+                        //まずいかもしれないけどAllOffsetを直に回す
+                        //まずかったから変更
+                        Vector3 tmpAllRot = GameMain.Instance.CharacterMgr.GetCharaAllRot();
+                        Quaternion tempAllQua = Quaternion.Euler(tmpAllRot.x, tmpAllRot.y, tmpAllRot.z);
 
-                //スライダー限界値を超えてないかのチェック
-                bool reRotate = false;
+                        tempAllQua *= posHandle.DeltaQuaternion();
 
-                if (mp.fValue[bone][bone + ".x"] > mp.fVmax[bone][bone + ".x"])
-                {
-                    if ((mp.fValue[bone][bone + ".x"] - 360f) <= mp.fVmax[bone][bone + ".x"] && (mp.fValue[bone][bone + ".x"] - 360f) >= mp.fVmin[bone][bone + ".x"])
-                        mp.fValue[bone][bone + ".x"] -= 360f;
-                    else
-                    {
-                        reRotate = true;
-                    }
-                }
-                if (mp.fValue[bone][bone + ".y"] > mp.fVmax[bone][bone + ".y"])
-                {
-                    if ((mp.fValue[bone][bone + ".y"] - 360f) <= mp.fVmax[bone][bone + ".y"] && (mp.fValue[bone][bone + ".y"] - 360f) >= mp.fVmin[bone][bone + ".y"])
-                        mp.fValue[bone][bone + ".y"] -= 360f;
-                    else
-                    {
-                        reRotate = true;
-                    }
-                }
+                        tmpAllRot = tempAllQua.eulerAngles;
+                        GameMain.Instance.CharacterMgr.SetCharaAllRot(tmpAllRot);
+                        //回転結果をプラグイン側の数値に反映
 
-                if (mp.fValue[bone][bone + ".z"] > mp.fVmax[bone][bone + ".z"])
-                {
-                    if ((mp.fValue[bone][bone + ".z"] - 360f) <= mp.fVmax[bone][bone + ".z"] && (mp.fValue[bone][bone + ".z"] - 360f) >= mp.fVmin[bone][bone + ".z"])
-                        mp.fValue[bone][bone + ".z"] -= 360f;
-                    else
-                    {
-                        reRotate = true;
-                    }
-                }
-                if (mp.fValue[bone][bone + ".x"] < mp.fVmin[bone][bone + ".x"])
-                {
-                    if ((mp.fValue[bone][bone + ".x"] + 360f) >= mp.fVmin[bone][bone + ".x"] && (mp.fValue[bone][bone + ".x"] + 360f) <= mp.fVmax[bone][bone + ".x"])
-                        mp.fValue[bone][bone + ".x"] += 360f;
-                    else
-                    {
-                        reRotate = true;
-                    }
-                }
-                if (mp.fValue[bone][bone + ".y"] < mp.fVmin[bone][bone + ".y"])
-                {
-                    if ((mp.fValue[bone][bone + ".y"] + 360f) >= mp.fVmin[bone][bone + ".y"] && (mp.fValue[bone][bone + ".y"] + 360f) <= mp.fVmax[bone][bone + ".y"])
-                        mp.fValue[bone][bone + ".y"] += 360f;
-                    else
-                    {
-                        reRotate = true;
-                    }
-                }
-                if (mp.fValue[bone][bone + ".z"] < mp.fVmin[bone][bone + ".z"])
-                {
-                    if ((mp.fValue[bone][bone + ".z"] + 360f) >= mp.fVmin[bone][bone + ".z"] && (mp.fValue[bone][bone + ".z"] + 360f) <= mp.fVmax[bone][bone + ".z"])
-                        mp.fValue[bone][bone + ".z"] += 360f;
-                    else
-                    {
-                        reRotate = true;
-                    }
-                }
 
-                if (!reRotate)
-                {
-                    //限界値をこえてなかったらスライダーと入力ラベルに反映
-                    foreach (Transform tr in trBoneUnit[bone])
-                    {
-                        if (tr.name == "SliderUnit")
+                        //Vector3 tmpAllRot = GameMain.Instance.CharacterMgr.GetCharaAllRot();
+
+
+                        mp.fValue["allpos"]["allpos" + ".x"] = tmpAllRot.x - mp.fVzero["allpos"]["allpos" + ".x"];
+                        mp.fValue["allpos"]["allpos" + ".y"] = tmpAllRot.y - mp.fVzero["allpos"]["allpos" + ".y"];
+                        mp.fValue["allpos"]["allpos" + ".z"] = tmpAllRot.z - mp.fVzero["allpos"]["allpos" + ".z"];
+
+                        foreach (Transform tr in trBoneUnit["allpos"])
                         {
+                            if (tr.name == "SliderUnit")
+                            {
+                                UISlider slider = FindChildByTag(tr, "Slider").GetComponent<UISlider>();
+                                string prop = getTag(slider, 2);
+                                slider.value = codecSliderValue("allpos", prop);
+                                uiValueLable["allpos"][prop].text = mp.fValue["allpos"][prop].ToString("F4");
+                                uiValueLable["allpos"][prop].gameObject.GetComponent<UIInput>().value = mp.fValue["allpos"][prop].ToString("F4");
 
-                            UISlider slider = FindChildByTag(tr, "Slider").GetComponent<UISlider>();
-                            string prop = getTag(slider, 2);
+                            }
+                        }
+                       
+
+                    }
+                    else if (bone.Contains("Maid"))
+                    {
+                        
+                        //まずいかもしれないけどメイドさんを直に回す
+                        maid.transform.rotation *= posHandle.DeltaQuaternion();
+                        //回転結果をプラグイン側の数値に反映
+
+                        Vector3 tmpMaidRot = maid.GetRot();
+
+                        mp.fValue["offset"]["offset" + ".x"] = tmpMaidRot.x - mp.fVzero["offset"]["offset" + ".x"];
+                        mp.fValue["offset"]["offset" + ".y"] = tmpMaidRot.y - mp.fVzero["offset"]["offset" + ".y"];
+                        mp.fValue["offset"]["offset" + ".z"] = tmpMaidRot.z - mp.fVzero["offset"]["offset" + ".z"];
+
+                        foreach (Transform tr in trBoneUnit["offset"])
+                        {
+                            if (tr.name == "SliderUnit")
+                            {
+                                UISlider slider = FindChildByTag(tr, "Slider").GetComponent<UISlider>();
+                                string prop = getTag(slider, 2);
+                                slider.value = codecSliderValue("offset", prop);
+                                uiValueLable["offset"][prop].text = mp.fValue["offset"][prop].ToString("F4");
+                                uiValueLable["offset"][prop].gameObject.GetComponent<UIInput>().value = mp.fValue["offset"][prop].ToString("F4");
+
+                            }
+                        }
+                        
+                    }
+                    else
+                    {
+                        float past_x = mp.fValue[bone][bone + ".x"];
+                        float past_y = mp.fValue[bone][bone + ".y"];
+                        float past_z = mp.fValue[bone][bone + ".z"];
+                        //先にボーンを回転させておく
+                        trBone[bone].rotation *= posHandle.DeltaQuaternion();
+                        //回転結果をプラグイン側の数値に反映
+                        calc_trBone2Param(bone);
+
+                        //スライダー限界値を超えてないかのチェック
+                        bool reRotate = false;
+
+                        if (mp.fValue[bone][bone + ".x"] > mp.fVmax[bone][bone + ".x"])
+                        {
+                            if ((mp.fValue[bone][bone + ".x"] - 360f) <= mp.fVmax[bone][bone + ".x"] && (mp.fValue[bone][bone + ".x"] - 360f) >= mp.fVmin[bone][bone + ".x"])
+                                mp.fValue[bone][bone + ".x"] -= 360f;
+                            else
+                            {
+                                reRotate = true;
+                            }
+                        }
+                        if (mp.fValue[bone][bone + ".y"] > mp.fVmax[bone][bone + ".y"])
+                        {
+                            if ((mp.fValue[bone][bone + ".y"] - 360f) <= mp.fVmax[bone][bone + ".y"] && (mp.fValue[bone][bone + ".y"] - 360f) >= mp.fVmin[bone][bone + ".y"])
+                                mp.fValue[bone][bone + ".y"] -= 360f;
+                            else
+                            {
+                                reRotate = true;
+                            }
+                        }
+
+                        if (mp.fValue[bone][bone + ".z"] > mp.fVmax[bone][bone + ".z"])
+                        {
+                            if ((mp.fValue[bone][bone + ".z"] - 360f) <= mp.fVmax[bone][bone + ".z"] && (mp.fValue[bone][bone + ".z"] - 360f) >= mp.fVmin[bone][bone + ".z"])
+                                mp.fValue[bone][bone + ".z"] -= 360f;
+                            else
+                            {
+                                reRotate = true;
+                            }
+                        }
+                        if (mp.fValue[bone][bone + ".x"] < mp.fVmin[bone][bone + ".x"])
+                        {
+                            if ((mp.fValue[bone][bone + ".x"] + 360f) >= mp.fVmin[bone][bone + ".x"] && (mp.fValue[bone][bone + ".x"] + 360f) <= mp.fVmax[bone][bone + ".x"])
+                                mp.fValue[bone][bone + ".x"] += 360f;
+                            else
+                            {
+                                reRotate = true;
+                            }
+                        }
+                        if (mp.fValue[bone][bone + ".y"] < mp.fVmin[bone][bone + ".y"])
+                        {
+                            if ((mp.fValue[bone][bone + ".y"] + 360f) >= mp.fVmin[bone][bone + ".y"] && (mp.fValue[bone][bone + ".y"] + 360f) <= mp.fVmax[bone][bone + ".y"])
+                                mp.fValue[bone][bone + ".y"] += 360f;
+                            else
+                            {
+                                reRotate = true;
+                            }
+                        }
+                        if (mp.fValue[bone][bone + ".z"] < mp.fVmin[bone][bone + ".z"])
+                        {
+                            if ((mp.fValue[bone][bone + ".z"] + 360f) >= mp.fVmin[bone][bone + ".z"] && (mp.fValue[bone][bone + ".z"] + 360f) <= mp.fVmax[bone][bone + ".z"])
+                                mp.fValue[bone][bone + ".z"] += 360f;
+                            else
+                            {
+                                reRotate = true;
+                            }
+                        }
+
+                        if (!reRotate)
+                        {
+                            //限界値をこえてなかったらスライダーと入力ラベルに反映
+                            foreach (Transform tr in trBoneUnit[bone])
+                            {
+                                if (tr.name == "SliderUnit")
+                                {
+
+                                    UISlider slider = FindChildByTag(tr, "Slider").GetComponent<UISlider>();
+                                    string prop = getTag(slider, 2);
 
 
 
 
 
-                            slider.value = codecSliderValue(bone, prop);
-                            uiValueLable[bone][prop].text = mp.fValue[bone][prop].ToString("F4");
-                            uiValueLable[bone][prop].gameObject.GetComponent<UIInput>().value = mp.fValue[bone][prop].ToString("F4");
+                                    slider.value = codecSliderValue(bone, prop);
+                                    uiValueLable[bone][prop].text = mp.fValue[bone][prop].ToString("F4");
+                                    uiValueLable[bone][prop].gameObject.GetComponent<UIInput>().value = mp.fValue[bone][prop].ToString("F4");
 
 
+                                }
+                            }
+                            vPastBoneAngle[bone] = trBone[bone].localEulerAngles;
+                        }
+                        else
+                        {
+                            //超えてたらボーン回転取り消し
+                            trBone[bone].localEulerAngles = vPastBoneAngle[bone];
+
+                            mp.fValue[bone][bone + ".x"] = past_x;
+                            mp.fValue[bone][bone + ".y"] = past_y;
+                            mp.fValue[bone][bone + ".z"] = past_z;
                         }
                     }
-                    vPastBoneAngle[bone] = trBone[bone].localEulerAngles;
                 }
                 else
                 {
-                    //超えてたらボーン回転取り消し
-                    trBone[bone].localEulerAngles = vPastBoneAngle[bone];
+                    if (bone == "AllOffset")
+                    {
+                        
+                        //まずいかもしれないけどAllOffsetを直に動かす
+                        //まずかったので変更
+                        
+                        //移動結果をプラグイン側の数値に反映
+                        Vector3 tmpAllPos = GameMain.Instance.CharacterMgr.GetCharaAllPos();
+                        tmpAllPos　+= posHandle.DeltaVector();
+                        GameMain.Instance.CharacterMgr.SetCharaAllPos(tmpAllPos);
 
-                    mp.fValue[bone][bone + ".x"] = past_x;
-                    mp.fValue[bone][bone + ".y"] = past_y;
-                    mp.fValue[bone][bone + ".z"] = past_z;
+                        mp.fValue["allpos"]["allpos" + ".px"] = tmpAllPos.x - mp.fVzero["allpos"]["allpos" + ".px"];
+                        mp.fValue["allpos"]["allpos" + ".py"] = tmpAllPos.y - mp.fVzero["allpos"]["allpos" + ".py"];
+                        mp.fValue["allpos"]["allpos" + ".pz"] = tmpAllPos.z - mp.fVzero["allpos"]["allpos" + ".pz"];
 
+                        foreach (Transform tr in trBoneUnit["allpos"])
+                        {
+                            if (tr.name == "SliderUnit")
+                            {
+                                UISlider slider = FindChildByTag(tr, "Slider").GetComponent<UISlider>();
+                                string prop = getTag(slider, 2);
+                                slider.value = codecSliderValue("allpos", prop);
+                                uiValueLable["allpos"][prop].text = mp.fValue["allpos"][prop].ToString("F4");
+                                uiValueLable["allpos"][prop].gameObject.GetComponent<UIInput>().value = mp.fValue["allpos"][prop].ToString("F4");
 
+                            }
+                        }
+                        
 
+                    }
+                    else if (bone.Contains("Maid"))
+                    {
+                        
+                        //まずいかもしれないけどメイドさんを直に動かす
+                        maid.transform.position += posHandle.DeltaVector();
+                        //移動結果をプラグイン側の数値に反映
+
+                        Vector3 tmpMaidPos = maid.transform.localPosition;
+
+                        mp.fValue["offset"]["offset" + ".px"] = tmpMaidPos.x - mp.fVzero["offset"]["offset" + ".px"];
+                        mp.fValue["offset"]["offset" + ".py"] = tmpMaidPos.y - mp.fVzero["offset"]["offset" + ".py"];
+                        mp.fValue["offset"]["offset" + ".pz"] = tmpMaidPos.z - mp.fVzero["offset"]["offset" + ".pz"];
+
+                        foreach (Transform tr in trBoneUnit["offset"])
+                        {
+                            if (tr.name == "SliderUnit")
+                            {
+                                UISlider slider = FindChildByTag(tr, "Slider").GetComponent<UISlider>();
+                                string prop = getTag(slider, 2);
+                                slider.value = codecSliderValue("offset", prop);
+                                uiValueLable["offset"][prop].text = mp.fValue["offset"][prop].ToString("F4");
+                                uiValueLable["offset"][prop].gameObject.GetComponent<UIInput>().value = mp.fValue["offset"][prop].ToString("F4");
+
+                            }
+                        }
+                        
+                    }
+                    else if (bone == "Bip01")
+                    {
+                        float past_px = mp.fValue[bone][bone + ".px"];
+                        float past_py = mp.fValue[bone][bone + ".py"];
+                        float past_pz = mp.fValue[bone][bone + ".pz"];
+                        //先にボーンを移動させておく
+
+                        //Debuginfo.Log(posHandle.DeltaVector().ToString());
+
+                        trBone[bone].position += posHandle.DeltaVector();
+
+                        Vector3 tmpPosition = trBone[bone].localPosition;
+
+                        mp.fValue[bone][bone + ".px"] = tmpPosition.x - mp.fVzero[bone][bone + ".px"];
+                        mp.fValue[bone][bone + ".py"] = tmpPosition.y - mp.fVzero[bone][bone + ".py"];
+                        mp.fValue[bone][bone + ".pz"] = tmpPosition.z - mp.fVzero[bone][bone + ".pz"];
+
+                        //スライダー限界値を超えてないかのチェック
+                        bool reTrans = false;
+
+                        if (mp.fValue[bone][bone + ".px"] > mp.fVmax[bone][bone + ".px"])
+                        {
+                            reTrans = true;
+                        }
+                        if (mp.fValue[bone][bone + ".py"] > mp.fVmax[bone][bone + ".py"])
+                        {
+                            reTrans = true;
+                        }
+
+                        if (mp.fValue[bone][bone + ".pz"] > mp.fVmax[bone][bone + ".pz"])
+                        {
+                            reTrans = true;
+                        }
+                        if (mp.fValue[bone][bone + ".px"] < mp.fVmin[bone][bone + ".px"])
+                        {
+                            reTrans = true;
+                        }
+                        if (mp.fValue[bone][bone + ".py"] < mp.fVmin[bone][bone + ".py"])
+                        {
+                            reTrans = true;
+                        }
+                        if (mp.fValue[bone][bone + ".pz"] < mp.fVmin[bone][bone + ".pz"])
+                        {
+                            reTrans = true;
+                        }
+
+                        if (!reTrans)
+                        {
+                            //限界値をこえてなかったらスライダーと入力ラベルに反映
+                            foreach (Transform tr in trBoneUnit[bone])
+                            {
+                                if (tr.name == "SliderUnit")
+                                {
+
+                                    UISlider slider = FindChildByTag(tr, "Slider").GetComponent<UISlider>();
+                                    string prop = getTag(slider, 2);
+
+                                    slider.value = codecSliderValue(bone, prop);
+                                    uiValueLable[bone][prop].text = mp.fValue[bone][prop].ToString("F4");
+                                    uiValueLable[bone][prop].gameObject.GetComponent<UIInput>().value = mp.fValue[bone][prop].ToString("F4");
+
+                                }
+                            }
+                            vPastBoneTrans = trBone[bone].localPosition;
+                        }
+                        else
+                        {
+                            //超えてたらボーン移動取り消し
+                            trBone[bone].localPosition = vPastBoneTrans;
+
+                            mp.fValue[bone][bone + ".px"] = past_px;
+                            mp.fValue[bone][bone + ".py"] = past_py;
+                            mp.fValue[bone][bone + ".pz"] = past_pz;
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log(LogLabel + "Bone position drag exception.");
+                    }
                 }
-
-
                 bLocked = false;
             }
         }
+
         //本体側の数値をスライダーとプラグイン側の数値に反映
         private void syncSlider(bool allSlider)
         {
@@ -3915,7 +7033,6 @@ namespace CM3D2.AddBoneSlider.Plugin
                             mp.fValue[bone][bone + ".py"] = tmpPosition.y - mp.fVzero[bone][bone + ".py"];
                             mp.fValue[bone][bone + ".pz"] = tmpPosition.z - mp.fVzero[bone][bone + ".pz"];
                         }
-
                         calc_trBone2Param(bone);
                         foreach (Transform tr in trBoneUnit[bone])
                         {
@@ -4163,59 +7280,83 @@ namespace CM3D2.AddBoneSlider.Plugin
                 // m10:2xy-2wz     m11:1-2x^2-2z^2 m12:2yz+2wx
                 // m20:2xz+2wy     m21:2yz-2wx     m22:1-2x^2-2y^2
                 // X->Y->Z
-                // YZX
+
                 float qx = trBone[bone].localRotation.x;
                 float qy = trBone[bone].localRotation.y;
                 float qz = trBone[bone].localRotation.z;
                 float qw = trBone[bone].localRotation.w;
 
-                float m10 = 2 * (qx * qy - qw * qz);
-                if (m10 > 1.0f) m10 = 1.0f;
-                if (m10 < -1.0f) m10 = -1.0f;
+                //float m10 = 2 * (qx * qy - qw * qz);
+                //if (m10 > 1.0f) m10 = 1.0f;
+                //if (m10 < -1.0f) m10 = -1.0f;
+
+                float m02 = 2 * (qx * qz - qw * qy);
+                if (m02 > 1.0f) m02 = 1.0f;
+                if (m02 < -1.0f) m02 = -1.0f;
 
                 float pastX = mp.fValue[bone][bone + ".x"];
                 float pastY = mp.fValue[bone][bone + ".y"];
                 float pastZ = mp.fValue[bone][bone + ".z"];
-                mp.fValue[bone][bone + ".z"] = Mathf.Asin(-m10) * Mathf.Rad2Deg;
-                if (System.Math.Floor(Mathf.Cos(mp.fValue[bone][bone + ".z"] * Mathf.Deg2Rad) * 10000) / 10000 != 0f)
+
+                mp.fValue[bone][bone + ".y"] = Mathf.Asin(-m02) * Mathf.Rad2Deg;
+
+                if (System.Math.Floor(Mathf.Cos(mp.fValue[bone][bone + ".y"] * Mathf.Deg2Rad) * 10000) / 10000 != 0f)
                 {
                     float m00 = 1 - 2 * (qy * qy + qz * qz);
-                    float m11 = 1 - 2 * (qx * qx + qz * qz);
+                    float m01 = 2 * (qx * qy + qw * qz);
                     float m12 = 2 * (qy * qz + qw * qx);
-                    float m20 = 2 * (qx * qz + qw * qy);
+                    float m22 = 1 - 2 * (qx * qx + qy * qy);
+
+                    //float m11 = 1 - 2 * (qx * qx + qz * qz);                    
+                    //float m20 = 2 * (qx * qz + qw * qy);
+                    
 
                     if (m00 > 1.0f) m00 = 1.0f;
                     if (m00 < -1.0f) m00 = -1.0f;
-                    if (m20 > 1.0f) m20 = 1.0f;
-                    if (m20 < -1.0f) m20 = -1.0f;
-                    if (m11 > 1.0f) m11 = 1.0f;
-                    if (m11 < -1.0f) m11 = -1.0f;
+                    if (m01 > 1.0f) m01 = 1.0f;
+                    if (m01 < -1.0f) m01 = -1.0f;
+
                     if (m12 > 1.0f) m12 = 1.0f;
                     if (m12 < -1.0f) m12 = -1.0f;
-
-                    mp.fValue[bone][bone + ".x"] = Mathf.Atan2(m12, m11) * Mathf.Rad2Deg;
-                    float before = m20 / Mathf.Cos(mp.fValue[bone][bone + ".z"] * Mathf.Deg2Rad);
-                    if (before > 1.0f) before = 1.0f;
-                    if (before < -1.0f) before = -1.0f;
-                    mp.fValue[bone][bone + ".y"] = Mathf.Asin(before) * Mathf.Rad2Deg;
-                    if (m00 < 0)
-                    {
-                        mp.fValue[bone][bone + ".y"] = 180 - mp.fValue[bone][bone + ".y"];
-                    }
-                }
-                if (System.Math.Floor(Mathf.Cos(mp.fValue[bone][bone + ".z"] * Mathf.Deg2Rad) * 10000) / 10000 == 0f || Double.IsNaN(mp.fValue[bone][bone + ".y"]))
-                {
-                    float m21 = 2 * (qy * qz - qw * qx);
-                    float m22 = 1 - 2 * (qx * qx + qy * qy);
-
-                    if (m21 > 1.0f) m21 = 1.0f;
-                    if (m21 < -1.0f) m21 = -1.0f;
                     if (m22 > 1.0f) m22 = 1.0f;
                     if (m22 < -1.0f) m22 = -1.0f;
 
-                    mp.fValue[bone][bone + ".y"] = 0f;
-                    mp.fValue[bone][bone + ".z"] = (pastZ + mp.fVzero[bone][bone + ".z"] > 0) ? 90f : -90f;
-                    mp.fValue[bone][bone + ".x"] = Mathf.Atan2(-m21, m22) * Mathf.Rad2Deg + mp.fValue[bone][bone + ".y"];
+                    //if (m20 > 1.0f) m20 = 1.0f;
+                    //if (m20 < -1.0f) m20 = -1.0f;
+                    //if (m11 > 1.0f) m11 = 1.0f;
+                    //if (m11 < -1.0f) m11 = -1.0f;
+
+
+                    mp.fValue[bone][bone + ".z"] = Mathf.Atan2(m01, m00) * Mathf.Rad2Deg;
+                    float before = m12 / Mathf.Cos(mp.fValue[bone][bone + ".y"] * Mathf.Deg2Rad);
+                    if (before > 1.0f) before = 1.0f;
+                    if (before < -1.0f) before = -1.0f;
+                    mp.fValue[bone][bone + ".x"] = Mathf.Asin(before) * Mathf.Rad2Deg;
+                    if (m22 < 0)
+                    {
+                        mp.fValue[bone][bone + ".x"] = 180 - mp.fValue[bone][bone + ".x"];
+                    }
+                }
+                if (System.Math.Floor(Mathf.Cos(mp.fValue[bone][bone + ".y"] * Mathf.Deg2Rad) * 10000) / 10000 == 0f || Double.IsNaN(mp.fValue[bone][bone + ".x"]))
+                {
+                    //float m21 = 2 * (qy * qz - qw * qx);
+                    //float m22 = 1 - 2 * (qx * qx + qy * qy);
+
+                    //if (m21 > 1.0f) m21 = 1.0f;
+                    //if (m21 < -1.0f) m21 = -1.0f;
+                    //if (m22 > 1.0f) m22 = 1.0f;
+                    //if (m22 < -1.0f) m22 = -1.0f;
+
+                    float m10 = 2 * (qx * qy - qw * qz);
+                    float m11 = 1 - 2 * (qx * qx + qz * qz);
+
+                    if (m10 > 1.0f) m10 = 1.0f;
+                    if (m10 < -1.0f) m10 = -1.0f;
+                    if (m11 > 1.0f) m11 = 1.0f;
+                    if (m11 < -1.0f) m11 = -1.0f;
+
+                    mp.fValue[bone][bone + ".x"] = 0f;
+                    mp.fValue[bone][bone + ".z"] = Mathf.Atan2(-m10, m11) * Mathf.Rad2Deg ;
                 }
 
 
@@ -4224,11 +7365,11 @@ namespace CM3D2.AddBoneSlider.Plugin
                 mp.fValue[bone][bone + ".y"] -= mp.fVzero[bone][bone + ".y"];
 
 
-                if ((mp.fValue[bone][bone + ".x"] - pastX) > (mp.fValue[bone][bone + ".x"] - 180f - pastX) && (mp.fValue[bone][bone + ".y"] - pastY) > (mp.fValue[bone][bone + ".y"] - 180f - pastY) && (mp.fValue[bone][bone + ".z"] - pastZ) > (180f - mp.fValue[bone][bone + ".z"] - 2 * mp.fVzero[bone][bone + ".z"] - pastZ))
+                if ((mp.fValue[bone][bone + ".x"] - pastX) > (mp.fValue[bone][bone + ".x"] - 180f - pastX) &&(mp.fValue[bone][bone + ".y"] - pastY) > (180f - mp.fValue[bone][bone + ".y"] - 2 * mp.fVzero[bone][bone + ".y"] - pastY) && (mp.fValue[bone][bone + ".z"] - pastZ) > (mp.fValue[bone][bone + ".z"] - 180f - pastZ))
                 {
                     mp.fValue[bone][bone + ".x"] -= 180f;
-                    mp.fValue[bone][bone + ".y"] -= 180f;
-                    mp.fValue[bone][bone + ".z"] = 180f - mp.fValue[bone][bone + ".z"] - 2 * mp.fVzero[bone][bone + ".z"];
+                    mp.fValue[bone][bone + ".y"] = 180f - mp.fValue[bone][bone + ".y"] - 2 * mp.fVzero[bone][bone + ".y"];
+                    mp.fValue[bone][bone + ".z"] -= 180f; 
                 }
 
 
@@ -4240,6 +7381,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 // m10:2xy-2wz     m11:1-2x^2-2z^2 m12:2yz+2wx
                 // m20:2xz+2wy     m21:2yz-2wx     m22:1-2x^2-2y^2
                 // Y->X->Z
+
                 float qx = trBone[bone].localRotation.x;
                 float qy = trBone[bone].localRotation.y;
                 float qz = trBone[bone].localRotation.z;
@@ -4294,8 +7436,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                     if (m00 < -1.0f) m00 = -1.0f;
 
                     mp.fValue[bone][bone + ".y"] = 0f;
-                    mp.fValue[bone][bone + ".x"] = (pastX + mp.fVzero[bone][bone + ".x"] > 0) ? 90f : -90f;
-                    mp.fValue[bone][bone + ".z"] = Mathf.Atan2(m01, m00) * Mathf.Rad2Deg + mp.fValue[bone][bone + ".y"];
+                    //mp.fValue[bone][bone + ".x"] = (pastX + mp.fVzero[bone][bone + ".x"] > 0) ? 90f : -90f;//asin(m12)
+                    mp.fValue[bone][bone + ".z"] = Mathf.Atan2(m01, m00) * Mathf.Rad2Deg ;
 
                 }
                 mp.fValue[bone][bone + ".z"] -= mp.fVzero[bone][bone + ".z"];
@@ -4311,6 +7453,223 @@ namespace CM3D2.AddBoneSlider.Plugin
             }
 
         }
+
+        //ハンドルの値をIKターゲットオブジェクトに反映
+        private bool inversekinematicFromHandle(Transform _ikParent,bool ikInitted)
+        {
+            //右クリック時はIKをボーンにアタッチ
+            //
+            /*
+            if (posHandle.rightClicked )
+            {
+                if (ikInitted == true)
+                {
+                    Debuginfo.Log("右クリック3");
+
+                    //detachIKfromBone();
+
+                    Debuginfo.Log("mouse:"+Input.mousePosition.ToString());
+                    
+                    foreach(var trArray in trTargetIKBones)
+                    {
+                        foreach(Transform trIK in trArray.Value)
+                        {
+
+                            Debuginfo.Log( Camera.main.WorldToScreenPoint(trIK.position).ToString() );
+                        }
+                    }
+
+
+                }
+                //return false;
+            }
+            */
+            
+
+            if (posHandle.controllDragged())
+            {
+                
+                bLocked = true;
+
+                maid.body0.m_Bones.animation.Stop();
+                maid.body0.boHeadToCam = false;
+                maid.body0.boEyeToCam = false;
+                
+
+
+                //IK開始時は設定の初期化
+                if (!ikInitted)
+                {
+                    ikInit(_ikParent);
+                }
+                //ハンドル君から値取得
+                _ikParent.position += posHandle.DeltaVector();
+                bLocked = false;
+
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        //IK設定の初期化
+        private void ikInit(Transform _ikParent)
+        {
+            Vector3 prePosition = posHandle.Pos;
+            //まず、ハンドルの親をIKターゲットオブジェクトに変更
+            posHandle.SetParentBone(_ikParent);
+            //IKターゲットオブジェクトの位置を親変更前のハンドルの位置の値に設定
+            _ikParent.position = prePosition;
+
+
+            Debuginfo.Log(_ikParent.position.ToString());
+
+            //posHandle.Rot = Quaternion.Euler(-90, 0, 90);//Quaternion.identity;
+
+            if (!attachIKMaidNo.Contains(currentMaidNo))
+            {
+                attachIKMaidList.Add(currentMaidNo, maid);
+                attachIKMaidNo.Add(currentMaidNo);
+            }
+        }
+
+        //IKターゲットオブジェクトクリック時の動作
+        private void ikTargetClicked()
+        {
+            if (posHandle.IKTargetClicked() && trTargetIKTemp != null)
+            {
+
+                Debuginfo.Log(LogLabel + "IKTarget:" + trTargetIKTemp.name.ToString());
+
+                bLocked = true;
+
+                maid.body0.m_Bones.animation.Stop();
+                maid.body0.boHeadToCam = false;
+                maid.body0.boEyeToCam = false;
+
+                switch (posHandle.IKmode)
+                {
+                    case HandleKun.IKMODE.LeftLeg:
+                        ikInit(goIKLeftLegTarget[currentMaidNo].transform);
+
+                        goIKLeftLegTarget[currentMaidNo].transform.parent = trTargetIKTemp;
+                        if(trTargetIKTemp.name !="Bip01")
+                            goIKLeftLegTarget[currentMaidNo].transform.localPosition = Vector3.zero;
+
+                        
+                        bIKAttachLeftLeg[currentMaidNo] = true;
+
+                        break;
+
+                    case HandleKun.IKMODE.RightLeg:
+                        ikInit(goIKRightLegTarget[currentMaidNo].transform);
+
+                        goIKRightLegTarget[currentMaidNo].transform.parent = trTargetIKTemp;
+                        if (trTargetIKTemp.name != "Bip01")
+                            goIKRightLegTarget[currentMaidNo].transform.localPosition = Vector3.zero;
+
+                        
+                        bIKAttachRightLeg[currentMaidNo] = true;
+
+                        break;
+
+                    case HandleKun.IKMODE.LeftArm:
+                        ikInit(goIKLeftArmTarget[currentMaidNo].transform);
+
+                        goIKLeftArmTarget[currentMaidNo].transform.parent = trTargetIKTemp;
+                        if (trTargetIKTemp.name != "Bip01")
+                            goIKLeftArmTarget[currentMaidNo].transform.localPosition = Vector3.zero;
+                        
+
+                        bIKAttachLeftArm[currentMaidNo] = true;
+
+                        break;
+
+                    case HandleKun.IKMODE.RightArm:
+                        ikInit(goIKRightArmTarget[currentMaidNo].transform);
+
+                        goIKRightArmTarget[currentMaidNo].transform.parent = trTargetIKTemp;
+                        if (trTargetIKTemp.name != "Bip01")
+                            goIKRightArmTarget[currentMaidNo].transform.localPosition = Vector3.zero;
+
+                        
+                        bIKAttachRightArm[currentMaidNo] = true;
+
+                        break;
+
+                    default:
+
+                        Debug.Log(LogLabel + "Handle IKmode target select exception.");
+                        break;
+                }
+                
+                if (trTargetIKTemp.name != "Bip01")
+                {
+                    posHandle.IKTargetAttachedColor(true);
+                }
+                else
+                {
+                    posHandle.IKTargetAttachedColor(false);
+                }
+
+                bIKTargetGet = false;
+
+                trTargetIKTemp = null;
+
+                posHandle.IKTargetClickAfter();
+
+                bLocked = false;
+
+            }
+        }
+
+        //IKのボーンアタッチ解除用
+        //IK関係のコレクションリスト自体は要素を削除せずそのまま
+        private void detachIKfromBone()
+        {
+            //Vector3 postPosition = ikHandle.Pos;
+            //IKターゲットの位置を初期化
+            Quaternion temp = posHandle.Rot;
+            //posHandle.transform.parent.parent = trBone["Bip01"];
+            //posHandle.transform.parent.localPosition = Vector3.zero;
+
+            if (posHandle.IKmode == HandleKun.IKMODE.LeftLeg)
+            {
+                posHandle.SetParentBone(trBone["Bip01 L Foot"]);
+                goIKLeftLegTarget[currentMaidNo].transform.parent = trBone["Bip01"];
+                bIKAttachLeftLeg[currentMaidNo] = false; 
+            }
+            else if(posHandle.IKmode == HandleKun.IKMODE.RightLeg)
+            {
+                posHandle.SetParentBone(trBone["Bip01 R Foot"]);
+                goIKRightLegTarget[currentMaidNo].transform.parent = trBone["Bip01"];
+                bIKAttachRightLeg[currentMaidNo] = false;
+            }
+            else if(posHandle.IKmode == HandleKun.IKMODE.LeftArm)
+            {
+                posHandle.SetParentBone(trBone["Bip01 L Hand"]);
+                goIKLeftArmTarget[currentMaidNo].transform.parent = trBone["Bip01"];
+                bIKAttachLeftArm[currentMaidNo] = false;
+            }
+            else if(posHandle.IKmode == HandleKun.IKMODE.RightArm)
+            {
+                posHandle.SetParentBone(trBone["Bip01 R Hand"]);
+                goIKRightArmTarget[currentMaidNo].transform.parent = trBone["Bip01"];
+                bIKAttachRightArm[currentMaidNo] = false;
+            }
+            else
+            {
+
+            }
+            //ikHandle.Pos = postPosition;
+            posHandle.transform.localPosition = Vector3.zero;
+            posHandle.Scale = 0.2f;
+            
+            posHandle.Rot = temp;//Quaternion.Euler(-90, 0, 90);
+        }
+
         private void outputANMPose(string poseName)
         {
             if(poseName == "")
@@ -4429,6 +7788,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                         else
                         {
                             Maid tempMaid;
+
+                            /*
                             if (sceneLevel == 27)
                             {
                                 //公式撮影モード
@@ -4439,6 +7800,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                                 //複数撮影モード
                                 tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(stockNo);
                             }
+                            */
+                            tempMaid = GetMaid(stockNo);
 
                             visMaidNo.Add(stockNo);
                             tempMaid.Visible = !tempMaid.Visible;
@@ -4735,6 +8098,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 foreach (int MaidNo in visMaidNo)
                 {
                     Maid tempMaid;
+                    /*
                     if (sceneLevel == 27)
                     {
                         //公式撮影モード
@@ -4745,6 +8109,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                         //複数撮影モード
                         tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(MaidNo);
                     }
+                    */
+                    tempMaid = GetMaid(MaidNo);
                     tempMaid.Visible = true;
                 }
 
