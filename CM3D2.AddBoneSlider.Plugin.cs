@@ -13,7 +13,7 @@ using System.Runtime.InteropServices;
 
 namespace CM3D2.AddBoneSlider.Plugin
 {
-    [PluginFilter("CM3D2x64"), PluginFilter("CM3D2x86")]
+    [PluginFilter("CM3D2x64"), PluginFilter("CM3D2x86"), PluginFilter("CM3D2OHx64"), PluginFilter("CM3D2OHx86")]
     [PluginName("CM3D2 AddBoneSlider"), PluginVersion("0.0.0.1")]
 
     //Debuginfo.Logの代わりにLoginfo.Logを使う
@@ -88,11 +88,91 @@ namespace CM3D2.AddBoneSlider.Plugin
         public int WindowPositionY = 40;
         public string PoseXmlDirectory = "";//Directory.GetCurrentDirectory() + @"\UnityInjector\Config";
         public string PoseImgDirectory = "";//Directory.GetCurrentDirectory() + @"\UnityInjector\Config\PoseImg";
-        public string OutputAnmDirectory = @"C:\KISS\CM3D2\PhotoModeData\Mod\Motion";
+        public string OutputAnmDirectory = "";
         public string OutputJsonDirectory = "";
         public string OutputAnmSybarisDirectory = "";
         public int DebugLogLevel = 0;
         public int HandleLegacymode = 0;
+    }
+
+    //キー入力でキー名がややこしいやつの対策
+    public static class FlexKeycode
+    {
+        static Dictionary<String, KeyCode> dicKey = new Dictionary<string, KeyCode>()
+        {
+            {"f1",KeyCode.F1},
+            {"f2",KeyCode.F2},
+            {"f3",KeyCode.F3},
+            {"f4",KeyCode.F4},
+            {"f5",KeyCode.F5},
+            {"f6",KeyCode.F6},
+            {"f7",KeyCode.F7},
+            {"f8",KeyCode.F8},
+            {"f9",KeyCode.F9},
+            {"f10",KeyCode.F10},
+            {"f11",KeyCode.F11},
+            {"f12",KeyCode.F12},
+            {"capslock",KeyCode.CapsLock},
+            {"caps lock",KeyCode.CapsLock},
+            {"backspace",KeyCode.Backspace },
+            {"back space",KeyCode.Backspace },
+            {"↓",KeyCode.DownArrow },
+            {"down",KeyCode.DownArrow },
+            {"downarrow",KeyCode.DownArrow },
+            {"down arrow",KeyCode.DownArrow },
+            {"↑",KeyCode.UpArrow },
+            {"up",KeyCode.DownArrow },
+            {"uparrow",KeyCode.DownArrow },
+            {"up arrow",KeyCode.DownArrow },
+            {"←",KeyCode.LeftArrow },
+            {"left",KeyCode.LeftArrow },
+            {"leftarrow",KeyCode.LeftArrow },
+            {"left arrow",KeyCode.LeftArrow },
+            {"→",KeyCode.RightArrow },
+            {"right",KeyCode.RightArrow },
+            {"rightarrow",KeyCode.RightArrow },
+            {"right arrow",KeyCode.RightArrow },
+            {"alt",KeyCode.LeftAlt },
+            {"leftalt",KeyCode.LeftAlt },
+            {"left alt",KeyCode.LeftAlt },
+            {"rightalt",KeyCode.RightAlt },
+            {"right alt",KeyCode.RightAlt },
+            {"shift",KeyCode.LeftShift },
+            {"leftshift",KeyCode.LeftShift },
+            {"left shift",KeyCode.LeftShift },
+            {"rightshift",KeyCode.RightShift },
+            {"right shift",KeyCode.RightShift },
+            {"control",KeyCode.LeftControl },
+            {"leftcontrol",KeyCode.LeftControl },
+            {"left control",KeyCode.LeftControl },
+            {"rightcontrol",KeyCode.RightControl },
+            {"right control",KeyCode.RightControl },
+            {"ctrl",KeyCode.LeftControl },
+            {"left ctrl",KeyCode.LeftControl },
+            {"rightctrl",KeyCode.RightControl },
+            {"right ctrl",KeyCode.RightControl },
+            {"numlock", KeyCode.Numlock },
+            {"num lock", KeyCode.Numlock },
+            {"pageup", KeyCode.PageUp },
+            {"page up", KeyCode.PageUp },
+            {"pagedown", KeyCode.PageDown },
+            {"page down", KeyCode.PageDown },
+            {"escape",KeyCode.Escape},
+            {"esc",KeyCode.Escape}
+        };
+
+        public static bool GetKeyDown(string key)
+        {
+            return dicKey.ContainsKey(key) ? Input.GetKeyDown(dicKey[key]) : Input.GetKeyDown(key);
+        }
+        public static bool GetKeyUp(string key)
+        {
+            return dicKey.ContainsKey(key) ? Input.GetKeyUp(dicKey[key]) : Input.GetKeyUp(key);
+        }
+        public static bool GetKey(string key)
+        {
+            return dicKey.ContainsKey(key) ? Input.GetKey(dicKey[key]) : Input.GetKey(key);
+        }
     }
 
     public class AddBoneSlider : UnityInjector.PluginBase
@@ -102,7 +182,13 @@ namespace CM3D2.AddBoneSlider.Plugin
         
 
         public const string PluginName = "AddBoneSlider";
-        public const string Version = "0.0.1.3";
+        public const string Version = "0.0.1.4pre";
+
+        private readonly int iSceneEdit = 5; //メイン版エディットモード
+        private readonly int iScenePhoto = 27; //メイン版公式撮影モード
+        private readonly int iSceneEditCBL = 4; //CBL版エディットモード
+        private readonly int iScenePhotoCBL= 21; //CBL版公式撮影モード
+
 
         private readonly string LogLabel = AddBoneSlider.PluginName + " : ";
 
@@ -2452,13 +2538,13 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 font = GameObject.Find("SystemUI Root").GetComponentsInChildren<UILabel>()[0].trueTypeFont;
             }
-
-            if (level != sceneLevel && ((sceneLevel == 5) || (sceneLevel == 27)))
+            //SceneLevel == 4(CBL版エディットモード)  と　SceneLevel21 == 21（CBL版公式撮影モード） も追加
+            if (level != sceneLevel && ((sceneLevel == iSceneEdit) || (sceneLevel == iScenePhoto)||(sceneLevel == iSceneEditCBL) || (sceneLevel == iScenePhotoCBL)))
             {
                 finalize();
             }
 
-            if ((level == 5) || (level == 27))
+            if ((level == iSceneEdit) || (level == iScenePhoto)|| (level == iSceneEditCBL) || (level == iScenePhotoCBL) )
             {
                 mp = new BoneParam();
                 if (xmlLoad = mp.Init()) StartCoroutine(initCoroutine());
@@ -2469,11 +2555,12 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         public void Update()
         {
-            if (((sceneLevel == 5) || (sceneLevel == 27)) && bInitCompleted)
+            if (((sceneLevel == iSceneEdit) || (sceneLevel == iScenePhoto)|| (sceneLevel == iSceneEditCBL) || (sceneLevel == iScenePhotoCBL)) && bInitCompleted)
             {
 
-
-                if (Input.GetKeyDown(settingIni.ToggleKey))
+                //Input.GetKeyDownの代わりに
+                //FlexKeycode.GetKeyDownを使う
+                if (FlexKeycode.GetKeyDown(settingIni.ToggleKey))
                 {
                     if (maid != null && maid.Visible == true && visible == false)
                     {
@@ -2988,7 +3075,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                     setSliderVisible(bone, b);
                 }
 
-                if (sceneLevel == 5 && bone == "allpos")
+                if ((sceneLevel == iSceneEdit || sceneLevel == iSceneEditCBL) && bone == "allpos")
                 {
                     setParentAllOffset();
                 }
@@ -4150,7 +4237,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 string bone = getTag(UIButton.current, 1);
 
-                if (sceneLevel == 5 && bone == "allpos")
+                if ((sceneLevel == iSceneEdit|| sceneLevel == iSceneEditCBL) && bone == "allpos")
                 {
                     setParentAllOffset();
                 }
@@ -4529,6 +4616,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                         settingIni.OutputAnmSybarisDirectory = "none";
                     }
 
+                    //CBL版をサポートに加えたのでフォルダ決め打ちしないでここで参照＆設定
+                    settingIni.OutputAnmDirectory = Directory.GetCurrentDirectory() + @"\PhotoModeData\Mod\Motion";
 
                 }
                 else
@@ -4578,7 +4667,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                         }
                     }
 
-
+                    
                     settingIni.ToggleKey = settingIni.ToggleKey.ToLower();
 
 
@@ -4605,7 +4694,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 maid = GameMain.Instance.CharacterMgr.GetMaid(currentMaidNo);
 
                 //じゃまずいから複数メイド撮影のときだけcurrentMaidNoの値をここで同期しとく
-                if(sceneLevel == 5)
+                if(sceneLevel == iSceneEdit || sceneLevel == iSceneEditCBL)
                 {
                     List<Maid> maidList = GameMain.Instance.CharacterMgr.GetStockMaidList();
                     for (int i = 0; i < maidList.Count; i++)
@@ -4786,7 +4875,9 @@ namespace CM3D2.AddBoneSlider.Plugin
                 
 
                 //EventDelegate.Remove(goProfileTabCopy.GetComponent<UIButton>().onClick, new EventDelegate.Callback(ProfileMgr.Instance.ChangeCommentTab));
-                EventDelegate.Remove(goProfileTabCopy.GetComponent<UIButton>().onClick, goProfileTabCopy.GetComponent<UIButton>().onClick.First());
+
+                if(goProfileTabCopy.GetComponent<UIButton>().onClick.Count > 0)
+                    EventDelegate.Remove(goProfileTabCopy.GetComponent<UIButton>().onClick, goProfileTabCopy.GetComponent<UIButton>().onClick.First());
 
                 goProfileTabCopy.SetActive(false);
                 goCancelCopy.SetActive(false);
@@ -5027,12 +5118,25 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                     XmlNodeList BonesNodeS = poses.SelectNodes("/poses/bones");
 
+
+                    //サムネポーズ紛失した時用
+                    List<XmlNode> deleteNodes = new List<XmlNode>();
+
+
+
                     foreach (XmlNode bonesNode in BonesNodeS)
                     {
+                        
                         string name = ((XmlElement)bonesNode).GetAttribute("pose_id");
 
-                        // button複製・追加
+                        //画像がなかった場合はとばす&ポーズ消去
+                        if (!File.Exists(settingIni.PoseImgDirectory + @"\PoseImg" + name + ".png"))
+                        {
+                            deleteNodes.Add(bonesNode);
+                            continue;
+                        }
 
+                        // button複製・追加
                         GameObject goPoseImgButton = SetCloneChild(goPSScrollViewTable, goPoseImgButtonOriginal, "Image:" + name);
                         goPoseImgButton.AddComponent<UIDragScrollView>().scrollView = uiPSScrollView;
 
@@ -5046,6 +5150,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
 
                         Texture2D thumPose = new Texture2D(2, 2);//
+                        
                         byte[] bytes = File.ReadAllBytes(settingIni.PoseImgDirectory + @"\PoseImg" + name + ".png");
                         thumPose.LoadImage(bytes);
                         if (thumPose != null)
@@ -5068,6 +5173,13 @@ namespace CM3D2.AddBoneSlider.Plugin
                         NGUITools.UpdateWidgetCollider(goPoseImgButton);
                         goPoseImgButton.SetActive(true);
                     }
+
+                    //画像がなかったポーズのノード消去
+                    foreach(XmlNode deleteNode in deleteNodes)
+                    {
+                        doc.DocumentElement.RemoveChild(deleteNode);
+                    }
+
                 }
                 Debuginfo.Log(LogLabel + " goPoseImgButton complete.");
                 ///////////////////////////////////////////////
@@ -6391,7 +6503,7 @@ namespace CM3D2.AddBoneSlider.Plugin
         //ここで差異を吸収する
         private Maid GetMaid(int _No)
         {
-            if(sceneLevel == 27)
+            if(sceneLevel == iScenePhoto || sceneLevel == iScenePhotoCBL)
                 return GameMain.Instance.CharacterMgr.GetMaid(_No);
             else
                 return GameMain.Instance.CharacterMgr.GetStockMaid(_No);
@@ -6399,7 +6511,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         private int GetMaidCount()
         {
-            if(sceneLevel == 27)
+            if(sceneLevel == iScenePhoto || sceneLevel == iScenePhotoCBL)
                 return GameMain.Instance.CharacterMgr.GetMaidCount();
             else
                 return GameMain.Instance.CharacterMgr.GetStockMaidCount();
@@ -7923,7 +8035,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 //エディットモードかつメイドさんが2人以上いて対象が1人目じゃない場合
                 //bool bVisBra = maid.body0.goSlot[i].AttachName
-                if (sceneLevel == 5 && maid != GameMain.Instance.CharacterMgr.GetMaid(0))//bVisivle.Count > 0)
+                if ((sceneLevel == iSceneEdit|| sceneLevel == iSceneEditCBL) && maid != GameMain.Instance.CharacterMgr.GetMaid(0))//bVisivle.Count > 0)
                 {
                     foreach (TBodySkin goSlotID in maid.body0.goSlot)
                     {
@@ -8067,7 +8179,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 maid.AllProcProp();
 
 
-                if (sceneLevel == 5 && maid != GameMain.Instance.CharacterMgr.GetMaid(0))//bVisivle.Count > 0)
+                if ((sceneLevel == iSceneEdit|| sceneLevel == iSceneEditCBL) && maid != GameMain.Instance.CharacterMgr.GetMaid(0))//bVisivle.Count > 0)
                 {
                     foreach (var exSlotVisiblePair in existGoSlot.Select((pairSlotIDList, index) => new { pairSlotIDList, index }))
                     {
@@ -8158,15 +8270,15 @@ namespace CM3D2.AddBoneSlider.Plugin
                 //int namidaLv = 0;
 
                 string strFace2 = "頬";
-                if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["tear3"]] == 1)
+                if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["hohol"]] == 1)
                 {
                     strFace2 += "３涙";
                 }
-                else if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["tear2"]] == 1)
+                else if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["hoho"]] == 1)
                 {
                     strFace2 += "２涙";
                 }
-                else if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["tear1"]] == 1)
+                else if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["hohos"]] == 1)
                 {
                     strFace2 += "１涙";
                 }
@@ -8175,15 +8287,15 @@ namespace CM3D2.AddBoneSlider.Plugin
                     strFace2 += "０涙";
                 }
 
-                if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["hohol"]] == 1)
+                if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["tear3"]] == 1)
                 {
                     strFace2 += "３";
                 }
-                else if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["hoho"]] == 1)
+                else if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["tear2"]] == 1)
                 {
                     strFace2 += "２";
                 }
-                else if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["hohos"]] == 1)
+                else if (maid.body0.Face.morph.BlendValues[(int)maid.body0.Face.morph.hash["tear1"]] == 1)
                 {
                     strFace2 += "１";
                 }
