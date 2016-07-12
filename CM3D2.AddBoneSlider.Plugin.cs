@@ -9,17 +9,14 @@ using System.Xml;
 using System.Linq;
 using UnityEngine;
 using UnityInjector.Attributes;
-using System.Runtime.InteropServices;
+//using System.Runtime.InteropServices;
 
 namespace CM3D2.AddBoneSlider.Plugin
 {
-<<<<<<< HEAD
+
     [PluginFilter("CM3D2x64"), PluginFilter("CM3D2x86"), PluginFilter("CM3D2OHx64"),PluginFilter("CM3D2OHx86")]
     [PluginName("CM3D2 AddBoneSlider"), PluginVersion("0.0.1.4")]
-=======
-    [PluginFilter("CM3D2x64"), PluginFilter("CM3D2x86"), PluginFilter("CM3D2OHx64"), PluginFilter("CM3D2OHx86")]
-    [PluginName("CM3D2 AddBoneSlider"), PluginVersion("0.0.0.1")]
->>>>>>> develop05
+
 
     //Debuginfo.Logの代わりにLoginfo.Logを使う
     static class Debuginfo
@@ -27,7 +24,7 @@ namespace CM3D2.AddBoneSlider.Plugin
         public static int settingLevel = 0;
         public static string premessage = "";
         //_messageLV 0：常に表示 1：公開デバッグモード用メッセージ 2：個人テスト用メッセージ
-        public static void Log(string _message, int _messageLv = 2)
+        internal static void Log(string _message, int _messageLv = 2)
         {
             if (_messageLv <= settingLevel)
             {
@@ -36,2916 +33,30 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         }
     }
-
-    //ini設定用
-    static class IniFileHelper
-    {
-        [DllImport("KERNEL32.DLL")]
-        public static extern uint GetPrivateProfileString(string lpAppName, string lpKeyName, string lpDefault, StringBuilder lpReturnedString, uint nSize, string lpFileName);
-
-        [DllImport("KERNEL32.DLL")]
-        public static extern uint GetPrivateProfileInt(string lpAppName, string lpKeyName, int nDefault, string lpFileName);
-
-        [DllImport("KERNEL32.DLL")]
-        public static extern uint WritePrivateProfileString(string lpAppName, string lpKeyName, string lpString, string lpFileName);
-
-        public static T Read<T>(string section, string filepath)
-        {
-            T ret = (T)Activator.CreateInstance(typeof(T));
-
-            foreach (var n in typeof(T).GetFields())
-            {
-                if (n.FieldType == typeof(int))
-                {
-                    n.SetValue(ret, (int)GetPrivateProfileInt(section, n.Name, 0, Path.GetFullPath(filepath)));
-                }
-                else if (n.FieldType == typeof(uint))
-                {
-                    n.SetValue(ret, GetPrivateProfileInt(section, n.Name, 0, Path.GetFullPath(filepath)));
-                }
-                else
-                {
-                    var sb = new StringBuilder(1024);
-                    GetPrivateProfileString(section, n.Name, "", sb, (uint)sb.Capacity, Path.GetFullPath(filepath));
-                    n.SetValue(ret, sb.ToString());
-                }
-            };
-
-            return ret;
-        }
-
-        public static void Write<T>(string secion, T data, string filepath)
-        {
-            foreach (var n in typeof(T).GetFields())
-            {
-                WritePrivateProfileString(secion, n.Name, n.GetValue(data).ToString(), Path.GetFullPath(filepath));
-            };
-        }
-
-    }
-    //todo0.0.1.5-02
-    //Fキー以外での起動
-    //iniの内容
-    public class SettingIni
-    {
-        public string ToggleKey = "f10";
-        public string AnmOutputmode = "";
-        public int WindowPositionX = -480;
-        public int WindowPositionY = 40;
-        public string PoseXmlDirectory = "";//Directory.GetCurrentDirectory() + @"\UnityInjector\Config";
-        public string PoseImgDirectory = "";//Directory.GetCurrentDirectory() + @"\UnityInjector\Config\PoseImg";
-        public string OutputAnmDirectory = "";
-        public string OutputJsonDirectory = "";
-        public string OutputAnmSybarisDirectory = "";
-        public int DebugLogLevel = 0;
-        public int HandleLegacymode = 0;
-    }
-
-<<<<<<< HEAD
-    public class IKManage
-=======
-    //キー入力でキー名がややこしいやつの対策
-    public static class FlexKeycode
-    {
-        static Dictionary<String, KeyCode> dicKey = new Dictionary<string, KeyCode>()
-        {
-            {"f1",KeyCode.F1},
-            {"f2",KeyCode.F2},
-            {"f3",KeyCode.F3},
-            {"f4",KeyCode.F4},
-            {"f5",KeyCode.F5},
-            {"f6",KeyCode.F6},
-            {"f7",KeyCode.F7},
-            {"f8",KeyCode.F8},
-            {"f9",KeyCode.F9},
-            {"f10",KeyCode.F10},
-            {"f11",KeyCode.F11},
-            {"f12",KeyCode.F12},
-            {"capslock",KeyCode.CapsLock},
-            {"caps lock",KeyCode.CapsLock},
-            {"backspace",KeyCode.Backspace },
-            {"back space",KeyCode.Backspace },
-            {"↓",KeyCode.DownArrow },
-            {"down",KeyCode.DownArrow },
-            {"downarrow",KeyCode.DownArrow },
-            {"down arrow",KeyCode.DownArrow },
-            {"↑",KeyCode.UpArrow },
-            {"up",KeyCode.DownArrow },
-            {"uparrow",KeyCode.DownArrow },
-            {"up arrow",KeyCode.DownArrow },
-            {"←",KeyCode.LeftArrow },
-            {"left",KeyCode.LeftArrow },
-            {"leftarrow",KeyCode.LeftArrow },
-            {"left arrow",KeyCode.LeftArrow },
-            {"→",KeyCode.RightArrow },
-            {"right",KeyCode.RightArrow },
-            {"rightarrow",KeyCode.RightArrow },
-            {"right arrow",KeyCode.RightArrow },
-            {"alt",KeyCode.LeftAlt },
-            {"leftalt",KeyCode.LeftAlt },
-            {"left alt",KeyCode.LeftAlt },
-            {"rightalt",KeyCode.RightAlt },
-            {"right alt",KeyCode.RightAlt },
-            {"shift",KeyCode.LeftShift },
-            {"leftshift",KeyCode.LeftShift },
-            {"left shift",KeyCode.LeftShift },
-            {"rightshift",KeyCode.RightShift },
-            {"right shift",KeyCode.RightShift },
-            {"control",KeyCode.LeftControl },
-            {"leftcontrol",KeyCode.LeftControl },
-            {"left control",KeyCode.LeftControl },
-            {"rightcontrol",KeyCode.RightControl },
-            {"right control",KeyCode.RightControl },
-            {"ctrl",KeyCode.LeftControl },
-            {"left ctrl",KeyCode.LeftControl },
-            {"rightctrl",KeyCode.RightControl },
-            {"right ctrl",KeyCode.RightControl },
-            {"numlock", KeyCode.Numlock },
-            {"num lock", KeyCode.Numlock },
-            {"pageup", KeyCode.PageUp },
-            {"page up", KeyCode.PageUp },
-            {"pagedown", KeyCode.PageDown },
-            {"page down", KeyCode.PageDown },
-            {"escape",KeyCode.Escape},
-            {"esc",KeyCode.Escape}
-        };
-
-        public static bool GetKeyDown(string key)
-        {
-            return dicKey.ContainsKey(key) ? Input.GetKeyDown(dicKey[key]) : Input.GetKeyDown(key);
-        }
-        public static bool GetKeyUp(string key)
-        {
-            return dicKey.ContainsKey(key) ? Input.GetKeyUp(dicKey[key]) : Input.GetKeyUp(key);
-        }
-        public static bool GetKey(string key)
-        {
-            return dicKey.ContainsKey(key) ? Input.GetKey(dicKey[key]) : Input.GetKey(key);
-        }
-    }
-
-    public class AddBoneSlider : UnityInjector.PluginBase
->>>>>>> develop05
-    {
-        private readonly string LogLabel = AddBoneSlider.PluginName + " : ";
-        private readonly float clickCheckOffsetInit = 40f;
-
-        private class IKPropList
-        {
-            private readonly string LogLabel = AddBoneSlider.PluginName + " : ";
-
-<<<<<<< HEAD
-            //本体側にIKが使えないのでこちらで用意
-            Dictionary<int, IKCONSTRAINED> IK = new Dictionary<int, IKCONSTRAINED>();
-            //IK脚腕のアタッチ状態判別用
-            Dictionary<int, bool> bIKAttach = new Dictionary<int, bool>();
-            //IKターゲット用
-            public Dictionary<int, GameObject> goIKTarget = new Dictionary<int, GameObject>();
-            //IK対象ボーンのtransform
-            public Dictionary<int, Transform[]> trIKBones = new Dictionary<int, Transform[]>();
-=======
-        public const string PluginName = "AddBoneSlider";
-        public const string Version = "0.0.1.4pre";
-
-        private readonly int iSceneEdit = 5; //メイン版エディットモード
-        private readonly int iScenePhoto = 27; //メイン版公式撮影モード
-        private readonly int iSceneEditCBL = 4; //CBL版エディットモード
-        private readonly int iScenePhotoCBL= 21; //CBL版公式撮影モード
-
->>>>>>> develop05
-
-            private float[,] constrait;
-
-            public IKPropList(float[,] _constrait)
-            {
-                constrait = _constrait;
-            }
-
-            public void initList(Transform Bip01,Transform[] boneList, Maid maid,int currentMaidNo)
-            {
-                if (!IK.ContainsKey(currentMaidNo))
-                {
-                    //Debuginfo.Log("init IKLeftLeg");
-                    IKCONSTRAINED ikTempLeftLeg = new IKCONSTRAINED();
-                    /*
-                    float[,] constrait =
-                        {
-                                {
-                                    mp.fVmin["Bip01 L Foot"]["Bip01 L Foot.x"] + mp.fVzero["Bip01 L Foot"]["Bip01 L Foot.x"],
-                                    mp.fVmax["Bip01 L Foot"]["Bip01 L Foot.x"] + mp.fVzero["Bip01 L Foot"]["Bip01 L Foot.x"],
-                                    mp.fVmin["Bip01 L Foot"]["Bip01 L Foot.y"] + mp.fVzero["Bip01 L Foot"]["Bip01 L Foot.y"],
-                                    mp.fVmax["Bip01 L Foot"]["Bip01 L Foot.y"] + mp.fVzero["Bip01 L Foot"]["Bip01 L Foot.y"],
-                                    mp.fVmin["Bip01 L Foot"]["Bip01 L Foot.z"] + mp.fVzero["Bip01 L Foot"]["Bip01 L Foot.z"],
-                                    mp.fVmax["Bip01 L Foot"]["Bip01 L Foot.z"] + mp.fVzero["Bip01 L Foot"]["Bip01 L Foot.z"]
-                                },
-                                {
-                                    mp.fVmin["Bip01 L Calf"]["Bip01 L Calf.x"] + mp.fVzero["Bip01 L Calf"]["Bip01 L Calf.x"],
-                                    mp.fVmax["Bip01 L Calf"]["Bip01 L Calf.x"] + mp.fVzero["Bip01 L Calf"]["Bip01 L Calf.x"],
-                                    mp.fVmin["Bip01 L Calf"]["Bip01 L Calf.y"] + mp.fVzero["Bip01 L Calf"]["Bip01 L Calf.y"],
-                                    mp.fVmax["Bip01 L Calf"]["Bip01 L Calf.y"] + mp.fVzero["Bip01 L Calf"]["Bip01 L Calf.y"],
-                                    mp.fVmin["Bip01 L Calf"]["Bip01 L Calf.z"] + mp.fVzero["Bip01 L Calf"]["Bip01 L Calf.z"],
-                                    mp.fVmax["Bip01 L Calf"]["Bip01 L Calf.z"] + mp.fVzero["Bip01 L Calf"]["Bip01 L Calf.z"]
-                                },
-                                {
-                                    mp.fVmin["Bip01 L Thigh"]["Bip01 L Thigh.x"] + mp.fVzero["Bip01 L Thigh"]["Bip01 L Thigh.x"],
-                                    mp.fVmax["Bip01 L Thigh"]["Bip01 L Thigh.x"] + mp.fVzero["Bip01 L Thigh"]["Bip01 L Thigh.x"],
-                                    mp.fVmin["Bip01 L Thigh"]["Bip01 L Thigh.y"] + mp.fVzero["Bip01 L Thigh"]["Bip01 L Thigh.y"],
-                                    mp.fVmax["Bip01 L Thigh"]["Bip01 L Thigh.y"] + mp.fVzero["Bip01 L Thigh"]["Bip01 L Thigh.y"],
-                                    mp.fVmin["Bip01 L Thigh"]["Bip01 L Thigh.z"] + mp.fVzero["Bip01 L Thigh"]["Bip01 L Thigh.z"],
-                                    mp.fVmax["Bip01 L Thigh"]["Bip01 L Thigh.z"] + mp.fVzero["Bip01 L Thigh"]["Bip01 L Thigh.z"]
-                                }
-                            };
-                    */
-                    ikTempLeftLeg.Init(boneList, maid.body0, constrait);
-                    IK.Add(currentMaidNo, ikTempLeftLeg);
-                }
-
-
-                //IK対象ボーンリストが設定されていなければ初期化
-                if (!trIKBones.ContainsKey(currentMaidNo))
-                {
-                    //Debuginfo.Log("init trIKLeftLegBones");
-                    //Transform[] boneList = { trBone["Bip01 L Thigh"], trBone["Bip01 L Calf"], trBone["Bip01 L Foot"] };
-                    trIKBones.Add(currentMaidNo, boneList);
-                }
-
-                //IKアタッチ状態が設定されていなければ一時表示[None]で初期化設定
-                if (!bIKAttach.ContainsKey(currentMaidNo))
-                {
-                    //Debuginfo.Log("init bIKAttachLeftLeg");
-                    bIKAttach.Add(currentMaidNo, false);
-                }
-
-                //IKターゲットが生成されてなければ生成
-                if (!goIKTarget.ContainsKey(currentMaidNo))
-                {
-                    //Debuginfo.Log("init goIKLeftLegTarget");
-                    GameObject tempIKLeftLegTarget = new GameObject();
-                    tempIKLeftLegTarget.transform.parent = Bip01;
-                    goIKTarget.Add(currentMaidNo, tempIKLeftLegTarget);
-                    //念のため
-                    bIKAttach[currentMaidNo] = false;
-                }
-            }
-
-            public void Destroy()
-            {
-                IK.Clear();
-                bIKAttach.Clear();
-                goIKTarget.Clear();
-                trIKBones.Clear();
-            }
-
-            //IK設定の初期化
-            public void ikInit(HandleKun posHandle, int currentMaidNo)
-            {
-                Vector3 prePosition = posHandle.Pos;
-                //まず、ハンドルの親をIKターゲットオブジェクトに変更
-                posHandle.SetParentBone(goIKTarget[currentMaidNo].transform);
-                //IKターゲットオブジェクトの位置を親変更前のハンドルの位置の値に設定
-                goIKTarget[currentMaidNo].transform.position = prePosition;
-
-
-                Debuginfo.Log(goIKTarget[currentMaidNo].transform.position.ToString());
-                
-            }
-
-            public void inversekinematicHandle(HandleKun posHandle, int currentMaidNo)
-            {
-
-                //IK開始時は設定の初期化
-                if (!bIKAttach[currentMaidNo])
-                {
-                    ikInit(posHandle, currentMaidNo);
-                }
-                //ハンドル君から値取得
-                goIKTarget[currentMaidNo].transform.position += posHandle.DeltaVector();
-
-                bIKAttach[currentMaidNo] = true;
-            }
-
-            public void lateupdateFunc(int m,Maid maid,bool isArm ,bool isLeft)
-            {
-                if (bIKAttach.ContainsKey(m) && bIKAttach[m])
-                {
-
-                    //公式撮影でアタッチ対象のメイドさんがいなくなった場合
-                    if (goIKTarget[m] == null)
-                    {
-                        Debuginfo.Log(LogLabel + "IK is null!");
-
-                        GameObject tempIKTarget = new GameObject();
-                        tempIKTarget.transform.parent = CMT.SearchObjName(maid.body0.m_Bones.transform, "Bip01", true);
-                        goIKTarget[m] = tempIKTarget;
-                        goIKTarget[m].transform.position = trIKBones[m][2].position;
-
-                        //if(trTargetIKBones.ContainsKey(m))
-                        //   trTargetIKBones.Remove(m);
-                        
-                    }
-                    else if (goIKTarget[m].activeInHierarchy == false)
-                    {
-                        //複数撮影でアタッチ対象のメイドさんがいなくなった場合
-                        Debuginfo.Log(LogLabel + "IK is invisible!");
-
-                        goIKTarget[m].transform.parent = CMT.SearchObjName(maid.body0.m_Bones.transform, "Bip01", true);
-                        goIKTarget[m].transform.position = trIKBones[m][2].position;
-                        
-                    }
-
-                    if (isArm)
-                    {
-                        if (isLeft && (maid.body0.tgtHandL != null || maid.body0.tgtHandL_AttachName != string.Empty))
-                            return;
-                        else if(maid.body0.tgtHandR != null || maid.body0.tgtHandR_AttachName != string.Empty)
-                            return;
-                    }
-
-                    IK[m].Proc(trIKBones[m][0], trIKBones[m][1], trIKBones[m][2], goIKTarget[m].transform.position);
-
-
-                    //for (int i = 0; i < IKCalc; ++i)
-                    //    IKLeftLeg[m].Porc(trIKLeftLegBones[m][0], trIKLeftLegBones[m][1], trIKLeftLegBones[m][2], goIKLeftLegTarget[m].transform.position, Vector3.zero);
-                }
-            }
-
-            public void removeAttachMaidList(int removeNo)
-            {
-                IK.Remove(removeNo);
-                bIKAttach.Remove(removeNo);
-
-                //ターゲット用オブジェクトを1秒後に消す
-                if (goIKTarget.ContainsKey(removeNo))
-                {
-                    if (goIKTarget[removeNo] != null)
-                    {
-                        goIKTarget[removeNo].transform.DetachChildren();
-
-                        GameObject.Destroy(goIKTarget[removeNo], 1f);
-                    }
-                }
-                goIKTarget.Remove(removeNo);
-                trIKBones.Remove(removeNo);
-            }
-
-            public void ikTargetClicked(HandleKun posHandle, int currentMaidNo, Transform trTargetIKTemp)
-            {
-                ikInit(posHandle,currentMaidNo);
-
-                goIKTarget[currentMaidNo].transform.parent = trTargetIKTemp;
-                if (trTargetIKTemp.name != "Bip01")
-                    goIKTarget[currentMaidNo].transform.localPosition = Vector3.zero;
-
-
-                bIKAttach[currentMaidNo] = true;
-            }
-
-            public void detachIKfromBone(Transform parent, int currentMaidNo)
-            {
-                goIKTarget[currentMaidNo].transform.parent = parent;
-                bIKAttach[currentMaidNo] = false;
-            }
-
-            public bool checkIKAttach(int currentMaidNo)
-            {
-                return (bIKAttach.ContainsKey(currentMaidNo) && bIKAttach[currentMaidNo]);
-            }
-
-            public void detachIK(Transform Bip01, int currentMaidNo)
-            {
-                if (bIKAttach.ContainsKey(currentMaidNo))
-                {
-                    bIKAttach[currentMaidNo] = false;
-                    goIKTarget[currentMaidNo].transform.parent = Bip01;
-                }
-            }
-
-            public void detachAll(int removeNo)
-            {
-                if (goIKTarget.ContainsKey(removeNo))
-                {
-                    if (goIKTarget[removeNo] != null)
-                    {
-                        goIKTarget[removeNo].transform.DetachChildren();
-                        GameObject.Destroy(goIKTarget[removeNo], 0.5f);
-                    }
-                }
-                
-                IK.Clear();
-                bIKAttach.Clear();
-                goIKTarget.Clear();
-                trIKBones.Clear();
-            }
-
-            public bool checkParentName(int currentMaidNo)
-            {
-                return goIKTarget.ContainsKey(currentMaidNo) && (goIKTarget[currentMaidNo].transform.parent.name != "Bip01");
-            }
-        }
-
-        private IKPropList IKListLeftLeg;//= new IKPropList();
-        private IKPropList IKListRightLeg; //= new IKPropList();
-        private IKPropList IKListLeftArm;//= new IKPropList();
-        private IKPropList IKListRightArm;//= new IKPropList();
-
-        //アタッチ状態が付与されたメイドリスト
-        public Dictionary<int, Maid> attachIKMaidList = new Dictionary<int, Maid>();
-        public List<int> attachIKMaidNo = new List<int>();
-        public HashSet<int> DeleteNoList = new HashSet<int>();
-
-
-        //IKをアタッチする_IK_ボーンのtransform
-        //public Dictionary<int, Transform[]> trTargetIKBones = new Dictionary<int, Transform[]>();
-        public Dictionary<int, Transform[]> trTargetIKBones = new Dictionary<int, Transform[]>();
-        public Transform trTargetIKTemp = null;
-        public Dictionary<string, string> sIKBoneName = new Dictionary<string, string>()
-        {
-            {"_IK_handL","左手" },
-            {"_IK_handR","右手" },
-            {"_IK_footL","左足" },
-            {"_IK_footR","右足" },
-            {"_IK_hohoL","左頬" },
-            {"_IK_hohoR","右頬" },
-            {"_IK_muneL","左胸" },
-            {"_IK_muneR","右胸" },
-            {"_IK_hara","お腹" },
-            {"_IK_hipL","左尻" },
-            {"_IK_hipR","右尻" },
-            {"_IK_anal","後穴" },
-            {"_IK_vagina","前穴" },
-            {"Bip01","解除" }
-        };
-
-        bool bIKTargetGet = false;
-
-        public IKManage(float[,]_constraitLeftLeg, float[,] _constraitRightLeg, float[,] _constraitLeftArm, float[,] _constraitRightArm)
-        {
-            IKListLeftLeg = new IKPropList(_constraitLeftLeg);
-            IKListRightLeg = new IKPropList(_constraitRightLeg);
-            IKListLeftArm = new IKPropList(_constraitLeftArm);
-            IKListRightArm = new IKPropList(_constraitRightArm);
-    }
-
-        public void initList(Transform Bip01, Transform[] boneList, Maid maid,int currentMaidNo,int No)
-        {
-            switch(No)
-            {
-                case 1:
-                    IKListLeftLeg.initList(Bip01, boneList, maid, currentMaidNo);
-                    break;
-                case 2:
-                    IKListRightLeg.initList(Bip01, boneList, maid, currentMaidNo);
-                    break;
-                case 3:
-                    IKListLeftArm.initList(Bip01, boneList, maid, currentMaidNo);
-                    break;
-                case 4:
-                    IKListRightArm.initList(Bip01, boneList, maid, currentMaidNo);
-                    break;
-                default:
-                    break;
-
-            }
-        }
-
-        public void Destroy()
-        {
-            attachIKMaidNo.Clear();
-            attachIKMaidList.Clear();
-            trTargetIKBones.Clear();
-
-            IKListLeftLeg.Destroy();
-            IKListRightLeg.Destroy();
-            IKListLeftArm.Destroy();
-            IKListRightArm.Destroy();
-        }
-
-        public void lateupdateFunc(HandleKun posHandle)
-        {
-            foreach (int m in attachIKMaidNo)
-            {
-                Debuginfo.Log(LogLabel + "finalize1");
-                //メイドさんがいなくなっていればスキップして
-                //リストから除外
-                if (attachIKMaidList[m] == null || attachIKMaidList[m].Visible == false)
-                {
-                    Debuginfo.Log(LogLabel + "maid[" + m + "] is LOST");
-                    removeAttachMaidList(m);
-                    DeleteNoList.Add(m);
-
-                }
-            }
-
-            //このタイミングでattachIKMaidNoの要素削除しないとInvalidOperationExceptionが出る
-
-
-            attachIKMaidNo.RemoveAll(DeleteNoList.Contains);
-
-            DeleteNoList.Clear();
-
-
-            foreach (int m in attachIKMaidNo)
-            {
-                Debuginfo.Log(LogLabel + "finalize2");
-
-                IKListLeftLeg.lateupdateFunc(m, attachIKMaidList[m],false,false);
-                IKListRightLeg.lateupdateFunc(m, attachIKMaidList[m],false,false);
-
-                IKListLeftArm.lateupdateFunc(m, attachIKMaidList[m], true, true);
-                IKListRightArm.lateupdateFunc(m, attachIKMaidList[m], true, false);
-
-            }
-        }
-
-        public void updateFunc(HandleKun posHandle,Dictionary<String,Transform>trBone)
-        {
-            //カメラ操作の右ドラッグと区別するため
-            if (Input.GetMouseButtonDown(1))
-            {
-                //Debuginfo.Log("右クリック開始");
-                bIKTargetGet = true;
-
-            }
-            else if (Input.GetAxis("Mouse X") != 0 || Input.GetAxis("Mouse Y") != 0 || Input.mouseScrollDelta != Vector3.zero)
-            {
-                //IKハンドル君表示中にカメラ操作があったらラベルも付随して移動させる
-                posHandle.IKBoneLabelPos = 1.5f * (Camera.main.WorldToScreenPoint(posHandle.IKTargetPos) - new Vector3(Screen.width * 0.5f, Screen.height * 0.5f - 30f, Camera.main.WorldToScreenPoint(posHandle.IKTargetPos).z));
-
-                bIKTargetGet = false;
-            }
-            else if (Input.GetMouseButtonUp(1) && bIKTargetGet == true)
-            {
-                //Debuginfo.Log("右クリック終了");
-                //ここで画面内オブジェクトの検知を済ませておく
-                //今表示されているメイドさんの_IK_ボーン情報をコレクションに収納
-                //settrTargetIKBones();
-
-                //Debuginfo.Log("mouse:" + Input.mousePosition.ToString());
-                Vector3 mousePos = Input.mousePosition;
-
-                trTargetIKTemp = null;
-
-                float clickCheckOffset = clickCheckOffsetInit;
-
-
-                float magnitude0 = (Camera.main.WorldToScreenPoint(trBone["Bip01 Neck"].position) - mousePos).magnitude;
-                if (magnitude0 < clickCheckOffset)
-                {
-                    clickCheckOffset = magnitude0;
-                    trTargetIKTemp = trBone["Bip01 Neck"];
-                }
-
-                List<int> RemoveNo = new List<int>();
-                foreach (var trArray in trTargetIKBones)
-                {
-                    if (trArray.Value[0] == null)
-                    {
-                        RemoveNo.Add(trArray.Key);
-                        continue;
-                    }
-                    foreach (Transform trIK in trArray.Value)
-                    {
-
-                        float magnitude = (Camera.main.WorldToScreenPoint(trIK.position) - mousePos).magnitude;
-                        if (magnitude < clickCheckOffset)
-                        {
-                            clickCheckOffset = magnitude;
-                            trTargetIKTemp = trIK;
-                            //Debuginfo.Log(trIK.name + ":" + Camera.main.WorldToScreenPoint(trIK.position).ToString());
-                        }
-                    }
-                }
-                foreach (int t in RemoveNo)
-                {
-                    trTargetIKBones.Remove(t);
-                }
-
-                if (trTargetIKTemp != null)
-                {
-                    //Debuginfo.Log("右クリック何かあった");
-
-                    posHandle.IKTargetPos = trTargetIKTemp.position;
-
-                    if (trTargetIKTemp.name == "Bip01 Neck")
-                    {
-                        trTargetIKTemp = trBone["Bip01"];
-                    }
-
-                    //なぜかNGUIの位置指定と実際のピクセルで1.5倍の違いがあるので1.5倍する
-                    posHandle.IKBoneLabelPos = 1.5f * (Camera.main.WorldToScreenPoint(posHandle.IKTargetPos) - new Vector3(Screen.width * 0.5f, Screen.height * 0.5f - 30f, Camera.main.WorldToScreenPoint(posHandle.IKTargetPos).z));
-
-                    posHandle.IKTargetLabelString = sIKBoneName[trTargetIKTemp.name];
-
-                    posHandle.IKTargetVisible = true;
-                }
-            }
-
-        }
-
-        public void inversekinematicHandle(HandleKun posHandle,Maid maid,int currentMaidNo)
-        {
-            switch (posHandle.IKmode)
-            {
-                case HandleKun.IKMODE.LeftLeg:
-                    IKListLeftLeg.inversekinematicHandle(posHandle, currentMaidNo);
-                    break;
-                case HandleKun.IKMODE.RightLeg:
-                    IKListRightLeg.inversekinematicHandle(posHandle, currentMaidNo);
-                    break;
-                case HandleKun.IKMODE.LeftArm:
-                    IKListLeftArm.inversekinematicHandle(posHandle, currentMaidNo);
-                    break;
-                case HandleKun.IKMODE.RightArm:
-                    IKListRightArm.inversekinematicHandle(posHandle, currentMaidNo);
-                    break;
-                default:
-                    Debug.LogError("IKMODE.Error");
-                    break;
-            }
-
-            if (!attachIKMaidNo.Contains(currentMaidNo))
-            {
-                attachIKMaidList.Add(currentMaidNo, maid);
-                attachIKMaidNo.Add(currentMaidNo);
-            }
-        }
-
-        //IK設定の初期化
-        private void ikInit(HandleKun.IKMODE ikmode, HandleKun posHandle,Maid maid,int currentMaidNo)
-        {
-            switch(ikmode)
-            {
-                case HandleKun.IKMODE.LeftLeg:
-                    IKListLeftLeg.ikInit(posHandle, currentMaidNo);
-                    break;
-                case HandleKun.IKMODE.RightLeg:
-                    IKListRightLeg.ikInit(posHandle, currentMaidNo);
-                    break;
-                case HandleKun.IKMODE.LeftArm:
-                    IKListLeftArm.ikInit(posHandle, currentMaidNo);
-                    break;
-                case HandleKun.IKMODE.RightArm:
-                    IKListRightArm.ikInit(posHandle, currentMaidNo);
-                    break;
-                default:
-                    Debug.LogError("IKMODE.Error");
-                    break;
-            }
-
-            if (!attachIKMaidNo.Contains(currentMaidNo))
-            {
-                attachIKMaidList.Add(currentMaidNo, maid);
-                attachIKMaidNo.Add(currentMaidNo);
-            }
-        }
-
-        public void ikTargetClicked(HandleKun posHandle,int currentMaidNo)
-        {
-            if (trTargetIKTemp != null)
-            {
-                Debuginfo.Log(LogLabel + "IKTarget:" + trTargetIKTemp.name.ToString());
-
-                switch (posHandle.IKmode)
-                {
-                    case HandleKun.IKMODE.LeftLeg:
-                        IKListLeftLeg.ikTargetClicked(posHandle, currentMaidNo, trTargetIKTemp);
-
-                        break;
-
-                    case HandleKun.IKMODE.RightLeg:
-                        IKListRightLeg.ikTargetClicked(posHandle, currentMaidNo, trTargetIKTemp);
-
-                        break;
-
-                    case HandleKun.IKMODE.LeftArm:
-                        IKListLeftArm.ikTargetClicked(posHandle, currentMaidNo, trTargetIKTemp);
-
-                        break;
-
-                    case HandleKun.IKMODE.RightArm:
-                        IKListRightArm.ikTargetClicked(posHandle, currentMaidNo, trTargetIKTemp);
-
-                        break;
-
-                    default:
-
-                        Debug.Log(LogLabel + "Handle IKmode target select exception.");
-                        break;
-                }
-
-
-                if (trTargetIKTemp.name != "Bip01")
-                {
-                    posHandle.IKTargetAttachedColor(true);
-                }
-                else
-                {
-                    posHandle.IKTargetAttachedColor(false);
-                }
-
-                bIKTargetGet = false;
-
-                trTargetIKTemp = null;
-            }
-
-        }
-
-        //いなくなったメイドさんのIKアタッチ情報の要素をコレクションリストから削除
-        public void removeAttachMaidList(int removeNo)
-        {
-            if (attachIKMaidNo.Contains(removeNo))
-            {
-                //attachIKMaidNo.Remove(removeNo);
-                attachIKMaidList.Remove(removeNo);
-                trTargetIKBones.Remove(removeNo);
-
-
-                IKListLeftLeg.removeAttachMaidList(removeNo);
-                IKListRightLeg.removeAttachMaidList(removeNo);
-
-                IKListLeftArm.removeAttachMaidList(removeNo);
-                IKListRightArm.removeAttachMaidList(removeNo);
-
-
-
-            }
-        }
-
-        public void detachIKfromBone(HandleKun posHandle, Dictionary<String,Transform> trBone, int currentMaidNo)
-        {
-            //Vector3 postPosition = ikHandle.Pos;
-            //IKターゲットの位置を初期化
-            Quaternion temp = posHandle.Rot;
-            //posHandle.transform.parent.parent = trBone["Bip01"];
-            //posHandle.transform.parent.localPosition = Vector3.zero;
-
-            if (posHandle.IKmode == HandleKun.IKMODE.LeftLeg)
-            {
-                posHandle.SetParentBone(trBone["Bip01 L Foot"]);
-                IKListLeftLeg.detachIKfromBone(trBone["Bip01"], currentMaidNo);
-                
-            }
-            else if (posHandle.IKmode == HandleKun.IKMODE.RightLeg)
-            {
-                posHandle.SetParentBone(trBone["Bip01 R Foot"]);
-                IKListRightLeg.detachIKfromBone(trBone["Bip01"], currentMaidNo);
-            }
-            else if (posHandle.IKmode == HandleKun.IKMODE.LeftArm)
-            {
-                posHandle.SetParentBone(trBone["Bip01 L Hand"]);
-                IKListLeftArm.detachIKfromBone(trBone["Bip01"], currentMaidNo);
-            }
-            else if (posHandle.IKmode == HandleKun.IKMODE.RightArm)
-            {
-                posHandle.SetParentBone(trBone["Bip01 R Hand"]);
-                IKListRightArm.detachIKfromBone(trBone["Bip01"], currentMaidNo);
-            }
-            else
-            {
-
-            }
-            //ikHandle.Pos = postPosition;
-            posHandle.transform.localPosition = Vector3.zero;
-            posHandle.Scale = 0.2f;
-
-            posHandle.Rot = temp;//Quaternion.Euler(-90, 0, 90);
-        }
-
-        public bool checkIKAttach(int currentMaidNo, int No)
-        {
-            switch (No)
-            {
-                case 1:
-                    return IKListLeftLeg.checkIKAttach(currentMaidNo);
-                    break;
-                case 2:
-                    return IKListRightLeg.checkIKAttach(currentMaidNo);
-                    break;
-                case 3:
-                    return IKListLeftArm.checkIKAttach(currentMaidNo);
-                    break;
-                case 4:
-                    return IKListRightArm.checkIKAttach(currentMaidNo);
-                    break;
-                default:
-                    return false;
-            }
-        }
-        public Transform getIKTarget(int currentMaidNo, int No)
-        {
-            switch (No)
-            {
-                case 1:
-                    return IKListLeftLeg.goIKTarget[currentMaidNo].transform;
-                    break;
-                case 2:
-                    return IKListRightLeg.goIKTarget[currentMaidNo].transform;
-                    break;
-                case 3:
-                    return IKListLeftArm.goIKTarget[currentMaidNo].transform;
-                    break;
-                case 4:
-                    return IKListRightArm.goIKTarget[currentMaidNo].transform;
-                    break;
-                default:
-                    return null;
-            }
-        }
-
-        public void detachIK(Transform Bip01 ,int currentMaidNo, int No)
-        {
-            switch (No)
-            {
-                case 1:
-                    IKListLeftLeg.detachIK(Bip01, currentMaidNo);
-                    break;
-                case 2:
-                    IKListRightLeg.detachIK(Bip01, currentMaidNo);
-                    break;
-                case 3:
-                    IKListLeftArm.detachIK(Bip01, currentMaidNo);
-                    break;
-                case 4:
-                    IKListRightArm.detachIK(Bip01, currentMaidNo);
-                    break;
-                default:
-                    break;
-            }
-        }
-        public void detachAll(int currentMaidNo)
-        {
-            //全ターゲット用オブジェクトを0.5秒後に消す
-            foreach (int removeNo in attachIKMaidNo)
-            {
-                IKListLeftLeg.detachAll(currentMaidNo);
-                IKListRightLeg.detachAll(currentMaidNo);
-                IKListLeftArm.detachAll(currentMaidNo);
-                IKListRightArm.detachAll(currentMaidNo);
-            }
-
-            attachIKMaidNo.Clear();
-            attachIKMaidList.Clear();
-            trTargetIKBones.Clear();
-            
-        }
-
-        public bool checkParentName(int currentMaidNo,int No)
-        {
-            switch (No)
-            {
-                case 1:
-                    return IKListLeftLeg.checkParentName(currentMaidNo);
-                    break;
-                case 2:
-                    return IKListRightLeg.checkParentName(currentMaidNo);
-                    break;
-                case 3:
-                    return IKListLeftArm.checkParentName(currentMaidNo);
-                    break;
-                case 4:
-                    return IKListRightArm.checkParentName(currentMaidNo);
-                    break;
-                default:
-                    return false;
-            }
-        }
-
-
-        public int attachIKMaidNoCount()
-        {
-            return attachIKMaidNo.Count;
-        }
-
-        public bool trTargetIKBoneContainsNo(int currentMaidNo)
-        {
-            return trTargetIKBones.ContainsKey(currentMaidNo);
-        }
-
-        public void trTargetIKBoneAdd(int currentMaidNo,Transform[] tempTransformList)
-        {
-            trTargetIKBones.Add(currentMaidNo,tempTransformList);
-        }
-
-    }
-
-    //制限角度つきIK
-    public class IKCONSTRAINED
-    {
-        private TBody body;
-
-        private float defLENroroot;
-
-        private float defLENroot;
-
-        private float defLENhead;
-
-        private Vector3 mid_old;
-
-        private Quaternion defRorootlocalRotation;
-
-        private Quaternion defRootlocalRotation;
-
-        private Quaternion defMidlocalRotation;
-
-        private Vector3 vechand;
-        //制限角度多段配列
-        //それぞれの添え字は
-        //[ボーンの先端からの順番,xの下限値→zの上限値]
-        private float[,] constrait;
-
-        public void Init(Transform initRoot, Transform initMid, Transform initHead, TBody b, float[,] initConstrait, Transform initRoroot = null)
-        {
-
-            this.body = b;
-            this.defLENroot = (initRoot.position - initMid.position).magnitude;
-            this.defLENhead = (initHead.position - initMid.position).magnitude;
-            this.mid_old = initMid.position;
-            this.defRootlocalRotation = initRoot.localRotation;
-            this.defMidlocalRotation = initMid.localRotation;
-            this.vechand = Vector3.zero;
-
-            if (initRoroot != null)
-            {
-                this.defLENroroot = (initRoroot.position - initRoot.position).magnitude;
-                this.defRorootlocalRotation = initRoroot.localRotation;
-            }
-
-            this.constrait = initConstrait;
-
-        }
-
-        public void Init(Transform[] boneList, TBody b, float[,] initConstrait, Transform initRoroot = null)
-        {
-
-            this.body = b;
-            this.defLENroot = (boneList[0].position - boneList[1].position).magnitude;
-            this.defLENhead = (boneList[2].position - boneList[1].position).magnitude;
-            this.mid_old = boneList[1].position;
-            this.defRootlocalRotation = boneList[0].localRotation;
-            this.defMidlocalRotation = boneList[1].localRotation;
-            this.vechand = Vector3.zero;
-
-            if (initRoroot != null)
-            {
-                this.defLENroroot = (initRoroot.position - boneList[0].position).magnitude;
-                this.defRorootlocalRotation = initRoroot.localRotation;
-            }
-
-            this.constrait = initConstrait;
-
-        }
-        
-        //腕・脚に特化させた肘・膝可動範囲制限付きIK
-        //本体側と関数名をあわせないためにあえてProcにする
-        public void Proc(Transform root, Transform mid, Transform head, Vector3 tgt)
-        {
-            //tgt += this.vechand;
-
-            //先ボーンの曲げる前の回転状態を保持しておく
-            Quaternion oldHeadRotation = head.transform.rotation;
-
-            float LENtgt = (tgt - root.position).magnitude;
-
-            //中間のボーンのZ軸角度(肘or膝)を一意に決める
-            float midAngle;
-
-            //ボーンの合計長さ　<　根元ボーンからターゲットまでの距離　の場合
-            if (LENtgt >= defLENroot + defLENhead)
-            {
-                midAngle = 0f;//180f;
-            }
-            else
-            {
-                float s = (float)Math.Sqrt((-LENtgt + defLENroot + defLENhead) * (LENtgt - defLENroot + defLENhead) * (LENtgt + defLENroot - defLENhead) * (LENtgt + defLENroot + defLENhead)) / 4f;
-
-                //各ボーンの長さ　< 根元ボーンからターゲットまでの距離　の場合
-                if (LENtgt > ((defLENroot > defLENhead) ? defLENroot : defLENhead))
-                {
-                    float h = 2 * s / (LENtgt);
-                    //midAngle = 180f - Mathf.Asin(h / defLENhead) * Mathf.Rad2Deg - Mathf.Asin(h / defLENroot) * Mathf.Rad2Deg;
-                    midAngle = Mathf.Asin(h / defLENhead) * Mathf.Rad2Deg + Mathf.Asin(h / defLENroot) * Mathf.Rad2Deg;
-
-                }
-                else //ボーンのどちらか長い方　> 根元ボーンからターゲットまでの距離の場合
-                {
-                    float h = 2 * s / ((defLENroot > defLENhead) ? defLENroot : defLENhead);
-                    midAngle = 180f - Mathf.Asin(h / ((defLENroot > defLENhead) ? defLENhead : defLENroot)) * Mathf.Rad2Deg;
-                }
-
-            }
-
-            //角度制限チェック
-            //肘も膝もZ軸周りの角度でしか回らないものとして計算する
-            //他の関節では適用できないので注意
-
-            if (this.constrait[1, 4] > midAngle)
-            {
-                midAngle = this.constrait[1, 4];
-            }
-            if (this.constrait[1, 5] < midAngle)
-            {
-                midAngle = this.constrait[1, 5];
-            }
-
-            //中間のボーンのX・Y軸周りの現在の角度を求める
-            Vector3 pastEuler = calcEulerfromRotation(mid.localRotation);
-
-            //計算結果の角度がずれたときのことを考えて一応チェック
-            //今後の検証次第ではここのチェックをスキップするかも
-            if (kaiten_ichii(pastEuler, this.constrait[1, 0], this.constrait[1, 1], this.constrait[1, 2], this.constrait[1, 3], this.constrait[1, 4], this.constrait[1, 5]))
-            {
-                //pastEuler.z -= 180f;
-                pastEuler.y -= 180f;
-                pastEuler.x = 180f - pastEuler.x;
-            }
-
-            //ここで中間のボーンを曲げる
-            mid.localRotation = Quaternion.identity;
-            mid.localRotation *= Quaternion.AngleAxis(midAngle, Vector3.forward);
-            mid.localRotation *= Quaternion.AngleAxis(pastEuler.x, Vector3.right);
-            mid.localRotation *= Quaternion.AngleAxis(pastEuler.y, Vector3.up);
-
-
-            if (!this.body.boMAN)
-            {
-
-                Vector3 zero = Vector3.zero;
-                Vector3 mid_old = mid.position;
-                bool flag = this.body.goSlot[0].bonehair.bodyhit.SphereMove_hair(ref mid_old, ref zero, Vector3.zero);
-                //if (flag)
-                //{
-                //    Debug.DrawLine(this.body.Spine0a.position, this.mid_old, Color.white);
-                //}
-                //mid.position = mid_old;
-            }
-
-            //中間のボーン(肘or膝)を曲げた状態で
-            //根元のボーン(肩or股)から先端のボーン(手or足)までのベクトルを
-            //根元のボーン(肩or股)からターゲットまでのベクトルに向ける回転を求めて
-            //根元のボーンをターゲットに向けるように回転させる
-
-            //root.localRotation = this.defRootlocalRotation;
-            root.transform.rotation = Quaternion.FromToRotation(head.transform.position - root.transform.position, tgt - root.transform.position) * root.transform.rotation;
-            //↑のタイミングで根元のボーンが回転する
-
-            //ボーンの角度範囲チェック＆超えてたら範囲内に収める
-            root.localRotation = constrainIK(root, 2);
-
-
-            //最後に先ボーンを元の回転になるように曲げる
-            head.transform.rotation = oldHeadRotation;
-            //ボーンの角度範囲チェック＆超えてたら範囲内に収める
-            head.localRotation = constrainIK(head, 0, head.name.Contains("Hand"));
-
-
-            //Debug.DrawLine(root.position, this.mid_old, Color.yellow);
-            //Debug.DrawLine(head.position, this.mid_old, Color.yellow);
-            //this.vechand = head.rotation * vechand_offset;
-        }
-
-        public Vector3 calcEulerfromRotation(Quaternion tr)
-        {
-            float qx = tr.x;
-            float qy = tr.y;
-            float qz = tr.z;
-            float qw = tr.w;
-
-            float m02 = 2 * (qx * qz - qw * qy);
-            float m10 = 2 * (qx * qy - qw * qz);
-            float m11 = 1 - 2 * (qx * qx + qz * qz);
-            float m12 = 2 * (qy * qz + qw * qx);
-            //float m20 = 2 * (qx * qz + qw * qy);
-            //float m21 = 2 * (qy * qz - qw * qx);
-            float m22 = 1 - 2 * (qx * qx + qy * qy);
-
-            if (m12 > 1.0f) m12 = 1.0f;
-            if (m12 < -1.0f) m12 = -1.0f;
-            if (m11 > 1.0f) m11 = 1.0f;
-            if (m11 < -1.0f) m11 = -1.0f;
-            if (m10 > 1.0f) m10 = 1.0f;
-            if (m10 < -1.0f) m10 = -1.0f;
-            if (m22 > 1.0f) m22 = 1.0f;
-            if (m22 < -1.0f) m22 = -1.0f;
-
-            float rotate_x = Mathf.Asin(m12) * Mathf.Rad2Deg;
-            float rotate_y = 0f;
-            float rotate_z = 0f;
-
-            if (System.Math.Floor(Mathf.Cos(rotate_x * Mathf.Deg2Rad) * 10000) / 10000 != 0f)
-            {
-
-                rotate_z = Mathf.Atan2(-m10, m11) * Mathf.Rad2Deg;
-                float before = -m02 / Mathf.Cos(rotate_x * Mathf.Deg2Rad);
-                if (before > 1.0f) before = 1.0f;
-                if (before < -1.0f) before = -1.0f;
-
-                rotate_y = Mathf.Asin(before) * Mathf.Rad2Deg;
-                if (m22 < 0)
-                {
-                    rotate_y = 180 - rotate_y;
-                }
-
-            }
-            if (System.Math.Floor(Mathf.Cos(rotate_x * Mathf.Deg2Rad) * 10000) / 10000 == 0f || Double.IsNaN(rotate_y))
-            {
-                float m00 = 1 - 2 * (qy * qy + qz * qz);
-                float m01 = 2 * (qx * qy + qw * qz);
-
-                if (m01 > 1.0f) m01 = 1.0f;
-                if (m01 < -1.0f) m01 = -1.0f;
-                if (m00 > 1.0f) m00 = 1.0f;
-                if (m00 < -1.0f) m00 = -1.0f;
-
-                rotate_y = 0f;
-                //rotate_x = (tr.x > 0) ? 90f : -90f;
-                rotate_z = Mathf.Atan2(m01, m00) * Mathf.Rad2Deg;
-
-            }
-
-            return new Vector3(rotate_x, rotate_y, rotate_z);
-        }
-
-        public Vector3 calcEulerfromRotation_hand(Quaternion tr)
-        {
-            float qx = tr.x;
-            float qy = tr.y;
-            float qz = tr.z;
-            float qw = tr.w;
-
-            float m02 = 2 * (qx * qz - qw * qy);
-            if (m02 > 1.0f) m02 = 1.0f;
-            if (m02 < -1.0f) m02 = -1.0f;
-
-            float rotate_x = 0f;
-            float rotate_y = Mathf.Asin(-m02) * Mathf.Rad2Deg;
-            float rotate_z = 0f;
-
-
-            if (System.Math.Floor(Mathf.Cos(rotate_y * Mathf.Deg2Rad) * 10000) / 10000 != 0f)
-            {
-                float m00 = 1 - 2 * (qy * qy + qz * qz);
-                float m01 = 2 * (qx * qy + qw * qz);
-                float m12 = 2 * (qy * qz + qw * qx);
-                float m22 = 1 - 2 * (qx * qx + qy * qy);
-
-                if (m00 > 1.0f) m00 = 1.0f;
-                if (m00 < -1.0f) m00 = -1.0f;
-                if (m01 > 1.0f) m01 = 1.0f;
-                if (m01 < -1.0f) m01 = -1.0f;
-
-                if (m12 > 1.0f) m12 = 1.0f;
-                if (m12 < -1.0f) m12 = -1.0f;
-                if (m22 > 1.0f) m22 = 1.0f;
-                if (m22 < -1.0f) m22 = -1.0f;
-
-                rotate_z = Mathf.Atan2(m01, m00) * Mathf.Rad2Deg;
-                float before = m12 / Mathf.Cos(rotate_y * Mathf.Deg2Rad);
-                if (before > 1.0f) before = 1.0f;
-                if (before < -1.0f) before = -1.0f;
-                rotate_x = Mathf.Asin(before) * Mathf.Rad2Deg;
-                if (m22 < 0)
-                {
-                    rotate_x = 180 - rotate_x;
-                }
-            }
-            if (System.Math.Floor(Mathf.Cos(rotate_y * Mathf.Deg2Rad) * 10000) / 10000 == 0f || Double.IsNaN(rotate_x))
-            {
-                float m10 = 2 * (qx * qy - qw * qz);
-                float m11 = 1 - 2 * (qx * qx + qz * qz);
-
-                if (m10 > 1.0f) m10 = 1.0f;
-                if (m10 < -1.0f) m10 = -1.0f;
-                if (m11 > 1.0f) m11 = 1.0f;
-                if (m11 < -1.0f) m11 = -1.0f;
-
-                rotate_x = 0f;
-                rotate_z = Mathf.Atan2(-m10, m11) * Mathf.Rad2Deg;
-            }
-
-
-            return new Vector3(rotate_x, rotate_y, rotate_z);
-        }
-
-        //角度が一意に決まらないときの苦肉の策
-        public bool kaiten_ichii(Vector3 rotate, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax)
-        {
-            return ((180f - rotate.x) > xmin && (180f - rotate.x) < xmax
-                  && (rotate.y - 180f) > ymin && (rotate.y - 180f) < ymax
-                  && (rotate.z - 180f) > zmin && (rotate.z - 180f) < zmax);
-        }
-        public bool kaiten_ichii_hand(Vector3 rotate, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax)
-        {
-            return ((rotate.x - 180f) > xmin && (rotate.x - 180f) < xmax
-                  && (180f - rotate.y) > ymin && (180f - rotate.y) < ymax
-                  && (rotate.z - 180f) > zmin && (rotate.z - 180f) < zmax);
-        }
-
-        public Quaternion constrainIK(Transform tr, int boneOrder, bool isHand = false)
-        {
-            return constrainIK(tr.localRotation, boneOrder, isHand);
-        }
-
-        public Quaternion constrainIK(Quaternion tr, int boneOrder, bool isHand = false)
-        {
-            Vector3 rotate;
-
-            if (!isHand)
-            {
-                rotate = calcEulerfromRotation(tr);
-                if (kaiten_ichii(rotate, this.constrait[boneOrder, 0], this.constrait[boneOrder, 1], this.constrait[boneOrder, 2], this.constrait[boneOrder, 3], this.constrait[boneOrder, 4], this.constrait[boneOrder, 5]))
-                {
-                    //rotate.z -= 180f;
-                    //rotate.y -= 180f;
-                    //rotate.x = 180f - rotate.x ;
-
-                    return tr;
-                }
-            }
-            else
-            {
-                rotate = calcEulerfromRotation_hand(tr);
-                if (kaiten_ichii_hand(rotate, this.constrait[boneOrder, 0], this.constrait[boneOrder, 1], this.constrait[boneOrder, 2], this.constrait[boneOrder, 3], this.constrait[boneOrder, 4], this.constrait[boneOrder, 5]))
-                {
-                    return tr;
-                }
-            }
-
-            bool bOver = false;
-
-            if (this.constrait[boneOrder, 0] > rotate.x)
-            {
-                if (this.constrait[boneOrder, 0] > rotate.x + 360f || this.constrait[boneOrder, 1] < rotate.x + 360f)
-                {
-                    rotate.x = this.constrait[boneOrder, 0];
-                    bOver = true;
-                }
-            }
-            if (this.constrait[boneOrder, 1] < rotate.x)
-            {
-                if (this.constrait[boneOrder, 1] < rotate.x - 360f || this.constrait[boneOrder, 0] > rotate.x - 360f)
-                {
-                    rotate.x = this.constrait[boneOrder, 1];
-                    bOver = true;
-                }
-            }
-            if (this.constrait[boneOrder, 2] > rotate.y)
-            {
-                if (this.constrait[boneOrder, 2] > rotate.y + 360f || this.constrait[boneOrder, 3] < rotate.y + 360f)
-                {
-                    rotate.y = this.constrait[boneOrder, 2];
-                    bOver = true;
-                }
-            }
-            if (this.constrait[boneOrder, 3] < rotate.y)
-            {
-                if (this.constrait[boneOrder, 3] < rotate.y - 360f || this.constrait[boneOrder, 2] > rotate.y - 360f)
-                {
-                    rotate.y = this.constrait[boneOrder, 3];
-                    bOver = true;
-                }
-            }
-            if (this.constrait[boneOrder, 4] > rotate.z)
-            {
-                if (this.constrait[boneOrder, 4] > rotate.z + 360f || this.constrait[boneOrder, 5] < rotate.z + 360f)
-                {
-                    rotate.z = this.constrait[boneOrder, 4];
-                    bOver = true;
-                }
-            }
-            if (this.constrait[boneOrder, 5] < rotate.z)
-            {
-                if (this.constrait[boneOrder, 5] < rotate.z - 360f || this.constrait[boneOrder, 4] > rotate.z - 360f)
-                {
-                    rotate.z = this.constrait[boneOrder, 5];
-                    bOver = true;
-                }
-            }
-
-            if (bOver)
-            {
-                if (!isHand)
-                {
-
-                    tr = Quaternion.identity;
-                    tr *= Quaternion.AngleAxis(rotate.z, Vector3.forward);
-                    tr *= Quaternion.AngleAxis(rotate.x, Vector3.right);
-                    tr *= Quaternion.AngleAxis(rotate.y, Vector3.up);
-                }
-                else
-                {
-                    //苦肉の策のツケ
-                    tr = Quaternion.identity;
-                    tr *= Quaternion.AngleAxis(rotate.z, Vector3.forward);
-                    tr *= Quaternion.AngleAxis(rotate.y, Vector3.up);
-                    tr *= Quaternion.AngleAxis(rotate.x, Vector3.right);
-
-                }
-            }
-
-            return tr;
-        }
-
-    }
- 
-    //ハンドル君
-    public class HandleKun
-    {
-        private readonly int BaseRenderQueue = 3500;
-
-
-        private bool initComplete = false;
-
-        private Maid maid = null;
-        private Transform trParentBone;
-
-        private GameObject goHandleMasterObject;
-        private GameObject goAngleHandle;
-        private GameObject goPositionHandle;
-
-        private GameObject goIKBoneTarget;
-
-        private ControllOnMouse controllOnMouseX;
-        private ControllOnMouse controllOnMouseY;
-        private ControllOnMouse controllOnMouseZ;
-
-        private ControllOnMouse controllOnMousePX;
-        private ControllOnMouse controllOnMousePY;
-        private ControllOnMouse controllOnMousePZ;
-
-        private ControllOnMouse controllOnMouseC;
-
-        private ClickOnlyControll CoC;
-
-        private int Legacymode;
-
-        private bool bIKAttached = false;
-
-        public bool bHandlePositionMode;
-
-        public bool rightClicked = false;
-
-
-
-        Texture2D m_texture_red = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-        Texture2D m_texture_green = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-        Texture2D m_texture_blue = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-        Texture2D m_texture_red_2 = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-        Texture2D m_texture_green_2 = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-        Texture2D m_texture_blue_2 = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-        Texture2D m_texture_white = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-        Texture2D m_texture_yellow = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-        Texture2D m_texture_cyan = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-        Texture2D m_texture_magenta = new Texture2D(16, 16, TextureFormat.ARGB32, false);
-
-        GameObject redring;
-        GameObject bluering;
-        GameObject greenring;
-        GameObject redvector;
-        GameObject bluevector;
-        GameObject greenvector;
-        GameObject whitecenter;
-
-        GizmoRender gizmoRender;
-
-        private UILabel uiLabelIKBoneName;
-
-        public enum IKMODE
-        {
-            None,
-            LeftLeg,
-            RightLeg,
-            LeftArm,
-            RightArm
-        }
-
-        private IKMODE ikmode = IKMODE.None;
-
-        private float handleScale = 1.0f;
-
-        public Transform transform
-        {
-            get
-            {
-                return (initComplete) ? this.goHandleMasterObject.transform : null;
-            }
-        }
-        public Vector3 Pos
-        {
-            get { return (initComplete) ? this.goHandleMasterObject.transform.position : default(Vector3); }
-            set { if (initComplete) this.goHandleMasterObject.transform.position = value; }
-        }
-        public Quaternion Rot
-        {
-            get { return (initComplete) ? this.goHandleMasterObject.transform.rotation : default(Quaternion); }
-            set { if (initComplete) this.goHandleMasterObject.transform.rotation = value; }
-        }
-
-        public float Scale
-        {
-            get { return (initComplete) ? this.handleScale : 0; }
-            set
-            {
-                if (initComplete)
-                {
-                    this.handleScale = value;
-                    this.goHandleMasterObject.transform.localScale = Vector3.one * handleScale;
-                }
-            }
-
-
-        }
-        public bool Visible
-        {
-            get
-            {
-                return (initComplete && this.goHandleMasterObject != null) ? this.goHandleMasterObject.activeSelf : default(bool);
-            }
-            set
-            {
-                if (initComplete && this.goHandleMasterObject != null) this.goHandleMasterObject.SetActive(value);
-            }
-        }
-
-        public IKMODE IKmode
-        {
-            get { return (initComplete) ? this.ikmode : IKMODE.None; }
-            set
-            {
-                //Debuginfo.Log("IKmode set");
-                //if (initComplete)
-                //{
-                //Debuginfo.Log("IKmode:" + (int)value);
-                this.ikmode = value;
-                if (value == IKMODE.None)
-                {
-                    //Rot = Quaternion.identity;
-                    controllOnMouseC.ikmode = false;
-                }
-                else
-                {
-                    //Rot = Quaternion.Euler(-90, 0, 90);
-
-                    controllOnMouseC.ikmode = true;
-                }
-                //}
-            }
-        }
-
-        public bool IKTargetVisible
-        {
-            get { return (initComplete) ? this.goIKBoneTarget.activeSelf : false; }
-            set
-            {
-                if (initComplete)
-                {
-                    this.uiLabelIKBoneName.gameObject.SetActive(value);
-                    this.goIKBoneTarget.SetActive(value);
-                    goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
-                    goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
-
-                }
-
-            }
-        }
-        public Vector3 IKTargetPos
-        {
-            get { return (initComplete) ? this.goIKBoneTarget.transform.position : default(Vector3); }
-            set { if (initComplete) this.goIKBoneTarget.transform.position = value; }
-        }
-
-        public Vector3 IKBoneLabelPos
-        {
-            set { if (initComplete) this.uiLabelIKBoneName.gameObject.transform.localPosition = value; }
-        }
-
-        public String IKTargetLabelString
-        {
-            set { if (initComplete) this.uiLabelIKBoneName.text = value; }
-        }
-
-        private class ClickOnlyControll : MonoBehaviour
-        {
-            public bool Dragged = false;
-            public bool DragFinished = false;
-            public bool mouseOver = false;
-            public bool centerClicked = false;
-
-            public void OnMouseDown()
-            {
-
-            }
-
-            public void OnMouseDrag()
-            {
-
-                Dragged = true;
-            }
-            public void OnMouseUp()
-            {
-                if (Dragged)
-                {
-                    //
-                    Debuginfo.Log("IKハンドル君左ドラッグ終了");
-                    Dragged = false;
-                    DragFinished = true;
-                }
-            }
-
-            public void OnMouseEnter()
-            {
-                mouseOver = true;
-            }
-
-            public void OnMouseOver()
-            {
-                if (Input.GetMouseButton(2))
-                {
-
-
-                    if (centerClicked == false)
-                    {
-                        Debuginfo.Log("中クリック");
-                        centerClicked = true;
-
-                    }
-
-                }
-
-                else if (centerClicked == true)
-                {
-                    Debuginfo.Log("中クリック終了");
-                    centerClicked = false;
-                }
-
-
-
-            }
-            public void OnMouseExit()
-            {
-                mouseOver = false;
-            }
-
-            public void Update()
-            {
-
-                if (mouseOver)
-                {
-
-                }
-
-            }
-
-            public void OnGui()
-            {
-                if (DragFinished)
-                {
-                    DragFinished = false;
-                }
-            }
-        }
-
-        private class ControllOnMouse : MonoBehaviour
-        {
-            public enum WheelType
-            {
-                Angle,
-                Position,
-                PosCenter
-            }
-
-            public enum AxisType
-            {
-                RX,
-                RY,
-                RZ,
-                NONE
-            }
-
-            public bool rightClicked = false;
-
-            public bool mouseOver = false;
-
-            private Vector3 objectPoint = Vector3.zero;
-
-
-            public WheelType wheelType = WheelType.Angle;
-            public AxisType axisType = AxisType.RX;
-            public bool ShouldReset = false;
-
-            public bool ikmode = false;
-
-            public bool Dragged = false;
-            public bool DragFinished = false;
-
-            public Vector3 clickPointVector = Vector3.zero;
-            public float oldValue = 0f;
-            Vector3 identitytoScreen = Vector3.zero;
-
-            public Quaternion dragQuaternion = Quaternion.identity;
-            public Vector3 dragVector = Vector3.zero;
-
-
-            public void Destroy()
-            {
-            }
-
-            public void Awake()
-            {
-            }
-
-            public void OnMouseDown()
-            {
-
-
-                if (wheelType == WheelType.Angle)
-                {
-                    //カメラから見たオブジェクトの現在位置を画面位置座標に変換
-                    //screenPoint = Camera.main.WorldToScreenPoint(transform.position);
-
-                    //リングが直線状になるとき
-                    if (Math.Abs(Vector3.Angle(Vector3.forward, Camera.main.worldToCameraMatrix.MultiplyVector(transform.up)) - 90f) < 10f)
-                    {
-                        if ((Vector3.Angle(Vector3.forward, Camera.main.worldToCameraMatrix.MultiplyVector(transform.up)) - 90f) < 0f)
-                            objectPoint = Camera.main.WorldToScreenPoint(transform.position + 0.2f * transform.up);
-                        else
-                            objectPoint = Camera.main.WorldToScreenPoint(transform.position - 0.2f * transform.up);
-                    }
-                    else
-                    {
-                        objectPoint = Camera.main.WorldToScreenPoint(transform.position);
-                    }
-
-
-                    clickPointVector = Input.mousePosition;
-                    clickPointVector.z = 0;
-                    clickPointVector -= objectPoint;
-
-                    oldValue = 0.0f;
-                }
-                else if (wheelType == WheelType.Position)
-                {
-                    clickPointVector = Input.mousePosition;
-                    //clickPointVector.z = 0;//Camera.main.WorldToScreenPoint(transform.position).z;
-
-                    oldValue = 0.0f;
-
-                    identitytoScreen = Camera.main.WorldToScreenPoint(transform.up + transform.position) - Camera.main.WorldToScreenPoint(transform.position);
-                    //identitytoScreen.z = 0;
-
-                }
-                else//wheelType == WheelType.PosCenter
-                {
-
-                    clickPointVector = Input.mousePosition;
-                    clickPointVector.z = Camera.main.WorldToScreenPoint(transform.position).z;
-                    oldValue = Camera.main.WorldToScreenPoint(transform.position).z;
-                    clickPointVector = Camera.main.ScreenToWorldPoint(clickPointVector);
-
-
-                }
-            }
-
-            public void OnMouseDrag()
-            {
-
-
-                if (wheelType == WheelType.Angle)
-                {
-                    Vector3 dragPoint = Input.mousePosition;
-
-                    dragPoint.z = 0;
-
-                    dragPoint -= objectPoint;
-
-                    float dragAngle = Vector3.Angle(clickPointVector, dragPoint);
-
-
-                    if ((clickPointVector.x * dragPoint.y - clickPointVector.y * dragPoint.x) < 0)
-                    {
-                        dragAngle = -dragAngle;
-
-                    }
-                    if (Vector3.Angle(Vector3.forward, Camera.main.worldToCameraMatrix.MultiplyVector(transform.up)) < 90)
-                    {
-                        dragAngle = -dragAngle;
-
-                    }
-                    if (axisType == AxisType.RY)
-                    {
-                        dragAngle = -dragAngle;
-                    }
-
-                    float offsetAngle = dragAngle - oldValue;
-
-
-                    switch (axisType)
-                    {
-                        case AxisType.RY:
-
-                            dragQuaternion = Quaternion.AngleAxis(offsetAngle, Vector3.right);
-
-                            break;
-
-                        case AxisType.RZ:
-
-                            dragQuaternion = Quaternion.AngleAxis(offsetAngle, Vector3.up);
-
-                            break;
-
-                        case AxisType.RX:
-
-                            dragQuaternion = Quaternion.AngleAxis(offsetAngle, Vector3.forward);
-
-                            break;
-
-
-                        default:
-                            break;
-
-                    }
-
-
-                    oldValue = dragAngle;
-
-                }
-                else if (wheelType == WheelType.Position)
-                {
-
-                    Vector3 dragPointVector = Input.mousePosition;
-
-                    float dragLength = (dragPointVector - clickPointVector).magnitude;
-
-                    Vector3 yajirushi = Camera.main.WorldToScreenPoint(transform.up + transform.position) - Camera.main.WorldToScreenPoint(transform.position);//Camera.main.worldToCameraMatrix.MultiplyVector(transform.up);
-
-                    dragLength = dragLength != 0 ? (yajirushi.x * (dragPointVector - clickPointVector).x + yajirushi.y * (dragPointVector - clickPointVector).y) / (yajirushi.magnitude * dragLength) : 0;
-
-
-                    clickPointVector.z = Camera.main.WorldToScreenPoint(transform.position).z;
-                    dragPointVector.z = Camera.main.WorldToScreenPoint(transform.position).z;
-                    Vector3 clickPoint = Camera.main.ScreenToWorldPoint(clickPointVector);
-                    Vector3 dragPoint = Camera.main.ScreenToWorldPoint(dragPointVector);
-
-
-                    dragLength = (dragPoint - clickPoint).magnitude * dragLength;
-
-
-                    float offsetLength = dragLength - oldValue;
-
-                    switch (axisType)
-                    {
-                        case AxisType.RY:
-
-                            dragVector = offsetLength * transform.up;//(-Vector3.right);
-
-                            break;
-
-                        case AxisType.RZ:
-
-                            dragVector = offsetLength * transform.up;//Vector3.up;
-
-                            break;
-
-                        case AxisType.RX:
-
-                            dragVector = offsetLength * transform.up;// Vector3.forward;
-
-                            break;
-
-
-                        default:
-                            break;
-
-                    }
-
-
-                    oldValue = dragLength;
-
-                }
-                else//wheelType == WheelType.PosCenter
-                {
-
-                    Vector3 dragPointVector = Input.mousePosition;
-                    dragPointVector.z = oldValue;//Camera.main.WorldToScreenPoint(transform.position).z;
-                    dragPointVector = Camera.main.ScreenToWorldPoint(dragPointVector);
-
-
-                    switch (axisType)
-                    {
-                        case AxisType.NONE:
-
-                            dragVector = dragPointVector - clickPointVector;
-
-                            break;
-
-                        default:
-                            break;
-
-                    }
-                    clickPointVector = dragPointVector;
-                }
-                Dragged = true;
-            }
-            public void OnMouseUp()
-            {
-                if (Dragged)
-                {
-                    Dragged = false;
-                    DragFinished = true;
-
-
-                }
-            }
-
-            public void OnMouseEnter()
-            {
-                mouseOver = true;
-            }
-
-            public void OnMouseOver()
-            {
-                /*
-                //ここじゃないと右クリックを検知できないのでここで検知
-                if (ikmode && Input.GetMouseButton(1) )
-                {
-                    if (rightClicked == false)
-                    {
-                        Debuginfo.Log("右クリック");
-                        rightClicked = true;
-                    }
-                }
-                else if(rightClicked == true)
-                {
-                    Debuginfo.Log("右クリック終了");
-                    rightClicked = false;
-                }
-                */
-
-            }
-            public void OnMouseExit()
-            {
-                mouseOver = false;
-            }
-
-            public void Update()
-            {
-
-                if (mouseOver)
-                {
-                    if (Input.GetMouseButton(2)) ShouldReset = true;
-                }
-
-            }
-
-            public void OnGui()
-            {
-                if (DragFinished)
-                {
-                    DragFinished = false;
-                }
-            }
-
-        }
-
-        public HandleKun(int _Legacymode, UIAtlas _systemAtlas,Maid _maid = null, Transform _transform = null)
-        {
-            this.Legacymode = _Legacymode;
-
-            SetMaterial(m_texture_red, new Color(1f, 0f, 0f, 0.5f), "red");
-            SetMaterial(m_texture_green, new Color(0f, 1f, 0f, 0.5f), "green");
-            SetMaterial(m_texture_blue, new Color(0f, 0f, 1f, 0.5f), "blue");
-
-            SetMaterial(m_texture_red_2, new Color(1f, 0f, 0f, 0.5f), "red_2");
-            SetMaterial(m_texture_green_2, new Color(0f, 1f, 0f, 0.5f), "green_2");
-            SetMaterial(m_texture_blue_2, new Color(0f, 0f, 1f, 0.5f), "blue_2");
-
-            SetMaterial(m_texture_white, new Color(1f, 1f, 1f, 0.5f), "white");
-            SetMaterial(m_texture_yellow, new Color(1f, 0.92f, 0.016f, 0.3f), "yellow");
-            SetMaterial(m_texture_cyan, new Color(0f, 1f, 1f, 0.5f), "cyan");
-            SetMaterial(m_texture_magenta, new Color(1f, 0f, 1f, 0.5f), "magenta");
-
-            Init();
-
-            //IKボーン表示用ラベル
-            UIPanel uiPanelIKBoneName = NGUITools.AddChild<UIPanel>(GameObject.Find("UI Root"));
-
-            UISprite uiIKBNSprite = uiPanelIKBoneName.gameObject.AddComponent<UISprite>();
-            //uiIKBNSprite.depth = uiBGSprite.depth - 1;
-            uiIKBNSprite.atlas = _systemAtlas;
-            uiIKBNSprite.spriteName = "cm3d2_dialog_frame";
-            uiIKBNSprite.type = UIBasicSprite.Type.Sliced;
-            uiIKBNSprite.SetDimensions(150, 70);
-
-            uiLabelIKBoneName = uiIKBNSprite.gameObject.AddComponent<UILabel>();
-            uiLabelIKBoneName.name = "IKBoneLabel";
-            uiLabelIKBoneName.trueTypeFont = GameObject.Find("SystemUI Root").GetComponentsInChildren<UILabel>()[0].trueTypeFont;
-            uiLabelIKBoneName.fontSize = 20;
-            uiLabelIKBoneName.text = "未設定";
-            //uiLabelIKBoneName.width = 110;
-            uiLabelIKBoneName.fontStyle = FontStyle.Bold;
-            uiLabelIKBoneName.depth = uiIKBNSprite.depth + 1;
-            //uiLabelIKBoneName.overflowMethod = UILabel.Overflow.ShrinkContent;
-
-            uiLabelIKBoneName.gameObject.SetActive(false);
-
-            if (_maid != null)
-            {
-                SetMaid(_maid, _transform);
-            }
-
-            this.goHandleMasterObject.SetActive(false);
-
-
-        }
-
-        //ハンドル君初期化生成処理
-        public void Init(bool isPositionMode = false)
-        {
-            #region Init
-            this.goHandleMasterObject = new GameObject();
-
-            this.goAngleHandle = new GameObject();
-            this.goPositionHandle = new GameObject();
-            goAngleHandle.transform.parent = this.goHandleMasterObject.transform;
-            goPositionHandle.transform.parent = this.goHandleMasterObject.transform;
-
-
-            //SSでハンドル君を消すために
-            //公式のハンドルを線の太さ0にして所持しとく
-            //公式のハンドルが消えたらハンドル君も消す
-            //ここまでやるなら公式のハンドル流用しろよとは思うけどなんとなく
-            if (Legacymode == 0)
-            {
-                gizmoRender = this.goHandleMasterObject.AddComponent<GizmoRender>();
-                gizmoRender.Visible = true;
-                gizmoRender.offsetScale = 0;
-            }
-
-
-
-            SetHandleObject(PrimitiveType.Sphere, m_texture_white, new Vector3(0.125f, 0.125f, 0.125f), new Vector3(0f, 0f, 0f), 0);
-
-            SetHandleObject(PrimitiveType.Cylinder, m_texture_blue, new Vector3(0.025f, 1f, 0.025f), new Vector3(0f, 0f, 0f), 1);
-            SetHandleObject(PrimitiveType.Cylinder, m_texture_red, new Vector3(0.025f, 1f, 0.025f), new Vector3(90f, 0f, 0f), 2);
-            SetHandleObject(PrimitiveType.Cylinder, m_texture_green, new Vector3(0.025f, 1f, 0.025f), new Vector3(0f, 0f, 90f), 3);
-
-            this.controllOnMouseZ = SetHandleRingObject(m_texture_blue_2, new Vector3(0f, 0f, 0f), new Color(0, 0, 1, 0.5f), 4);//Z
-            this.controllOnMouseZ.wheelType = ControllOnMouse.WheelType.Angle;
-            this.controllOnMouseZ.axisType = ControllOnMouse.AxisType.RZ;
-
-            this.controllOnMouseX = SetHandleRingObject(m_texture_red_2, new Vector3(90f, 0f, 0f), new Color(1, 0, 0, 0.5f), 5);//X
-            this.controllOnMouseX.wheelType = ControllOnMouse.WheelType.Angle;
-            this.controllOnMouseX.axisType = ControllOnMouse.AxisType.RX;
-
-            this.controllOnMouseY = SetHandleRingObject(m_texture_green_2, new Vector3(0f, 0f, 90f), new Color(0, 1, 0, 0.5f), 6);//Y
-            this.controllOnMouseY.wheelType = ControllOnMouse.WheelType.Angle;
-            this.controllOnMouseY.axisType = ControllOnMouse.AxisType.RY;
-
-            this.controllOnMousePZ = SetHandleVectorObject(m_texture_blue, new Vector3(0f, 0f, 0f), new Color(0, 0, 1, 0.5f), 4);//Z
-            this.controllOnMousePZ.wheelType = ControllOnMouse.WheelType.Position;
-            this.controllOnMousePZ.axisType = ControllOnMouse.AxisType.RZ;
-
-            this.controllOnMousePX = SetHandleVectorObject(m_texture_red, new Vector3(90f, 0f, 0f), new Color(1, 0, 0, 0.5f), 5);//X
-            this.controllOnMousePX.wheelType = ControllOnMouse.WheelType.Position;
-            this.controllOnMousePX.axisType = ControllOnMouse.AxisType.RX;
-
-            this.controllOnMousePY = SetHandleVectorObject(m_texture_green, new Vector3(0f, 0f, 90f), new Color(0, 1, 0, 0.5f), 6);//Y
-            this.controllOnMousePY.wheelType = ControllOnMouse.WheelType.Position;
-            this.controllOnMousePY.axisType = ControllOnMouse.AxisType.RY;
-
-            whitecenter = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            whitecenter.renderer.receiveShadows = false;
-            whitecenter.renderer.castShadows = false;
-            whitecenter.renderer.useLightProbes = false;
-
-            whitecenter.renderer.material.mainTexture = m_texture_white;
-            if (Legacymode == 0)
-            {
-                whitecenter.renderer.material.shader = Shader.Find("Hidden/Transplant_Internal-Colored");
-
-                whitecenter.renderer.material.SetFloat("_ZTest", 6);
-                whitecenter.renderer.material.SetFloat("_Cull", 2);
-                whitecenter.renderer.material.SetFloat("_ZWrite", 0);
-
-            }
-            else
-            {
-                whitecenter.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
-            }
-            whitecenter.renderer.material.SetColor("_Color", new Color(1, 1, 1, 0.5f));
-
-            whitecenter.renderer.material.renderQueue = BaseRenderQueue + 9;
-
-            whitecenter.transform.localScale = new Vector3(0.25f, 0.25f, 0.25f);
-            whitecenter.name = "whitecenter";
-            whitecenter.transform.parent = this.goPositionHandle.transform;
-
-            this.controllOnMouseC = whitecenter.AddComponent<ControllOnMouse>();
-            this.controllOnMouseC.wheelType = ControllOnMouse.WheelType.PosCenter;
-            this.controllOnMouseC.axisType = ControllOnMouse.AxisType.NONE;
-
-
-
-            goIKBoneTarget = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            goIKBoneTarget.renderer.receiveShadows = false;
-            goIKBoneTarget.renderer.castShadows = false;
-            goIKBoneTarget.renderer.useLightProbes = false;
-
-            goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
-            if (Legacymode == 0)
-            {
-                goIKBoneTarget.renderer.material.shader = Shader.Find("Hidden/Transplant_Internal-Colored");
-                goIKBoneTarget.renderer.material.SetFloat("_ZTest", 6);
-                goIKBoneTarget.renderer.material.SetFloat("_Cull", 2);
-                goIKBoneTarget.renderer.material.SetFloat("_ZWrite", 0);
-
-            }
-            else
-            {
-                goIKBoneTarget.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
-            }
-
-            goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
-            goIKBoneTarget.renderer.material.renderQueue = BaseRenderQueue + 9;
-
-            goIKBoneTarget.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
-            goIKBoneTarget.name = "goIKBoneTarget";
-            goIKBoneTarget.transform.parent = this.goHandleMasterObject.transform;
-            goIKBoneTarget.SetActive(false);
-
-            this.CoC = goIKBoneTarget.AddComponent<ClickOnlyControll>();
-
-
-            #endregion
-
-            ChangeHandleModePosition(isPositionMode);
-        }
-
-        //テクスチャ設定
-        private void SetMaterial(Texture2D m_texture, Color _color, String name)
-        {
-
-            for (int y = 0; y < m_texture.height; y++)
-            {
-                for (int x = 0; x < m_texture.width; x++)
-                {
-                    m_texture.SetPixel(x, y, _color);
-                }
-            }
-            m_texture.Apply();
-            m_texture.name = name;
-        }
-
-        //ハンドル君汎用パーツを作る
-        private void SetHandleObject(PrimitiveType _type, Texture2D m_texture, Vector3 _position, Vector3 _angle, int RQ)
-        {
-            GameObject PartsObject = GameObject.CreatePrimitive(_type);
-
-            PartsObject.renderer.receiveShadows = false;
-            PartsObject.renderer.castShadows = false;
-            PartsObject.renderer.useLightProbes = false;
-            PartsObject.renderer.material.mainTexture = m_texture;
-            if (Legacymode == 0)
-            {
-                PartsObject.renderer.material.shader = Shader.Find("Custom/GizmoShader");
-                PartsObject.renderer.material.SetInt("unity_GUIZTestMode", 6);
-            }
-            else
-            {
-                PartsObject.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
-            }
-            PartsObject.renderer.material.renderQueue = BaseRenderQueue + RQ;
-            PartsObject.transform.localScale = _position;
-            PartsObject.transform.localEulerAngles = _angle;
-
-
-            PartsObject.transform.parent = this.goAngleHandle.transform;
-        }
-
-        //ハンドル君のリング部分を作る
-        private ControllOnMouse SetHandleRingObject(Texture2D m_texture, Vector3 handleAngle, Color m_color, int RQ)
-        {
-            #region createPrimitive
-            GameObject Ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-
-
-            Mesh mesh = Ring.GetComponent<MeshFilter>().mesh;
-
-            //円筒プリミティブを縁を少し残して円柱の底面を抜いたメッシュに修正
-            Vector3[] newMesh = new Vector3[92];
-            Vector2[] newUV = new Vector2[92];
-
-            for (int i = 0; i < 92; ++i)
-            {
-
-                if (i >= 46)
-                {
-                    newMesh[i] = newMesh[i - 46];
-                    newMesh[i].x *= 0.95f;
-                    newMesh[i].z *= 0.95f;
-
-                    newUV[i] = newUV[i - 46];
-                    newUV[i].y = 0.5f;
-
-                }
-                else if (i >= 40)
-                {
-                    newMesh[i] = mesh.vertices[i + 2];
-                    newUV[i] = mesh.uv[i + 2];
-                }
-                else
-                {
-
-                    newMesh[i] = mesh.vertices[i];
-                    newUV[i] = mesh.uv[i];
-                }
-
-            }
-
-            int[] newTri = new int[360];
-
-            for (int i = 0; i < 120; ++i)
-            {
-                if (mesh.triangles[i] > 40)
-                    newTri[i] = mesh.triangles[i] - 2;
-                else
-                    newTri[i] = mesh.triangles[i];
-
-
-            }
-
-            for (int i = 0; i < 20; ++i)
-            {
-                for (int j = 0; j < 3; ++j)
-                {
-                    if (newTri[6 * i + j] == 41)
-                    {
-                        newTri[6 * i + 122 - j] = 86;
-                    }
-                    else if (newTri[6 * i + j] == 43)
-                    {
-                        newTri[6 * i + 122 - j] = 90;
-                    }
-                    else if (newTri[6 * i + j] == 45)
-                    {
-                        newTri[6 * i + 122 - j] = 88;
-                    }
-                    else if (newTri[6 * i + j] >= 20 && newTri[6 * i + j] < 40)
-                    {
-                        newTri[6 * i + 122 - j] = newTri[6 * i + j] + 26;
-                    }
-                    else
-                    {
-                        newTri[6 * i + 122 - j] = newTri[6 * i + j];
-
-                    }
-
-
-                    if (newTri[6 * i + j + 3] == 41)
-                    {
-                        newTri[6 * i + 125 - j] = 86;
-                    }
-                    else if (newTri[6 * i + j + 3] == 43)
-                    {
-                        newTri[6 * i + 125 - j] = 90;
-                    }
-                    else if (newTri[6 * i + j + 3] == 45)
-                    {
-                        newTri[6 * i + 125 - j] = 88;
-                    }
-                    else if (newTri[6 * i + j + 3] >= 20 && newTri[6 * i + j + 3] < 40)
-                    {
-                        newTri[6 * i + 125 - j] = newTri[6 * i + j + 3] + 26;
-                    }
-                    else
-                    {
-                        newTri[6 * i + 125 - j] = newTri[6 * i + j + 3];
-
-                    }
-
-                    if (newTri[6 * i + j] == 40)
-                    {
-                        newTri[6 * i + 242 - j] = 87;
-                    }
-                    else if (newTri[6 * i + j] == 42)
-                    {
-                        newTri[6 * i + 242 - j] = 91;
-                    }
-                    else if (newTri[6 * i + j] == 44)
-                    {
-                        newTri[6 * i + 242 - j] = 89;
-                    }
-                    else if (newTri[6 * i + j] < 20)
-                    {
-                        newTri[6 * i + 242 - j] = newTri[6 * i + j] + 66;
-                    }
-                    else
-                    {
-                        newTri[6 * i + 242 - j] = newTri[6 * i + j];
-
-                    }
-
-                    if (newTri[6 * i + j + 3] == 40)
-                    {
-                        newTri[6 * i + 245 - j] = 87;
-                    }
-                    else if (newTri[6 * i + j + 3] == 42)
-                    {
-                        newTri[6 * i + 245 - j] = 91;
-                    }
-                    else if (newTri[6 * i + j + 3] == 44)
-                    {
-                        newTri[6 * i + 245 - j] = 89;
-                    }
-                    else if (newTri[6 * i + j + 3] < 20)
-                    {
-                        newTri[6 * i + 245 - j] = newTri[6 * i + j + 3] + 66;
-                    }
-                    else
-                    {
-                        newTri[6 * i + 245 - j] = newTri[6 * i + j + 3];
-
-                    }
-
-                }
-
-            }
-
-            mesh.Clear();
-            mesh.vertices = newMesh;
-            mesh.uv = newUV;
-            mesh.triangles = newTri;
-
-
-
-            Ring.renderer.receiveShadows = false;
-            Ring.renderer.castShadows = false;
-            Ring.renderer.useLightProbes = false;
-            Ring.renderer.material.mainTexture = m_texture;
-
-            if (Legacymode == 0)
-            {
-                Ring.renderer.material.shader = Shader.Find("Hidden/Transplant_Internal-Colored");
-                Ring.renderer.material.SetFloat("_ZTest", 6);
-                Ring.renderer.material.SetFloat("_Cull", 2);
-                Ring.renderer.material.SetFloat("_ZWrite", 0);
-
-            }
-            else
-            {
-                Ring.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
-            }
-
-            Ring.renderer.material.SetColor("_Color", m_color);
-            Ring.renderer.material.renderQueue = BaseRenderQueue + RQ;
-
-            Ring.transform.localScale = new Vector3(2f, 0.05f, 2f);
-            Ring.transform.localEulerAngles = handleAngle;
-
-            UnityEngine.Object.Destroy(Ring.GetComponent<Collider>());
-
-            MeshCollider meshCollider = Ring.AddComponent<MeshCollider>();
-            meshCollider.sharedMesh = Ring.GetComponent<MeshFilter>().sharedMesh;
-
-            Ring.name = m_texture.name + "ring";
-            Ring.transform.parent = this.goAngleHandle.transform;
-
-            if (Ring.name == "red_2ring")
-            {
-                redring = Ring;
-
-            }
-            else if (Ring.name == "green_2ring")
-            {
-
-                greenring = Ring;
-
-            }
-            else if (Ring.name == "blue_2ring")
-            {
-                bluering = Ring;
-
-            }
-            else
-            {
-                Debug.LogError("ControllOnMouse: material name is invalid.");
-            }
-            #endregion
-            return Ring.AddComponent<ControllOnMouse>();
-
-        }
-
-        //ハンドル君の矢印部分を作る
-        private ControllOnMouse SetHandleVectorObject(Texture2D m_texture, Vector3 handleAngle, Color m_color, int RQ)
-        {
-            #region createPrimitive
-            GameObject Segare = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-
-            Mesh mesh = Segare.GetComponent<MeshFilter>().mesh;
-
-            //円筒プリミティブを矢印形に修正
-            Vector3[] newMesh = new Vector3[88];
-            Vector2[] newUV = new Vector2[88];
-
-            for (int i = 0; i < 88; ++i)
-            {
-                if (i == 41)
-                {
-                    newMesh[i] = new Vector3(0f, 1.25f, 0f);
-                }
-                else if (i >= 68)
-                {
-                    newMesh[i] = mesh.vertices[i];
-                    newMesh[i].x *= 2.0f;
-                    newMesh[i].z *= 2.0f;
-                    //newMesh[i].y += 1.0f;
-                }
-                else
-                {
-                    newMesh[i] = mesh.vertices[i];
-                    ///newMesh[i].y += 1.0f;
-                }
-                newUV[i] = mesh.uv[i];
-
-            }
-
-            int[] newTri = new int[360];
-            for (int i = 0; i < 240; ++i)
-            {
-                newTri[i] = mesh.triangles[i];
-            }
-            for (int i = 0; i < 19; ++i)
-            {
-                newTri[6 * i + 240] = 20 + i;
-                newTri[6 * i + 241] = 68 + i;
-                newTri[6 * i + 242] = 21 + i;
-                newTri[6 * i + 243] = 69 + i;
-                newTri[6 * i + 244] = 21 + i;
-                newTri[6 * i + 245] = 68 + i;
-            }
-            {
-                newTri[354] = 39;
-                newTri[355] = 87;
-                newTri[356] = 20;
-                newTri[357] = 68;
-                newTri[358] = 20;
-                newTri[359] = 87;
-            }
-            mesh.Clear();
-            mesh.vertices = newMesh;
-            mesh.uv = newUV;
-            mesh.triangles = newTri;
-
-            Segare.renderer.receiveShadows = false;
-            Segare.renderer.castShadows = false;
-            Segare.renderer.useLightProbes = false;
-            Segare.renderer.material.mainTexture = m_texture;
-
-            if (Legacymode == 0)
-            {
-                Segare.renderer.material.shader = Shader.Find("Hidden/Transplant_Internal-Colored");
-                Segare.renderer.material.SetFloat("_ZTest", 6);
-                Segare.renderer.material.SetFloat("_Cull", 2);
-                Segare.renderer.material.SetFloat("_ZWrite", 0);
-
-            }
-            else
-            {
-                Segare.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
-            }
-
-            Segare.renderer.material.SetColor("_Color", m_color);
-            Segare.renderer.material.renderQueue = BaseRenderQueue + RQ;
-
-            Segare.transform.localScale = new Vector3(0.05f, 0.4f, 0.05f);
-            Segare.transform.localEulerAngles = handleAngle;
-
-
-            UnityEngine.Object.Destroy(Segare.GetComponent<Collider>());
-
-            MeshCollider meshCollider = Segare.AddComponent<MeshCollider>();
-            meshCollider.sharedMesh = Segare.GetComponent<MeshFilter>().sharedMesh;
-
-            Segare.name = m_texture.name + "vector";
-            Segare.transform.parent = this.goPositionHandle.transform;
-
-            if (Segare.name == "redvector")
-            {
-                redvector = Segare;
-
-            }
-            else if (Segare.name == "greenvector")
-            {
-
-                greenvector = Segare;
-
-            }
-            else if (Segare.name == "bluevector")
-            {
-                bluevector = Segare;
-
-            }
-            else
-            {
-                Debug.LogError("ControllOnMouse: material name is invalid.");
-            }
-            #endregion
-
-            return Segare.AddComponent<ControllOnMouse>();
-
-        }
-
-
-        //ハンドル君変形
-        public void ChangeHandleModePosition(bool isPositionMode)
-        {
-            bHandlePositionMode = isPositionMode;
-            this.goAngleHandle.SetActive(!isPositionMode);
-            this.goPositionHandle.SetActive(isPositionMode);
-
-            //Rot = isPositionMode ? Quaternion.Euler(-90, 0, 90): Quaternion.identity;
-
-            IKTargetVisible = false;
-        }
-
-        //動かすメイド設定
-        public void SetMaid(Maid _maid, Transform _parentBone = null)
-        {
-            if (_maid == this.maid)
-            {
-                if (_parentBone == null)
-                {
-                    SetParentBone(this.trParentBone);
-                }
-                else
-                {
-                    SetParentBone(_parentBone);
-                }
-            }
-            else
-            {
-                this.maid = _maid;
-                SetParentBone(_parentBone);
-
-            }
-
-        }
-
-        //今動かしてるボーンを取得
-        public Transform GetParentBone()
-        {
-            return (initComplete && this.goHandleMasterObject != null) ? this.trParentBone : null;
-        }
-
-        //動かすボーン設定
-        public void SetParentBone(Transform _trParentBone)
-        {
-
-            if (this.goHandleMasterObject == null)
-            {
-
-                Init();
-            }
-            if (_trParentBone != null)
-            {
-                //現在のボーンが渡されてきたら処理をスキップ
-                if (_trParentBone != this.trParentBone)
-                {
-                    this.trParentBone = _trParentBone;
-                    this.goHandleMasterObject.transform.parent = _trParentBone;//FindParent(maid.transform, "AllOffset");
-                    this.goHandleMasterObject.transform.localPosition = Vector3.zero;//_parentBone.localPosition;//this.maid.gameObject.transform.localPosition;
-                    this.goHandleMasterObject.transform.localRotation = Quaternion.identity;//_parentBone.localRotation;//this.maid.gameObject.transform.localRotation;
-
-                    initComplete = true;
-
-                    //ハンドル君の大きさ調整
-                    if (IKmode == IKMODE.None)
-                    {
-                        if (_trParentBone.name == "Bip01" || _trParentBone.name == "AllOffset" || _trParentBone.name.Contains("Maid"))
-                        {
-                            handleScale = 1.0f;
-                            /*
-                            if(bHandlePositionMode)
-                                Rot = Quaternion.Euler(-90, 0, 90);
-                            else
-                                Rot = Quaternion.identity;
-                            */
-                        }
-                        else if (_trParentBone.name.Contains("Bip01") || _trParentBone.name.Contains("_IK_"))
-                        {   //ハンドル君の大きさは子ボーンまでの長さに比例させる
-                            int childBoneCount = 0;
-                            handleScale = 0.0f;
-                            for (int i = 0; i < trParentBone.childCount; ++i)
-                            {
-                                Transform childBone = _trParentBone.GetChild(i);
-                                if (childBone.name.Contains("Bip") && !childBone.name.Contains("SCL"))
-                                {
-                                    ++childBoneCount;
-                                    handleScale += childBone.localPosition.magnitude;
-                                }
-                            }
-                            if (childBoneCount != 0)
-                            {
-                                handleScale /= (float)childBoneCount;
-                            }
-                            if (handleScale < 0.1) handleScale = 0.1f;
-                        }
-                        else
-                        {
-                            handleScale = 0.2f;
-                        }
-                    }
-                    else
-                    {   //ハンドル君がIKモードのときは大きさ固定
-                        //ついでに角度も固定
-                        //Rot = Quaternion.Euler(-90, 0, 90);
-                        Rot = Quaternion.identity;
-                        handleScale = 0.2f;
-                    }
-                    this.goHandleMasterObject.transform.localScale = Vector3.one * handleScale;
-                }
-            }
-            else
-            {
-                //nullが来たら非表示にしとく
-                this.goHandleMasterObject.SetActive(false);
-                initComplete = false;
-            }
-        }
-
-        //ハンドルのドラッグ状態取得
-        public bool controllDragged()
-        {
-            if (!initComplete)
-                return false;
-
-            if (bHandlePositionMode == false)
-            {
-                if (controllOnMouseX.DragFinished || controllOnMouseY.DragFinished || controllOnMouseZ.DragFinished)
-                {
-                    Visible = false;
-                    controllOnMouseX.DragFinished = false;
-                    controllOnMouseY.DragFinished = false;
-                    controllOnMouseZ.DragFinished = false;
-
-                    redring.renderer.material.mainTexture = m_texture_red_2;
-                    greenring.renderer.material.mainTexture = m_texture_green_2;
-                    bluering.renderer.material.mainTexture = m_texture_blue_2;
-
-                    redring.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
-                    greenring.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
-                    bluering.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
-
-
-
-                    SetParentBone(trParentBone);
-                    Visible = true;
-
-                }
-
-                if (!controllOnMouseX.Dragged && !controllOnMouseY.Dragged && !controllOnMouseZ.Dragged)
-                {
-
-
-                    if (controllOnMouseX.mouseOver)
-                    {
-                        redring.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
-                        redring.renderer.material.mainTexture = m_texture_yellow;
-                    }
-                    else
-                    {
-                        redring.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
-                        redring.renderer.material.mainTexture = m_texture_red_2;
-
-                    }
-
-                    if (controllOnMouseY.mouseOver)
-                    {
-                        greenring.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
-                        greenring.renderer.material.mainTexture = m_texture_yellow;
-                    }
-                    else
-                    {
-                        greenring.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
-                        greenring.renderer.material.mainTexture = m_texture_green_2;
-
-                    }
-
-                    if (controllOnMouseZ.mouseOver)
-                    {
-                        bluering.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
-                        bluering.renderer.material.mainTexture = m_texture_yellow;
-                    }
-                    else
-                    {
-                        bluering.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
-                        bluering.renderer.material.mainTexture = m_texture_blue_2;
-                    }
-                }
-
-                return (controllOnMouseX.Dragged || controllOnMouseY.Dragged || controllOnMouseZ.Dragged);
-            }
-            else
-            {
-                if (controllOnMousePX.DragFinished || controllOnMousePY.DragFinished || controllOnMousePZ.DragFinished || controllOnMouseC.DragFinished)
-                {
-                    Visible = false;
-                    controllOnMousePX.DragFinished = false;
-                    controllOnMousePY.DragFinished = false;
-                    controllOnMousePZ.DragFinished = false;
-                    controllOnMouseC.DragFinished = false;
-
-
-                    /*
-                    if (this.rightClicked == true)
-                    {
-                        this.rightClicked = false;
-                        Debuginfo.Log("右クリック2終了その2");
-                    }
-                    */
-
-                    redvector.renderer.material.mainTexture = m_texture_red;
-                    greenvector.renderer.material.mainTexture = m_texture_green;
-                    bluevector.renderer.material.mainTexture = m_texture_blue;
-                    whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
-
-                    redvector.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
-                    greenvector.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
-                    bluevector.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
-                    whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
-
-                    Visible = true;
-
-                }
-
-                //Debuginfo.Log("PX.Dragged" + controllOnMousePX.Dragged + "PY.Dragged" + controllOnMousePY.Dragged + "PZ.Dragged" + controllOnMousePZ.Dragged　+  "C.Dragged" + controllOnMouseC.Dragged);
-
-                if (!controllOnMousePX.Dragged && !controllOnMousePY.Dragged && !controllOnMousePZ.Dragged && !controllOnMouseC.Dragged)
-                {
-                    //右クリック情報伝達用
-                    //this.rightClicked |= controllOnMousePX.rightClicked;
-                    //this.rightClicked |= controllOnMousePY.rightClicked;
-                    //this.rightClicked |= controllOnMousePZ.rightClicked;
-
-
-                    if (controllOnMousePX.mouseOver)
-                    {
-                        redvector.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
-                        redvector.renderer.material.mainTexture = m_texture_yellow;
-                    }
-                    else
-                    {
-                        redvector.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
-                        redvector.renderer.material.mainTexture = m_texture_red_2;
-
-                    }
-
-                    if (controllOnMousePY.mouseOver)
-                    {
-                        greenvector.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
-                        greenvector.renderer.material.mainTexture = m_texture_yellow;
-                    }
-                    else
-                    {
-                        greenvector.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
-                        greenvector.renderer.material.mainTexture = m_texture_green_2;
-
-                    }
-
-                    if (controllOnMousePZ.mouseOver)
-                    {
-                        bluevector.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
-                        bluevector.renderer.material.mainTexture = m_texture_yellow;
-                    }
-                    else
-                    {
-                        bluevector.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
-                        bluevector.renderer.material.mainTexture = m_texture_blue_2;
-                    }
-
-                    if (controllOnMouseC.mouseOver)
-                    {
-                        /*
-                        if (controllOnMouseC.rightClicked)
-                        {
-                            if (this.rightClicked == false)
-                            {
-                                this.rightClicked |= controllOnMouseC.rightClicked;
-                                Debuginfo.Log("右クリック2");
-                            }
-                        }
-                        else
-                        {
-                            if (this.rightClicked == true)
-                            {
-                                this.rightClicked = false;
-                                Debuginfo.Log("右クリック2終了");
-                            }                                
-                        }
-                        */
-                        whitecenter.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
-                        whitecenter.renderer.material.mainTexture = m_texture_yellow;
-                    }
-                    else
-                    {
-                        whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
-                        whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
-                    }
-                }
-
-                return (controllOnMousePX.Dragged || controllOnMousePY.Dragged || controllOnMousePZ.Dragged || controllOnMouseC.Dragged);
-            }
-        }
-
-        public void resetHandleCoreColor()
-        {
-            whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
-            whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
-        }
-
-        //IKターゲットのクリック終了後に呼び出すよう
-        public void IKTargetClickAfter()
-        {
-            //Debuginfo.Log("IKハンドル君左クリック終了後");
-            CoC.DragFinished = false;
-            CoC.Dragged = false;
-            goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
-            goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
-
-            whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
-            whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
-
-            //一旦再表示させないとハンドル君のコアが消える
-            Visible = false;
-            Visible = true;
-
-            IKTargetVisible = false;
-        }
-
-        //IKターゲットのクリック状態取得
-        public bool IKTargetClicked()
-        {
-            if (!initComplete)
-            {
-                return false;
-            }
-            else if (CoC.centerClicked == true)
-            {
-                CoC.centerClicked = false;
-
-                IKTargetVisible = false;
-
-                //Debuginfo.Log("IKハンドル君中クリック");
-                return false;
-            }
-            else
-            {
-                if (CoC.DragFinished)
-                {
-                    //Debuginfo.Log("IKハンドル君左クリック終了");
-                    CoC.DragFinished = false;
-
-                    goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
-                    goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
-
-                    IKTargetVisible = false;
-                }
-                if (!CoC.Dragged)
-                {
-                    //Debuginfo.Log("IKハンドル君左クリック");
-                    if (CoC.mouseOver)
-                    {
-                        goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.016f, 0.5f));
-                        goIKBoneTarget.renderer.material.mainTexture = m_texture_yellow;
-                    }
-                    else
-                    {
-                        goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
-                        goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
-                    }
-                }
-                return CoC.Dragged;
-            }
-        }
-
-        public void IKTargetAttachedColor(bool _attached)
-        {
-            if (!initComplete)
-            {
-                return;
-            }
-
-            bIKAttached = _attached;
-        }
-
-        public void Proc()
-        {
-            if (!initComplete) return;
-
-            //検知用のGizmoRenderが消えたらハンドル君も消える
-            if (gizmoRender.Visible != Visible)
-            {
-                Visible = gizmoRender.Visible;
-            }
-
-        }
-
-        public void setVisible(bool bVisible)
-        {
-            gizmoRender.Visible = bVisible;
-            Visible = bVisible;
-
-        }
-
-        //どの軸がドラッグされてるのか判別してドラッグ回転を返す
-        public Quaternion DeltaQuaternion()
-        {
-            if (!initComplete) return Quaternion.identity;
-            if (controllOnMouseX.Dragged)
-            {
-                return controllOnMouseX.dragQuaternion;
-            }
-            else if (controllOnMouseY.Dragged)
-            {
-                return controllOnMouseY.dragQuaternion;
-            }
-            else if (controllOnMouseZ.Dragged)
-            {
-                return controllOnMouseZ.dragQuaternion;
-            }
-            else
-            {
-                return Quaternion.identity;
-            }
-        }
-
-        //どの軸がドラッグされてるのか判別してドラッグ移動量を返す
-        public Vector3 DeltaVector()
-        {
-            if (!initComplete) return Vector3.zero;
-            if (controllOnMousePX.Dragged)
-            {
-                if (IKTargetVisible == true) IKTargetVisible = false;
-
-                return /*transform.localToWorldMatrix.MultiplyVector*/(controllOnMousePX.dragVector);
-            }
-            else if (controllOnMousePY.Dragged)
-            {
-                if (IKTargetVisible == true) IKTargetVisible = false;
-
-                return /*transform.localToWorldMatrix.MultiplyVector*/(controllOnMousePY.dragVector);
-            }
-            else if (controllOnMousePZ.Dragged)
-            {
-                if (IKTargetVisible == true) IKTargetVisible = false;
-
-                return /*transform.localToWorldMatrix.MultiplyVector*/(controllOnMousePZ.dragVector);
-            }
-            else if (controllOnMouseC.Dragged)
-            {
-                if (IKTargetVisible == true) IKTargetVisible = false;
-
-                return controllOnMouseC.dragVector;
-            }
-            else
-            {
-                return Vector3.zero;
-            }
-        }
-
-        /*
-        public void setIKmode(bool _IKenable)
-        {
-            controllOnMouseC.ikmode = _IKenable;
-        }
-        */
-        public void Destroy()
-        {
-            if (this.goHandleMasterObject)
-            {
-                Debuginfo.Log("AngleHandle:Destroy!");
-                GameObject.Destroy(this.goHandleMasterObject);
-
-            }
-            initComplete = false;
-        }
-    }
+    
 
     public class AddBoneSlider : UnityInjector.PluginBase
     {
 
         #region Constants
-        
+
 
         public const string PluginName = "AddBoneSlider";
         public const string Version = "0.0.1.4";
 
         private readonly string LogLabel = AddBoneSlider.PluginName + " : ";
 
+
+        private readonly int iSceneEdit = 5; //メイン版エディットモード
+        private readonly int iScenePhoto = 27; //メイン版公式撮影モード
+        private readonly int iSceneEditCBL = 4; //CBL版エディットモード
+        private readonly int iScenePhotoCBL = 21; //CBL版公式撮影モード
+
         private readonly float TimePerInit = 1.00f;
 
         //private readonly int IKCalc = 3;
 
-        private readonly float clickCheckOffsetInit = 40f;
+        //private readonly float clickCheckOffsetInit = 40f;
 
 
         //private readonly int UIRootWidth = 1920; 
@@ -2968,20 +79,14 @@ namespace CM3D2.AddBoneSlider.Plugin
         private bool bLocked = false;
 
         private BoneParam mp;
-        //private Dictionary<string, Dictionary<string, float>> undoValue = new Dictionary<string, Dictionary<string, float>>();
 
         private Maid maid;
-
-
         //SeceneLevel5（複数メイド撮影）ではStockNoが、SeceneLevel27（公式撮影）ではMaidNoが設定される
         private int currentMaidNo;
-        
+
 
         private GameObject goAMSPanel;
-
         private GameObject goScrollView;
-
-
         private GameObject[] goScrollViewTable = new GameObject[6];
 
         private GameObject goPSPanel;
@@ -3005,20 +110,33 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         private UI2DSprite uiTextureCurrentMaid;
         private UILabel uiLabelCurrentMaid;
-
-
         private Font font;
         private Dictionary<string, Transform> trBoneUnit = new Dictionary<string, Transform>();
         private Dictionary<string, Dictionary<string, UILabel>> uiValueLable = new Dictionary<string, Dictionary<string, UILabel>>();
+        private Dictionary<string, Dictionary<string, UISlider>> uiSlider = new Dictionary<string, Dictionary<string, UISlider>>();
+
+
         public Dictionary<string, Transform> trBone = new Dictionary<string, Transform>();
         public Dictionary<string, Quaternion> vPastBoneAngle = new Dictionary<string, Quaternion>();
         private Dictionary<string, Transform> trPoseImgUnit = new Dictionary<string, Transform>();
+
         public Vector3 vPastBoneTrans;
 
+
+        //copy用
+        private Dictionary<string, Quaternion> vCopyBoneAngle = new Dictionary<string, Quaternion>();
+        private Vector3 vCopyBoneTrans;
+
+
         //Undo履歴
-        //private LinkedList<UndoBase> llUndoList　= new LinkedList<UndoBase>();
-        private UndoList undoList = new UndoList();
-        private String UndofuncName;
+        private UndoList undoList;
+        private string UndofuncName;
+        //その他カテのスライダー初期化カウント
+        private Dictionary<string, int> iOtherSliderInit;
+        private bool bUndoLock = false;
+
+        //ボーンカテゴリー管理用
+        private string sCurrentCategory = "Default";
 
         public string activeHandleName = "";
         HandleKun posHandle;
@@ -3028,80 +146,7 @@ namespace CM3D2.AddBoneSlider.Plugin
         public string iniFileName;
         public string PoseName  ="";
 
-        //本体側にIKが使えないのでこちらで用意
-        /*
-        public Dictionary<int, TBody.IKCMO> IKLeftLeg = new Dictionary<int, TBody.IKCMO>();
-        public Dictionary<int, TBody.IKCMO> IKRightLeg = new Dictionary<int, TBody.IKCMO>();
-        public Dictionary<int, TBody.IKCMO> IKLeftArm = new Dictionary<int, TBody.IKCMO>();
-        public Dictionary<int, TBody.IKCMO> IKRightArm = new Dictionary<int, TBody.IKCMO>();
-        
-        public Dictionary<int, IKCONSTRAINED> IKLeftLeg = new Dictionary<int, IKCONSTRAINED>();
-        public Dictionary<int, IKCONSTRAINED> IKRightLeg = new Dictionary<int, IKCONSTRAINED>();
-        public Dictionary<int, IKCONSTRAINED> IKLeftArm = new Dictionary<int, IKCONSTRAINED>();
-        public Dictionary<int, IKCONSTRAINED> IKRightArm = new Dictionary<int, IKCONSTRAINED>();
-
-        //IK脚腕のアタッチ状態判別用
-        public Dictionary<int, bool> bIKAttachLeftLeg = new Dictionary<int, bool>();
-        public Dictionary<int, bool> bIKAttachRightLeg = new Dictionary<int, bool>();
-        public Dictionary<int, bool> bIKAttachLeftArm = new Dictionary<int, bool>();
-        public Dictionary<int, bool> bIKAttachRightArm = new Dictionary<int, bool>();
-
-        //IKターゲット用
-        public Dictionary<int, GameObject> goIKLeftLegTarget = new Dictionary<int, GameObject>();
-        public Dictionary<int, GameObject> goIKRightLegTarget = new Dictionary<int, GameObject>();
-        public Dictionary<int, GameObject> goIKLeftArmTarget = new Dictionary<int, GameObject>();
-        public Dictionary<int, GameObject> goIKRightArmTarget = new Dictionary<int, GameObject>();
-
-        //IK対象ボーンのtransform
-        public Dictionary<int, Transform[]> trIKLeftLegBones = new Dictionary<int, Transform[]>();
-        public Dictionary<int, Transform[]> trIKRightLegBones = new Dictionary<int, Transform[]>();
-        public Dictionary<int, Transform[]> trIKLeftArmBones = new Dictionary<int, Transform[]>();
-        public Dictionary<int, Transform[]> trIKRightArmBones = new Dictionary<int, Transform[]>();
-
-
-        //アタッチ状態が付与されたメイドリスト
-        public Dictionary<int, Maid> attachIKMaidList = new Dictionary<int, Maid>();
-        public List<int> attachIKMaidNo = new List<int>();
-        public HashSet<int> DeleteNoList = new HashSet<int>();
-
-
-        //IKをアタッチする_IK_ボーンのtransform
-        //public Dictionary<int, Transform[]> trTargetIKBones = new Dictionary<int, Transform[]>();
-        public Dictionary<int, Transform[]> trTargetIKBones = new Dictionary<int, Transform[] >();
-        public Transform trTargetIKTemp = null;
-        public Dictionary<string, string> sIKBoneName = new Dictionary<string, string>()
-        {
-            {"_IK_handL","左手" },
-            {"_IK_handR","右手" },
-            {"_IK_footL","左足" },
-            {"_IK_footR","右足" },
-            {"_IK_hohoL","左頬" },
-            {"_IK_hohoR","右頬" },
-            {"_IK_muneL","左胸" },
-            {"_IK_muneR","右胸" },
-            {"_IK_hara","お腹" },
-            {"_IK_hipL","左尻" },
-            {"_IK_hipR","右尻" },
-            {"_IK_anal","後穴" },
-            {"_IK_vagina","前穴" },
-            {"Bip01","解除" }
-        };
-        bool bIKTargetGet = false;
-
-        */
-        private IKManage ikManage;//= new IKManage();
-
-        //
-
-
-        //IKターゲット操作用ハンドル君×4
-        //HandleKun LeftLegHandle;
-        //HandleKun RightLegHandle;
-        //HandleKun LeftArmHandle;
-        //HandleKun RightArmHandle;
-        //リストラ
-
-
+        private IKManage ikManage;
 
         SettingIni settingIni;
         
@@ -3194,6 +239,12 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 XmlNode mods = doc.DocumentElement;
                 XmlFormat = ((XmlElement)mods).GetAttribute("format");
+
+                if(XmlFormat != "1.01" )
+                {
+                    Debug.LogError(LogLabel + " \"" + XmlFileName + "\" is old Version format.");
+                    return false;
+                }
 
                 XmlNodeList modNodeS = mods.SelectNodes("/bones/bone");
                 if (!(modNodeS.Count > 0))
@@ -3305,384 +356,7 @@ namespace CM3D2.AddBoneSlider.Plugin
             }
         }
 
-        //Undo履歴管理用
-        private class UndoList
-        {
-            //Undo履歴
-            LinkedList<UndoBase> _llundolist;
-            //Redo履歴
-            LinkedList<UndoBase> _llredolist;
-            //Undo容量
-            int size;
-
-            public UndoList(int _size = 10)
-            {
-                _llundolist = new LinkedList<UndoBase>();
-                _llredolist = new LinkedList<UndoBase>();
-                size = _size;
-            }
-            
-            public void Add(UndoBase _undo)
-            {
-                //Redo履歴があれば消去
-                if (_llredolist.Count() > 0)
-                {
-                    _llredolist.Clear();
-                }
-                //Undo履歴が容量を超えてたら
-                //先頭を削除
-                if (_llundolist.Count() >= size)
-                {
-                    _llundolist.RemoveFirst();
-                }
-                //Undo要素を最後尾に追加
-                _llundolist.AddLast(_undo);
-
-            }
-
-            public void doUndo()
-            {
-                if (_llundolist.Count() > 0)
-                {
-
-                    //Undo履歴の最後尾の要素のUndoを実行
-                    UndoBase redo = _llundolist.Last().doUndo();
-
-                    //Undoが成功していればRedo要素をRedo履歴に加える
-                    if (redo != null)
-                    {
-                        _llredolist.AddLast(redo);
-                    }
-
-                    //Undo履歴の最後尾の要素を削除
-                    _llundolist.RemoveLast();
-                }
-            }
-
-            public void doRedo()
-            {
-                if (_llredolist.Count() > 0)
-                {
-                    //Redo履歴の最後尾の要素のUndo(Redo)を実行
-                    UndoBase undo = _llredolist.Last().doUndo();
-
-                    //Redoが成功していればUndo要素をUndo履歴に加える
-                    if (undo != null)
-                    {
-                        _llundolist.AddLast(undo);
-                    }
-
-                    //Redo履歴の最後尾の要素を削除
-                    _llredolist.RemoveLast();
-                }
-            }
-        }
         
-
-        //各Undo要素の大元
-        private interface UndoBase
-        {
-            UndoBase doUndo();
-
-            //void changeRedo();
-
-
-        }
-
-        private class UndoBone : UndoBase
-        {
-            private Dictionary<Transform, Quaternion> qBonelocal;
-
-            public UndoBone(Dictionary<Transform, Quaternion> _qBone)
-            {
-                qBonelocal = _qBone;
-            }
-
-            public UndoBone(Transform _tr, Quaternion _qua)
-            {
-                qBonelocal = new Dictionary<Transform, Quaternion>(){ {_tr, _qua} };
-
-            }
-
-            public UndoBone(Dictionary<String, Transform> _Dic)
-            {
-                qBonelocal = new Dictionary<Transform, Quaternion>();
-                foreach(KeyValuePair < String, Transform> pair in _Dic)
-                {
-                    qBonelocal.Add(pair.Value, pair.Value.localRotation);
-                }
-            }
-            public UndoBone()
-            {
-                qBonelocal = new Dictionary<Transform, Quaternion>();
-
-            }
-            public UndoBase doUndo()
-            {
-                foreach(Transform tr in qBonelocal.Keys)
-                {
-                    if (tr == null && tr.gameObject.activeInHierarchy == false)
-                    {
-                        return null;
-                    }
-                }
-
-                //現在の状態を元にRedo要素を作成
-                Dictionary<Transform, Quaternion> re_qBonelocal = new Dictionary<Transform, Quaternion>();
-                foreach (KeyValuePair<Transform, Quaternion> pair in qBonelocal)
-                {
-                    re_qBonelocal.Add(pair.Key, pair.Key.localRotation);
-                }
-
-                foreach (KeyValuePair<Transform, Quaternion> pair in qBonelocal)
-                {
-                    pair.Key.localRotation = pair.Value;
-                }
-
-                return new UndoBone(re_qBonelocal);
-            }
-
-            public void Add(Transform _tr, Quaternion _qua)
-            {
-                qBonelocal.Add(_tr, _qua);
-            }
-            
-        }
-
-        private class UndoBonePos : UndoBase
-        {
-
-            private Vector3 vBonelocalPos;
-            private Transform tr;
-            
-            public UndoBonePos(Transform _tr, Vector3 _vPos)
-            {
-                tr = _tr;
-                vBonelocalPos = _vPos;
-
-            }
-            public UndoBase doUndo()
-            {
-                if (tr != null && tr.gameObject.activeInHierarchy)
-                {
-                    Vector3 _tempPos = tr.localPosition;
-
-                    tr.localPosition = vBonelocalPos;
-
-                    return new UndoBonePos(tr, _tempPos);
-                }
-                else
-                {
-                    return null;
-                }
-            }
-            
-        }
-
-        private class UndoBoneAll : UndoBase
-        {
-            private Dictionary<Transform, Quaternion> qBonelocal;
-            private Vector3 vBonelocalPos;
-            //private Transform tr;
-
-            public UndoBoneAll(Dictionary<Transform, Quaternion> _qBone, Vector3 _vPos)
-            {
-                qBonelocal = _qBone;
-                vBonelocalPos = _vPos;
-            }
-            public UndoBoneAll(Dictionary<String, Transform> _Dic)
-            {
-                qBonelocal = new Dictionary<Transform, Quaternion>();
-                foreach (KeyValuePair<String, Transform> pair in _Dic)
-                {
-                    qBonelocal.Add(pair.Value, pair.Value.localRotation);
-                    if(pair.Key == "Bip01")
-                    {
-                        vBonelocalPos = pair.Value.localPosition;
-                    }
-                }
-            }
-
-            public UndoBoneAll(Dictionary<String, Transform> _trDic, Dictionary<String, Quaternion> _qDic,Vector3 _vPos)
-            {
-                qBonelocal = _trDic.Select( (k ,i) => new {k.Value, v = _qDic[k.Key]}).ToDictionary(a => a.Value, a => a.v);
-                vBonelocalPos = _vPos;
-            }
-
-            public UndoBase doUndo()
-            {
-                //現在の状態を元にRedo要素を作成
-                Vector3 _tempPos = Vector3.zero;
-                Dictionary<Transform, Quaternion> re_qBonelocal = new Dictionary<Transform, Quaternion>();
-                foreach (KeyValuePair<Transform, Quaternion> pair in qBonelocal)
-                {
-                    re_qBonelocal.Add(pair.Key, pair.Key.localRotation);
-                    if(pair.Key.name == "Bip01")
-                    {
-                        _tempPos = pair.Key.localPosition;
-                    }
-                }
-
-                foreach (KeyValuePair<Transform, Quaternion> pair in qBonelocal)
-                {
-                    pair.Key.localRotation = pair.Value;
-                    if (pair.Key.name == "Bip01")
-                    {
-                        pair.Key.localPosition = vBonelocalPos;
-                    }
-                }
-
-                return new UndoBoneAll(re_qBonelocal,_tempPos);
-
-            }
-
-        }
-
-        private class UndoAllpos : UndoBase
-        {
-            private Vector3 allpos;
-            private bool isPos;
-
-            public UndoAllpos(Vector3 _vPos,bool _isPos = false)
-            {
-                allpos = _vPos;
-                isPos = _isPos;
-            }
-            public UndoBase doUndo()
-            {
-                Vector3 _temp;
-                if (isPos == true)
-                {
-                    _temp = GameMain.Instance.CharacterMgr.GetCharaAllOfsetPos();
-
-                    GameMain.Instance.CharacterMgr.SetCharaAllPos(allpos);
-                }
-                else
-                {
-                    _temp = GameMain.Instance.CharacterMgr.GetCharaAllOfsetRot();
-
-                    GameMain.Instance.CharacterMgr.SetCharaAllRot(allpos);
-                }
-                return new UndoAllpos( _temp,isPos);
-            }
-
-        }
-
-        private class UndoOffset : UndoBase
-        {
-            private Vector3 offset;
-            private Maid maid;
-            private bool isPos;
-
-            public UndoOffset(Maid _maid, Vector3 _Offset,bool _isPos = false)
-            {
-                maid = _maid;
-                offset = _Offset;
-                isPos = _isPos;
-            }
-            public UndoBase doUndo()
-            {
-                if(maid != null && maid.Visible == true)
-                {
-                    Vector3 _temp;
-                    if (isPos == true)
-                    {
-                        _temp = maid.transform.localPosition;
-
-                        maid.SetPos(offset);
-                    }
-                    else
-                    {
-                        _temp = maid.GetRot();
-
-                        maid.SetRot(offset);
-                    }
-
-                    return new UndoOffset(maid, _temp,isPos);
-                }
-                else
-                {
-                    return null;
-                }
-            }
-        }
-
-        /*
-        private class UndoCamera : UndoListBase
-        {
-
-            public UndoCamera()
-            {
-
-            }
-        }
-        */
-
-        private class UndoEye : UndoBase
-        {
-            Maid maid;
-            Quaternion qEye;
-            bool isRight;
-
-            public UndoEye(Maid _maid, Quaternion _qEye,bool _isRight )
-            {
-                maid = _maid;
-                qEye = _qEye;
-                isRight = _isRight;
-            }
-            public UndoBase doUndo()
-            {
-                if (maid != null && maid.Visible == true)
-                {
-                    Quaternion eye;
-                    if (isRight)
-                    {
-                        eye = maid.body0.quaDefEyeR;
-                        maid.body0.quaDefEyeR = qEye;
-                    }
-                    else
-                    {
-                        eye = maid.body0.quaDefEyeL;
-                        maid.body0.quaDefEyeL = qEye;
-                    }
-                    return new UndoEye(maid,eye,isRight);
-                }
-                else
-                {
-                    return null;
-                }
-            }
-        }
-
-        private class UndoSecret : UndoBase
-        {
-            jiggleBone jMune;
-            float updown;
-            float yori;
-
-            public UndoSecret(jiggleBone _mune, float _updown, float _yori)
-            {
-                jMune = _mune;
-                updown = _updown;
-                yori = _yori;
-            }
-            public UndoBase doUndo()
-            {
-                if (jMune != null && jMune.gameObject.activeInHierarchy == true)
-                {
-                    float tempud = jMune.MuneUpDown;
-                    float _tempy = jMune.MuneYori;
-                    jMune.MuneUpDown = updown;
-                    jMune.MuneYori = yori;
-                    return new UndoSecret(jMune,tempud,_tempy);
-                }
-                else
-                {
-                    return null;
-                }
-            }
-        }
-
 
         #endregion
 
@@ -3692,30 +366,42 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         public void OnLevelWasLoaded(int level)
         {
+
+
+
             if (level == 9)
             {
                 font = GameObject.Find("SystemUI Root").GetComponentsInChildren<UILabel>()[0].trueTypeFont;
-            }
-            //SceneLevel == 4(CBL版エディットモード)  と　SceneLevel21 == 21（CBL版公式撮影モード） も追加
-            if (level != sceneLevel && ((sceneLevel == iSceneEdit) || (sceneLevel == iScenePhoto)||(sceneLevel == iSceneEditCBL) || (sceneLevel == iScenePhotoCBL)))
-            {
-                finalize();
+                setInifile();
             }
 
-            if ((level == iSceneEdit) || (level == iScenePhoto)|| (level == iSceneEditCBL) || (level == iScenePhotoCBL) )
-            {
-                mp = new BoneParam();
-                if (xmlLoad = mp.Init()) StartCoroutine(initCoroutine());
-            }
+            //VR版は当面の間非サポートに決定
+            //VR版はUnity5らしい＆PluginFilterが機能してないので
+            //ここでフィルタリング
+            //一応iniで起動できるようにもしておく
 
-            sceneLevel = level;
+            if (UnityEngine.Application.unityVersion.Split('.')[0] == "4" || settingIni.VRmodeEnable != 0 )
+            {
+                //SceneLevel == 4(CBL版エディットモード)  と　SceneLevel21 == 21（CBL版公式撮影モード） も追加
+                if (level != sceneLevel && ((sceneLevel == iSceneEdit) || (sceneLevel == iScenePhoto) || (sceneLevel == iSceneEditCBL) || (sceneLevel == iScenePhotoCBL)))
+                {
+                    finalize();
+                }
+
+                if ((level == iSceneEdit) || (level == iScenePhoto) || (level == iSceneEditCBL) || (level == iScenePhotoCBL))
+                {
+                    mp = new BoneParam();
+                    if (xmlLoad = mp.Init()) StartCoroutine(initCoroutine());
+                }
+
+                sceneLevel = level;
+            }
         }
 
         public void Update()
         {
             if (((sceneLevel == iSceneEdit) || (sceneLevel == iScenePhoto)|| (sceneLevel == iSceneEditCBL) || (sceneLevel == iScenePhotoCBL)) && bInitCompleted)
             {
-
                 //Input.GetKeyDownの代わりに
                 //FlexKeycode.GetKeyDownを使う
                 if (FlexKeycode.GetKeyDown(settingIni.ToggleKey))
@@ -3726,20 +412,16 @@ namespace CM3D2.AddBoneSlider.Plugin
                     }
                     goAMSPanel.SetActive(visible = !visible);
 
-
                     //posHandle.Visible = visible;
 
-                 
                     posHandle.setVisible(visible);
                     
                     settingIni.WindowPositionX = (int)uiAMSPanel.transform.localPosition.x;
                     settingIni.WindowPositionY = (int)uiAMSPanel.transform.localPosition.y;
-
                 }
+
                 if (maid == null || maid.Visible == false)
                 {
-                    
-
                     int stockNo = FindVisibleMaidStockNo(0, 1);
                     if (stockNo != -1)
                     {
@@ -3748,37 +430,31 @@ namespace CM3D2.AddBoneSlider.Plugin
                     }
                     else
                     {
-
                         if (visible == true)
                         {
                             //Debuginfo.Log(LogLabel + "window destroy at photomode");
 
                             visible = false;
                             goAMSPanel.SetActive(false);
-
                             posHandle.setVisible(false);
                         }
-
                     }
                 }
 
                 if (visible)
                 {
-                    
                     if (bLocked == false)
                     {
                         //UIと一緒に消す用
                         if (settingIni.HandleLegacymode == 0)
                         {
                             posHandle.Proc();
-                            
                         }
                         //複数撮影SS対策用
                         if (Input.GetKeyDown(KeyCode.S))
                         {
                             //Debuginfo.Log(LogLabel +"input S");
                             posHandle.Visible = false;
-                            
                         }
 
                         //ハンドル君がIKモードの時、右クリックして
@@ -3786,7 +462,6 @@ namespace CM3D2.AddBoneSlider.Plugin
                         if(posHandle.Visible == true && posHandle.IKmode!= HandleKun.IKMODE.None )
                         {
                             ikManage.updateFunc(posHandle,trBone);
-                            
                         }
 
                         if (posHandle.Visible == true)
@@ -3795,8 +470,11 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                             if (posHandle.IKTargetVisible == true)
                             {
-                                ikTargetClicked();
+                                //Undoチェック
+                                //UndofuncName = "IKTargetClicked";
 
+
+                                ikTargetClicked();
                             }
 
                             if(posHandle.IKmode == HandleKun.IKMODE.None)
@@ -3805,48 +483,18 @@ namespace CM3D2.AddBoneSlider.Plugin
                             }
                             else
                             {
-                                ikManage.inversekinematicHandle(posHandle, maid, currentMaidNo);
+                                string tempUndofuncName = ikManage.inversekinematicHandle(undoList.Add, getCurrentIKBone, setCurrentIKBone, 
+                                    getCurrentIKBone(currentMaidNo, (int)posHandle.IKmode), this.setIKButtonActiveforUndo, this.getIKButtonActiveforUndo, 
+                                    posHandle, maid, currentMaidNo,UndofuncName);
+
+                                if (tempUndofuncName != UndofuncName)
+                                {
+                                    setIKButtonActive(true, (int)posHandle.IKmode);
+                                    UndofuncName = tempUndofuncName;
+                                }
                             }
-                            /*
-                            switch (posHandle.IKmode)
-                            {
-                                case HandleKun.IKMODE.None:
-                                    syncFromHandle();
-                                    break;
-
-                                case HandleKun.IKMODE.LeftLeg:
-                                    bool temp1 = inversekinematicFromHandle(goIKLeftLegTarget[currentMaidNo].transform, bIKAttachLeftLeg[currentMaidNo]);
-                                    bIKAttachLeftLeg[currentMaidNo] |= temp1;
-                                    break;
-
-                                case HandleKun.IKMODE.RightLeg:
-                                    bool temp2 = inversekinematicFromHandle(goIKRightLegTarget[currentMaidNo].transform, bIKAttachRightLeg[currentMaidNo]);
-                                    bIKAttachRightLeg[currentMaidNo] |= temp2;
-                                    break;
-
-                                case HandleKun.IKMODE.LeftArm:
-                                    bool temp3 = inversekinematicFromHandle(goIKLeftArmTarget[currentMaidNo].transform, bIKAttachLeftArm[currentMaidNo]);
-                                    bIKAttachLeftArm[currentMaidNo] |= temp3;
-                                    break;
-
-                                case HandleKun.IKMODE.RightArm:
-                                    bool temp4 = inversekinematicFromHandle(goIKRightArmTarget[currentMaidNo].transform, bIKAttachRightArm[currentMaidNo]);
-                                    bIKAttachRightArm[currentMaidNo] |= temp4;
-                                    break;
-
-                                default:
-
-                                    Debug.Log(LogLabel+"Handle IKmode exception.");
-                                    break;
-                            }
-                            */
-
-
-
-
                         }
                         syncSlider(false);
-
                     }
 
                     if (settingIni.WindowPositionX != (int)uiAMSPanel.transform.localPosition.x)
@@ -3854,345 +502,43 @@ namespace CM3D2.AddBoneSlider.Plugin
                     if (settingIni.WindowPositionY != (int)uiAMSPanel.transform.localPosition.y)
                         settingIni.WindowPositionY = (int)uiAMSPanel.transform.localPosition.y;
                 }
-
             }
         }
 
         //IK機能用
         public void LateUpdate()
         {
-
-            ikManage.lateupdateFunc(posHandle);
-
-
-            //ハンドル君がIKボーンにアタッチした状態で
-            //そのIKボーンをもつメイドさんがいなくなると
-            //ハンドル君もいっしょに死ぬので
-            //ハンドル君が死んでないかチェック
-            if (posHandle.GetParentBone() == null)
+            if (maid != null && maid.Visible == true && ikManage !=null  )
             {
-                Debuginfo.Log(LogLabel + "ハンドル君にリザします");
-                posHandle.Init(true);
-                rebootHandle();
+                ikManage.lateupdateFunc(posHandle);
 
-                /*
-                posHandle.SetMaid(maid, trBone["Bip01 L Foot"]);
-                posHandle.IKTargetAttachedColor(false);
-                posHandle.resetHandleCoreColor();
-                //posHandle.setVisible(false);
-                posHandle.setVisible(false);
-
-                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
-                */
-
-            }
-            //ハンドル君がIKボーンにアタッチした状態で
-            //そのIKボーンをもつメイドさんが消えると
-            //ハンドル君もいっしょに消えるので
-            //ハンドル君が消えてないかチェック
-            if (posHandle.GetParentBone().gameObject.activeInHierarchy == false)
-            {
-                Debuginfo.Log(LogLabel + "ハンドル君のバニシュを解除します");
-                rebootHandle();
-
-                /*
-                posHandle.SetMaid(maid, trBone["Bip01 L Foot"]);
-                posHandle.IKTargetAttachedColor(false);
-                posHandle.resetHandleCoreColor();
-                posHandle.setVisible(false);
-
-                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
-                */
-            }
+                syncFromIK();
 
 
-
-
-                /*
-                foreach (int m in attachIKMaidNo)
+                //ハンドル君がIKボーンにアタッチした状態で
+                //そのIKボーンをもつメイドさんがいなくなると
+                //ハンドル君もいっしょに死ぬので
+                //ハンドル君が死んでないかチェック
+                if (posHandle.checkAlive() == false)
                 {
-                    Debuginfo.Log(LogLabel + "finalize1");
-                    //メイドさんがいなくなっていればスキップして
-                    //リストから除外
-                    if (attachIKMaidList[m] == null || attachIKMaidList[m].Visible == false)
-                    {
-                        Debuginfo.Log(LogLabel + "maid[" + m + "] is LOST");
-                        removeAttachMaidList(m);
-                        DeleteNoList.Add(m);
-
-                    }
+                    Debuginfo.Log(LogLabel + "ハンドル君にリザします");
+                    posHandle.Init(true);
+                    rebootHandle();
                 }
 
-                //このタイミングでattachIKMaidNoの要素削除しないとInvalidOperationExceptionが出る
-
-
-                attachIKMaidNo.RemoveAll(DeleteNoList.Contains);
-
-                DeleteNoList.Clear();
-
-
-                foreach (int m in attachIKMaidNo)
+                //ハンドル君がIKボーンにアタッチした状態で
+                //そのIKボーンをもつメイドさんが消えると
+                //ハンドル君もいっしょに消えるので
+                //ハンドル君が消えてないかチェック
+                if (posHandle.checkBanishment() == false)
                 {
-                    Debuginfo.Log(LogLabel + "finalize2");
-
-                    if (bIKAttachLeftLeg.ContainsKey(m) && bIKAttachLeftLeg[m])
-                    {
-
-                        //公式撮影でアタッチ対象のメイドさんがいなくなった場合
-                        if (goIKLeftLegTarget[m] == null)
-                        {
-                            Debuginfo.Log(LogLabel + "LeftLegIK is null!");
-
-                            GameObject tempIKTarget = new GameObject();
-                            tempIKTarget.transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
-                            goIKLeftLegTarget[m] = tempIKTarget;
-                            goIKLeftLegTarget[m].transform.position = trIKLeftLegBones[m][2].position;
-
-                            //if(trTargetIKBones.ContainsKey(m))
-                            //   trTargetIKBones.Remove(m);
-
-                            //ハンドル君がIKボーンにアタッチした状態で
-                            //そのIKボーンをもつメイドさんがいなくなると
-                            //ハンドル君もいっしょに死ぬので
-                            //ハンドル君が死んでないかチェック
-
-
-                            if (posHandle.GetParentBone() == null)
-                            {
-                                Debuginfo.Log(LogLabel + "ハンドル君にリザします");
-                                posHandle.Init(true);
-                                posHandle.SetMaid(maid, trBone["Bip01 L Foot"]);
-                                posHandle.IKTargetAttachedColor(false);
-                                posHandle.resetHandleCoreColor();
-                                //posHandle.setVisible(false);
-                                posHandle.setVisible(false);
-
-                                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
-
-                            }
-                        }
-                        else if (goIKLeftLegTarget[m].activeInHierarchy == false)
-                        {
-                            //複数撮影でアタッチ対象のメイドさんがいなくなった場合
-                            Debuginfo.Log(LogLabel + "LeftLegIK is invisible!");
-
-                            goIKLeftLegTarget[m].transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
-                            goIKLeftLegTarget[m].transform.position = trIKLeftLegBones[m][2].position;
-
-                            //ハンドル君がIKボーンにアタッチした状態で
-                            //そのIKボーンをもつメイドさんが消えると
-                            //ハンドル君もいっしょに消えるので
-                            //ハンドル君が消えてないかチェック
-                            if (posHandle.GetParentBone().gameObject.activeInHierarchy == false)
-                            {
-                                Debuginfo.Log(LogLabel + "ハンドル君のバニシュを解除します");
-                                posHandle.SetMaid(maid, trBone["Bip01 L Foot"]);
-                                posHandle.IKTargetAttachedColor(false);
-                                posHandle.resetHandleCoreColor();
-                                posHandle.setVisible(false);
-
-                                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
-                            }
-
-                        }
-
-                        IKLeftLeg[m].Proc(trIKLeftLegBones[m][0], trIKLeftLegBones[m][1], trIKLeftLegBones[m][2], goIKLeftLegTarget[m].transform.position);
-
-                        //for (int i = 0; i < IKCalc; ++i)
-                        //    IKLeftLeg[m].Porc(trIKLeftLegBones[m][0], trIKLeftLegBones[m][1], trIKLeftLegBones[m][2], goIKLeftLegTarget[m].transform.position, Vector3.zero);
-                    }
-
-                    if (bIKAttachRightLeg.ContainsKey(m) && bIKAttachRightLeg[m])
-                    {
-                        if (goIKRightLegTarget[m] == null)
-                        {
-                            Debuginfo.Log(LogLabel + "RightLegIK is null!");
-
-                            GameObject tempIKTarget = new GameObject();
-                            tempIKTarget.transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
-                            goIKRightLegTarget[m] = tempIKTarget;
-                            goIKRightLegTarget[m].transform.position = trIKRightLegBones[m][2].position;
-
-                            //if(trTargetIKBones.ContainsKey(m))
-                            //   trTargetIKBones.Remove(m);
-
-                            //ハンドル君がIKボーンにアタッチした状態で
-                            //そのIKボーンをもつメイドさんがいなくなると
-                            //ハンドル君もいっしょに死ぬので
-                            //ハンドル君が死んでないかチェック
-                            if (posHandle.GetParentBone() == null)
-                            {
-                                Debuginfo.Log(LogLabel + "ハンドル君にリザします");
-                                posHandle.Init(true);
-                                posHandle.SetMaid(maid, trBone["Bip01 R Foot"]);
-                                posHandle.IKTargetAttachedColor(false);
-                                posHandle.resetHandleCoreColor();
-                                posHandle.setVisible(false);
-
-                                FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").SetActive(false);
-
-                            }
-                            else if (goIKRightLegTarget[m].activeInHierarchy == false)
-                            {
-                                Debuginfo.Log(LogLabel + "RightLegIK is invisible!");
-
-                                goIKRightLegTarget[m].transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
-                                goIKRightLegTarget[m].transform.position = trIKRightLegBones[m][2].position;
-
-                                //ハンドル君がIKボーンにアタッチした状態で
-                                //そのIKボーンをもつメイドさんが消えると
-                                //ハンドル君もいっしょに消えるので
-                                //ハンドル君が消えてないかチェック
-                                if (posHandle.GetParentBone().gameObject.activeInHierarchy == false)
-                                {
-                                    Debuginfo.Log(LogLabel + "ハンドル君のバニシュを解除します");
-                                    posHandle.SetMaid(maid, trBone["Bip01 R Foot"]);
-                                    posHandle.IKTargetAttachedColor(false);
-                                    posHandle.setVisible(false);
-
-                                    FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").SetActive(false);
-                                }
-
-                            }
-
-                        }
-                        IKRightLeg[m].Proc(trIKRightLegBones[m][0], trIKRightLegBones[m][1], trIKRightLegBones[m][2], goIKRightLegTarget[m].transform.position);
-
-                        //for (int i = 0; i < IKCalc; ++i)
-                        //    IKRightLeg[m].Porc(trIKRightLegBones[m][0], trIKRightLegBones[m][1], trIKRightLegBones[m][2], goIKRightLegTarget[m].transform.position, Vector3.zero);
-                    }
-
-
-                    if (bIKAttachLeftArm.ContainsKey(m) && bIKAttachLeftArm[m])
-                    {
-
-                        if (goIKLeftArmTarget[m] == null)
-                        {
-                            Debuginfo.Log(LogLabel + "LeftArmIK　is null!");
-
-                            GameObject tempIKTarget = new GameObject();
-                            tempIKTarget.transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
-                            goIKLeftArmTarget[m] = tempIKTarget;
-                            goIKLeftArmTarget[m].transform.position = trIKLeftArmBones[m][2].position;
-
-                            //if(trTargetIKBones.ContainsKey(m))
-                            //   trTargetIKBones.Remove(m);
-
-                            //ハンドル君がIKボーンにアタッチした状態で
-                            //そのIKボーンをもつメイドさんがいなくなると
-                            //ハンドル君もいっしょに死ぬので
-                            //ハンドル君が死んでないかチェック
-                            if (posHandle.GetParentBone() == null)
-                            {
-                                Debuginfo.Log(LogLabel + "ハンドル君にリザします");
-                                posHandle.Init(true);
-                                posHandle.SetMaid(maid, trBone["Bip01 L Hand"]);
-                                posHandle.IKTargetAttachedColor(false);
-                                posHandle.setVisible(false);
-
-                                FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").SetActive(false);
-
-                            }
-                        }
-                        else if (goIKLeftArmTarget[m].activeInHierarchy == false)
-                        {
-                            Debuginfo.Log(LogLabel + "LeftArmIK is invisible!");
-
-                            goIKLeftArmTarget[m].transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
-                            goIKLeftArmTarget[m].transform.position = trIKLeftArmBones[m][2].position;
-
-                            //ハンドル君がIKボーンにアタッチした状態で
-                            //そのIKボーンをもつメイドさんが消えると
-                            //ハンドル君もいっしょに消えるので
-                            //ハンドル君が消えてないかチェック
-                            if (posHandle.GetParentBone().gameObject.activeInHierarchy == false)
-                            {
-                                Debuginfo.Log(LogLabel + "ハンドル君のバニシュを解除します");
-                                posHandle.SetMaid(maid, trBone["Bip01 L Hand"]);
-                                posHandle.IKTargetAttachedColor(false);
-                                posHandle.resetHandleCoreColor();
-                                posHandle.setVisible(false);
-
-                                FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").SetActive(false);
-                            }
-
-                        }
-                        if (attachIKMaidList[m].body0.tgtHandL == null && attachIKMaidList[m].body0.tgtHandL_AttachName == string.Empty)
-                            IKLeftArm[m].Proc(trIKLeftArmBones[m][0], trIKLeftArmBones[m][1], trIKLeftArmBones[m][2], goIKLeftArmTarget[m].transform.position);
-
-                        //for (int i = 0; i < IKCalc; ++i)
-                        //    IKLeftArm[m].Porc(trIKLeftArmBones[m][0], trIKLeftArmBones[m][1], trIKLeftArmBones[m][2], goIKLeftArmTarget[m].transform.position, Vector3.zero);
-                    }
-                    if (bIKAttachRightArm.ContainsKey(m) && bIKAttachRightArm[m])
-                    {
-
-                        if (goIKRightArmTarget[m] == null)
-                        {
-                            Debuginfo.Log(LogLabel + "RightArmIK is null!");
-
-                            GameObject tempIKTarget = new GameObject();
-                            tempIKTarget.transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
-                            goIKRightArmTarget[m] = tempIKTarget;
-                            goIKRightArmTarget[m].transform.position = trIKRightArmBones[m][2].position;
-
-                            //if(trTargetIKBones.ContainsKey(m))
-                            //   trTargetIKBones.Remove(m);
-
-                            //ハンドル君がIKボーンにアタッチした状態で
-                            //そのIKボーンをもつメイドさんがいなくなると
-                            //ハンドル君もいっしょに死ぬので
-                            //ハンドル君が死んでないかチェック
-                            if (posHandle.GetParentBone() == null)
-                            {
-                                Debuginfo.Log(LogLabel + "ハンドル君にリザします");
-                                posHandle.Init(true);
-                                posHandle.SetMaid(maid, trBone["Bip01 R Hand"]);
-                                posHandle.IKTargetAttachedColor(false);
-                                posHandle.setVisible(false);
-
-                                FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").SetActive(false);
-
-                            }
-                        }
-                        else if (goIKRightArmTarget[m].activeInHierarchy == false)
-                        {
-                            Debuginfo.Log(LogLabel + "RightArmIK is invisible!");
-
-                            goIKRightArmTarget[m].transform.parent = CMT.SearchObjName(attachIKMaidList[m].body0.m_Bones.transform, "Bip01", true);
-                            goIKRightArmTarget[m].transform.position = trIKRightArmBones[m][2].position;
-
-                            //ハンドル君がIKボーンにアタッチした状態で
-                            //そのIKボーンをもつメイドさんが消えると
-                            //ハンドル君もいっしょに消えるので
-                            //ハンドル君が消えてないかチェック
-                            if (posHandle.GetParentBone().gameObject.activeInHierarchy == false)
-                            {
-                                Debuginfo.Log(LogLabel + "ハンドル君のバニシュを解除します");
-                                posHandle.SetMaid(maid, trBone["Bip01 R Hand"]);
-                                posHandle.IKTargetAttachedColor(false);
-                                posHandle.resetHandleCoreColor();
-                                posHandle.setVisible(false);
-
-                                FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").SetActive(false);
-                            }
-
-                        }
-                        //腕IKが本体側で何か設定されていればそちらを優先
-                        if (attachIKMaidList[m].body0.tgtHandR == null && attachIKMaidList[m].body0.tgtHandR_AttachName == string.Empty)
-                            IKRightArm[m].Proc(trIKRightArmBones[m][0], trIKRightArmBones[m][1], trIKRightArmBones[m][2], goIKRightArmTarget[m].transform.position);
-
-                        //for (int i = 0; i < IKCalc; ++i)
-                        //    IKRightArm[m].Porc(trIKRightArmBones[m][0], trIKRightArmBones[m][1], trIKRightArmBones[m][2], goIKRightArmTarget[m].transform.position, Vector3.zero);
-                    }
-
+                    Debuginfo.Log(LogLabel + "ハンドル君のバニシュを解除します");
+                    rebootHandle();
                 }
-                */
             }
-
-
+        }
+        
         #endregion
-
-
 
         #region Callbacks
 
@@ -4202,9 +548,10 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 string bone = getTag(UIButton.current, 1);
                 bool b = false;
-
+                
                 if (mp.IsToggle(bone))
                 {
+
                     b = !mp.bEnabled[bone];
                     mp.bEnabled[bone] = b;
 
@@ -4222,9 +569,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 {
                     setParentAllOffset();
                 }
-
                 setUnitButtonColor(UIButton.current, b);
-
             }
             catch (Exception ex) { Debug.LogError(LogLabel + "OnClickToggleHeader() " + ex); return; }
         }
@@ -4287,14 +632,14 @@ namespace CM3D2.AddBoneSlider.Plugin
                     maid.body0.boHeadToCam = false;
                     maid.body0.boEyeToCam = false;
 
-
+                    bUndoLock = true;
                     //Undoチェック
-                    Debuginfo.Log(LogLabel + "PoseLoad:" + maid.name);
                     UndofuncName = "PoseLoad:" + maid.name;
+                    //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                     //Undo履歴に加える
-                    undoList.Add(new UndoBoneAll(trBone));
-
+                    //undoList.Add(new UndoBoneAll(trBone));
+                    undoList.Add(Undo.createUndoBoneAll(trBone));
 
                     foreach (XmlNode boneNode in boneNodeS)
                     {
@@ -4334,6 +679,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                     }
                     vPastBoneTrans = trBone["Bip01"].localPosition;
                     bLocked = false;
+                    bUndoLock = false;
 
                 }
                 else if (UICamera.currentTouchID == -2)
@@ -4361,243 +707,233 @@ namespace CM3D2.AddBoneSlider.Plugin
 
             Color color = UIButton.current.defaultColor;
             UIButton.current.defaultColor = new Color(color.r, color.g, color.b, bToggle ? 1f : 0.8f);
-            FindChild(UIButton.current.gameObject, "SelectCursor").SetActive(bToggle);
+            FindChildByTag(UIButton.current.gameObject, "SelectCursor").SetActive(bToggle);
             goPSPanel.SetActive(bToggle);
 
+            if(bToggle == true)
+                uiPSTable.Reposition();
         }
 
         public void OnClickSavePose()
         {
-            if (UICamera.currentTouchID == -1)
+            //ボーンデータの保存処理
+            XmlDocument document = new XmlDocument();
+
+
+            if (!File.Exists(PoseXmlFileName))
             {
-                //ボーンデータの保存処理
-                XmlDocument document = new XmlDocument();
-
-
-                if (!File.Exists(PoseXmlFileName))
-                {
-                    XmlDeclaration declaration = document.CreateXmlDeclaration("1.0", "UTF-8", null);  // XML宣言
-                    document.AppendChild(declaration);
-                    XmlElement Ini_root;
-                    Ini_root = document.CreateElement("poses");  // ルート要素
-                    Ini_root.SetAttribute("name", "bonepose.xml");
-                    Ini_root.SetAttribute("description", "CM3D2.AddBoneSlider.Plugin の各bone値保存用XML");
-                    document.AppendChild(Ini_root);
-                    document.Save(PoseXmlFileName);
-                }
-
-                document.Load(PoseXmlFileName);
-
-                PoseTexDirectoryName = settingIni.PoseImgDirectory;
-
-                //Debuginfo.Log("PoseTexDirectoryName :" + PoseTexDirectoryName);
-                string dateName = DateTime.Now.ToString("yyyyMMddHHmmssfff");
-
-                XmlElement root = document.DocumentElement;
-
-
-                XmlElement elementBones = document.CreateElement("bones");
-                elementBones.SetAttribute("pose_id", dateName);  // 属性
-                elementBones.SetAttribute("format", "1.00");
-                root.AppendChild(elementBones);
-
-
-                foreach (string bone in mp.sBone)
-                {
-                    if (mp.bNosave[bone] == true) continue;
-
-                    XmlElement elementBone = document.CreateElement("bone");
-                    elementBone.SetAttribute("id", bone);  // 属性
-                    elementBones.AppendChild(elementBone);
-                    {
-                        if (bone == "Bip01")
-                        {
-                            XmlElement value_px = document.CreateElement("value");
-                            value_px.SetAttribute("prop_name", bone + ".px");  // 属性
-                            value_px.SetAttribute("axis", "posx");  // 属性
-                            value_px.SetAttribute("val", mp.fValue[bone][bone + ".px"].ToString("F4"));  // 属性
-                            elementBone.AppendChild(value_px);
-
-                            XmlElement value_py = document.CreateElement("value");
-                            value_py.SetAttribute("prop_name", bone + ".py");  // 属性
-                            value_py.SetAttribute("axis", "posy");  // 属性
-                            value_py.SetAttribute("val", mp.fValue[bone][bone + ".py"].ToString("F4"));  // 属性
-                            elementBone.AppendChild(value_py);
-
-                            XmlElement value_pz = document.CreateElement("value");
-                            value_pz.SetAttribute("prop_name", bone + ".pz");  // 属性
-                            value_pz.SetAttribute("axis", "posz");  // 属性
-                            value_pz.SetAttribute("val", mp.fValue[bone][bone + ".pz"].ToString("F4"));  // 属性
-                            elementBone.AppendChild(value_pz);
-                        }
-
-                        XmlElement value_x = document.CreateElement("value");
-                        value_x.SetAttribute("prop_name", bone + ".x");  // 属性
-                        value_x.SetAttribute("axis", "rotx");  // 属性
-                        value_x.SetAttribute("val", mp.fValue[bone][bone + ".x"].ToString("F4"));  // 属性
-                        elementBone.AppendChild(value_x);
-
-                        XmlElement value_y = document.CreateElement("value");
-                        value_y.SetAttribute("prop_name", bone + ".y");  // 属性
-                        value_y.SetAttribute("axis", "roty");  // 属性
-                        value_y.SetAttribute("val", mp.fValue[bone][bone + ".y"].ToString("F4"));  // 属性
-                        elementBone.AppendChild(value_y);
-
-                        XmlElement value_z = document.CreateElement("value");
-                        value_z.SetAttribute("prop_name", bone + ".z");  // 属性
-                        value_z.SetAttribute("axis", "rotz");  // 属性
-                        value_z.SetAttribute("val", mp.fValue[bone][bone + ".z"].ToString("F4"));  // 属性
-                        elementBone.AppendChild(value_z);
-
-                    }
-                }
-
-
-                // ファイルに保存する
+                XmlDeclaration declaration = document.CreateXmlDeclaration("1.0", "UTF-8", null);  // XML宣言
+                document.AppendChild(declaration);
+                XmlElement Ini_root;
+                Ini_root = document.CreateElement("poses");  // ルート要素
+                Ini_root.SetAttribute("name", "bonepose.xml");
+                Ini_root.SetAttribute("description", "CM3D2.AddBoneSlider.Plugin の各bone値保存用XML");
+                document.AppendChild(Ini_root);
                 document.Save(PoseXmlFileName);
+            }
 
-                //ポーズ画像の保存処理
-                if (!Directory.Exists(PoseTexDirectoryName))
+            document.Load(PoseXmlFileName);
+
+            PoseTexDirectoryName = settingIni.PoseImgDirectory;
+
+            //Debuginfo.Log("PoseTexDirectoryName :" + PoseTexDirectoryName);
+            string dateName = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+
+            XmlElement root = document.DocumentElement;
+
+
+            XmlElement elementBones = document.CreateElement("bones");
+            elementBones.SetAttribute("pose_id", dateName);  // 属性
+            elementBones.SetAttribute("format", "1.00");
+            root.AppendChild(elementBones);
+
+
+            foreach (string bone in mp.sBone)
+            {
+                if (mp.bNosave[bone] == true) continue;
+
+                XmlElement elementBone = document.CreateElement("bone");
+                elementBone.SetAttribute("id", bone);  // 属性
+                elementBones.AppendChild(elementBone);
                 {
-                    Directory.CreateDirectory(PoseTexDirectoryName);
+                    if (bone == "Bip01")
+                    {
+                        XmlElement value_px = document.CreateElement("value");
+                        value_px.SetAttribute("prop_name", bone + ".px");  // 属性
+                        value_px.SetAttribute("axis", "posx");  // 属性
+                        value_px.SetAttribute("val", mp.fValue[bone][bone + ".px"].ToString("F4"));  // 属性
+                        elementBone.AppendChild(value_px);
+
+                        XmlElement value_py = document.CreateElement("value");
+                        value_py.SetAttribute("prop_name", bone + ".py");  // 属性
+                        value_py.SetAttribute("axis", "posy");  // 属性
+                        value_py.SetAttribute("val", mp.fValue[bone][bone + ".py"].ToString("F4"));  // 属性
+                        elementBone.AppendChild(value_py);
+
+                        XmlElement value_pz = document.CreateElement("value");
+                        value_pz.SetAttribute("prop_name", bone + ".pz");  // 属性
+                        value_pz.SetAttribute("axis", "posz");  // 属性
+                        value_pz.SetAttribute("val", mp.fValue[bone][bone + ".pz"].ToString("F4"));  // 属性
+                        elementBone.AppendChild(value_pz);
+                    }
+
+                    XmlElement value_x = document.CreateElement("value");
+                    value_x.SetAttribute("prop_name", bone + ".x");  // 属性
+                    value_x.SetAttribute("axis", "rotx");  // 属性
+                    value_x.SetAttribute("val", mp.fValue[bone][bone + ".x"].ToString("F4"));  // 属性
+                    elementBone.AppendChild(value_x);
+
+                    XmlElement value_y = document.CreateElement("value");
+                    value_y.SetAttribute("prop_name", bone + ".y");  // 属性
+                    value_y.SetAttribute("axis", "roty");  // 属性
+                    value_y.SetAttribute("val", mp.fValue[bone][bone + ".y"].ToString("F4"));  // 属性
+                    elementBone.AppendChild(value_y);
+
+                    XmlElement value_z = document.CreateElement("value");
+                    value_z.SetAttribute("prop_name", bone + ".z");  // 属性
+                    value_z.SetAttribute("axis", "rotz");  // 属性
+                    value_z.SetAttribute("val", mp.fValue[bone][bone + ".z"].ToString("F4"));  // 属性
+                    elementBone.AppendChild(value_z);
 
                 }
+            }
 
-                string text = PoseTexDirectoryName + @"\poseimg" + dateName + ".png";
-                ThumShot posethumshot = GameMain.Instance.ThumCamera.GetComponent<ThumShot>();
 
-                //posethumshot.MoveTargetCard(maid);
-                Transform transform = CMT.SearchObjName(maid.transform, "Bip01 HeadNub", true);
-                if (transform != null)
+            // ファイルに保存する
+            document.Save(PoseXmlFileName);
+
+            //ポーズ画像の保存処理
+            if (!Directory.Exists(PoseTexDirectoryName))
+            {
+                Directory.CreateDirectory(PoseTexDirectoryName);
+
+            }
+
+            string text = PoseTexDirectoryName + @"\poseimg" + dateName + ".png";
+            ThumShot posethumshot = GameMain.Instance.ThumCamera.GetComponent<ThumShot>();
+
+            //posethumshot.MoveTargetCard(maid);
+            Transform transform = CMT.SearchObjName(maid.transform, "Bip01 HeadNub", true);
+            if (transform != null)
+            {
+                posethumshot.transform.position = transform.TransformPoint(transform.localPosition + new Vector3(0.84f, 2.25f, 0f));
+                posethumshot.transform.rotation = transform.rotation * Quaternion.Euler(90f, 0f, 90f);
+            }
+            else
+            {
+                Debug.LogError(LogLabel + "：サムネイルを取ろうとしましたがメイドが居ません。");
+                return;
+            }
+
+            //ここの間で他のメイドがいたら消す処理を加える
+            //メイドの表示状態を記録しておく
+            //ここで消す
+            bool otherMaid = true;
+            int tempCurrentNo = this.currentMaidNo;
+            List<int> visMaidNo = new List<int>();
+            int stockNo = FindVisibleMaidStockNo(this.currentMaidNo + 1, 1);
+            while (otherMaid)
+            {
+
+                if (stockNo != -1)
                 {
-                    posethumshot.transform.position = transform.TransformPoint(transform.localPosition + new Vector3(0.84f, 2.25f, 0f));
-                    posethumshot.transform.rotation = transform.rotation * Quaternion.Euler(90f, 0f, 90f);
+
+                    if (this.currentMaidNo == stockNo)
+                    {
+                        otherMaid = false;
+                        break;
+                    }
+                    else
+                    {
+                        Maid tempMaid;
+
+                        tempMaid = GetMaid(stockNo);
+                        visMaidNo.Add(stockNo);
+                        tempMaid.Visible = !tempMaid.Visible;
+                        //GameMain.Instance.CharacterMgr.BanishmentMaid(maid);
+
+                        stockNo = FindVisibleMaidStockNo(stockNo + 1, 1);
+                    }
                 }
                 else
                 {
-                    Debug.LogError(LogLabel + "：サムネイルを取ろうとしましたがメイドが居ません。");
-                    return;
+                    Debug.LogError(LogLabel + ":maid is Lost!");
+                    break;
                 }
-
-                //ここの間で他のメイドがいたら消す処理を加える
-                //メイドの表示状態を記録しておく
-                //ここで消す
-                bool otherMaid = true;
-                int tempCurrentNo = this.currentMaidNo;
-                List<int> visMaidNo = new List<int>();
-                int stockNo = FindVisibleMaidStockNo(this.currentMaidNo + 1, 1);
-                while (otherMaid)
-                {
-
-                    if (stockNo != -1)
-                    {
-
-                        if (this.currentMaidNo == stockNo)
-                        {
-                            otherMaid = false;
-                            break;
-                        }
-                        else
-                        {
-                            Maid tempMaid;
-                            /*
-                            if (sceneLevel == 27)
-                            {
-                                //公式撮影モード
-                                tempMaid = GameMain.Instance.CharacterMgr.GetMaid(stockNo);
-                            }
-                            else
-                            {
-                                //複数撮影モード
-                                tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(stockNo);
-                            }
-                            */
-                            tempMaid = GetMaid(stockNo);
-                            visMaidNo.Add(stockNo);
-                            tempMaid.Visible = !tempMaid.Visible;
-                            //GameMain.Instance.CharacterMgr.BanishmentMaid(maid);
-
-                            stockNo = FindVisibleMaidStockNo(stockNo + 1, 1);
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogError(LogLabel + ":maid is Lost!");
-                        break;
-                    }
-                }
-
-                Camera poseshotthumCamera = posethumshot.gameObject.GetComponent<Camera>();
-                poseshotthumCamera.fieldOfView = 50f;
-
-                //撮影
-                RenderTexture m_rtThumCard = new RenderTexture(100, 100, 24, RenderTextureFormat.ARGB32);
-                m_rtThumCard.filterMode = FilterMode.Bilinear;
-                m_rtThumCard.antiAliasing = 8;
-                RenderTexture m_rtThumCard2 = new RenderTexture(100, 100, 0, RenderTextureFormat.ARGB32);
-
-                Texture2D posetex = posethumshot.RenderThum(poseshotthumCamera, m_rtThumCard, m_rtThumCard2, new Size<int>(100, 100));
-                byte[] bytes = posetex.EncodeToPNG();
-                File.WriteAllBytes(text, bytes);
-
-                //ここで消してたメイドを元に戻す
-
-                foreach (int MaidNo in visMaidNo)
-                {
-                    Maid tempMaid;
-                    /*
-                    if (sceneLevel == 27)
-                    {
-                        //公式撮影モード
-                        tempMaid = GameMain.Instance.CharacterMgr.GetMaid(MaidNo);
-                    }
-                    else
-                    {
-                        //複数撮影モード
-                        tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(MaidNo);
-                    }
-                    */
-                    tempMaid = GetMaid(MaidNo);
-                    tempMaid.Visible = true;
-                }
-                
-                this.currentMaidNo = tempCurrentNo;
-
-
-                //作成した新しいポーズをロードできるようにする処理
-                GameObject goPoseImgButton = SetCloneChild(goPSScrollViewTable, FindChild(goPSScrollViewTable, "ImageOriginal"), "Image:" + dateName);
-                goPoseImgButton.AddComponent<UIDragScrollView>().scrollView = uiPSScrollView;
-
-                UIButton uiPoseImgButton = goPoseImgButton.GetComponent<UIButton>();
-                EventDelegate.Set(uiPoseImgButton.onClick, new EventDelegate.Callback(this.OnClickPoseImg));
-
-                UISprite uiSpritePoseImgButton = goPoseImgButton.GetComponent<UISprite>();
-                uiSpritePoseImgButton.type = UIBasicSprite.Type.Sliced;
-                uiSpritePoseImgButton.SetDimensions(100, 100);
-
-                UI2DSprite uiTexturePose = NGUITools.AddWidget<UI2DSprite>(goPoseImgButton);
-                Sprite sprite2D = Sprite.Create(posetex, new Rect(0f, 0f, (float)posetex.width, (float)posetex.height), default(Vector2));
-                uiTexturePose.sprite2D = sprite2D;
-                uiTexturePose.depth = basedepth + 1;
-                uiTexturePose.MakePixelPerfect();
-
-                UILabel uiLabelPoseImg = FindChild(goPoseImgButton, "Name").GetComponent<UILabel>();
-                NGUITools.Destroy(uiLabelPoseImg.gameObject);
-
-                FindChild(goPoseImgButton, "SelectCursor").GetComponent<UISprite>().SetDimensions(16, 16);
-                FindChild(goPoseImgButton, "SelectCursor").SetActive(false);
-
-                NGUITools.UpdateWidgetCollider(goPoseImgButton);
-                goPoseImgButton.SetActive(true);
-
-                uiPSTable.Reposition();
             }
-            //右クリックしたとき、anmファイル出力用のパネルを展開
-            else if (UICamera.currentTouchID == -2)
+
+            Camera poseshotthumCamera = posethumshot.gameObject.GetComponent<Camera>();
+            poseshotthumCamera.fieldOfView = 50f;
+
+            //撮影
+            RenderTexture m_rtThumCard = new RenderTexture(100, 100, 24, RenderTextureFormat.ARGB32);
+            m_rtThumCard.filterMode = FilterMode.Bilinear;
+            m_rtThumCard.antiAliasing = 8;
+            RenderTexture m_rtThumCard2 = new RenderTexture(100, 100, 0, RenderTextureFormat.ARGB32);
+
+            Texture2D posetex = posethumshot.RenderThum(poseshotthumCamera, m_rtThumCard, m_rtThumCard2, new Size<int>(100, 100));
+            byte[] bytes = posetex.EncodeToPNG();
+            File.WriteAllBytes(text, bytes);
+
+            //ここで消してたメイドを元に戻す
+
+            foreach (int MaidNo in visMaidNo)
             {
-                
-                goPNamePanel.SetActive(true);
+                Maid tempMaid;
+                /*
+                if (sceneLevel == 27)
+                {
+                    //公式撮影モード
+                    tempMaid = GameMain.Instance.CharacterMgr.GetMaid(MaidNo);
+                }
+                else
+                {
+                    //複数撮影モード
+                    tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(MaidNo);
+                }
+                */
+                tempMaid = GetMaid(MaidNo);
+                tempMaid.Visible = true;
             }
+
+            this.currentMaidNo = tempCurrentNo;
+
+
+            //作成した新しいポーズをロードできるようにする処理
+            GameObject goPoseImgButton = SetCloneChild(goPSScrollViewTable, FindChild(goPSScrollViewTable, "ImageOriginal"), "Image:" + dateName);
+            goPoseImgButton.AddComponent<UIDragScrollView>().scrollView = uiPSScrollView;
+
+            UIButton uiPoseImgButton = goPoseImgButton.GetComponent<UIButton>();
+            EventDelegate.Set(uiPoseImgButton.onClick, new EventDelegate.Callback(this.OnClickPoseImg));
+
+            UISprite uiSpritePoseImgButton = goPoseImgButton.GetComponent<UISprite>();
+            uiSpritePoseImgButton.type = UIBasicSprite.Type.Sliced;
+            uiSpritePoseImgButton.SetDimensions(100, 100);
+
+            UI2DSprite uiTexturePose = NGUITools.AddWidget<UI2DSprite>(goPoseImgButton);
+            Sprite sprite2D = Sprite.Create(posetex, new Rect(0f, 0f, (float)posetex.width, (float)posetex.height), default(Vector2));
+            uiTexturePose.sprite2D = sprite2D;
+            uiTexturePose.depth = basedepth + 1;
+            uiTexturePose.MakePixelPerfect();
+
+            UILabel uiLabelPoseImg = FindChild(goPoseImgButton, "Name").GetComponent<UILabel>();
+            NGUITools.Destroy(uiLabelPoseImg.gameObject);
+
+            FindChild(goPoseImgButton, "SelectCursor").GetComponent<UISprite>().SetDimensions(16, 16);
+            FindChild(goPoseImgButton, "SelectCursor").SetActive(false);
+
+            NGUITools.UpdateWidgetCollider(goPoseImgButton);
+            goPoseImgButton.SetActive(true);
+
+            uiPSTable.Reposition();
+
+
+
+        }
+        public void OnClickOutputPose()
+        {
+            //anmファイル出力用のパネルを展開
+            goPNamePanel.SetActive(true);
         }
 
 
@@ -4609,15 +945,20 @@ namespace CM3D2.AddBoneSlider.Plugin
                 {
                     //カーソルの状態で判別
                     //bool bToggle = !(UIButton.current.defaultColor.a == 1f);
-                    bool bToggle = !FindChild(UIButton.current.gameObject, "SelectCursor").activeSelf;
+                    bool bToggle = !FindChildByTag(UIButton.current.gameObject, "SelectCursor").activeSelf;
 
                     //IKターゲットオブジェクトとターゲット操作用ハンドル君表示
                     if (bToggle)
                     {
 
+                        //Eye to camera をここで止める
+                        maid.body0.m_Bones.animation.Stop();
+                        maid.body0.boHeadToCam = false;
+                        maid.body0.boEyeToCam = false;
+
                         //以下、IK用変数初期化処理
                         Transform[] boneList = { trBone["Bip01 L Thigh"], trBone["Bip01 L Calf"], trBone["Bip01 L Foot"] };
-                        ikManage.initList(trBone["Bip01"], boneList, maid, currentMaidNo,1);
+                        ikManage.addList(trBone["Bip01"], boneList, maid, currentMaidNo,0);
 
                         /*
                         if (!IKLeftLeg.ContainsKey(currentMaidNo))
@@ -4687,7 +1028,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                         posHandle.ChangeHandleModePosition(true);
                         posHandle.IKmode = HandleKun.IKMODE.LeftLeg;
                         //if (!bIKAttachLeftLeg.ContainsKey(currentMaidNo) || !bIKAttachLeftLeg[currentMaidNo])
-                        if(!ikManage.checkIKAttach(currentMaidNo,1) )
+                        if(!ikManage.checkIKAttach(currentMaidNo,0) )
                         {
                             //Debuginfo.Log("init bIKAttachLeftLeg");
                             //posHandle.SetParentBone(trBone["Bip01"]);
@@ -4698,7 +1039,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                         }
                         else
                         {
-                            posHandle.SetMaid(maid, ikManage.getIKTarget(currentMaidNo,1));
+                            posHandle.SetMaid(maid, ikManage.getIKTransform(currentMaidNo,0));
                         }
 
                         //IK用ハンドル君表示
@@ -4715,7 +1056,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                         posHandle.setVisible(false);
                     }
 
-                    if (ikManage.checkParentName(currentMaidNo, 1))
+                    if (ikManage.checkParentName(currentMaidNo, 0))
                     {
                         posHandle.IKTargetAttachedColor(true);
                     }
@@ -4724,21 +1065,15 @@ namespace CM3D2.AddBoneSlider.Plugin
                         posHandle.IKTargetAttachedColor(false);
                     }
 
-                    //IKボタン類の表示状態を一括処理
+                    //IKボタン類の表示状態を処理
 
-                    setIKButtonActive(bToggle);
+                    setIKButtonCursorActive(bToggle);
 
                 }
                 else if (UICamera.currentTouchID == -2)
                 {   //右クリックでIK解除
-                    /*
-                    if (bIKAttachLeftLeg.ContainsKey(currentMaidNo))
-                    {
-                        bIKAttachLeftLeg[currentMaidNo] = false;
-                        goIKLeftLegTarget[currentMaidNo].transform.parent = trBone["Bip01"];
-                    }
-                    */
-                    ikManage.detachIK(trBone["Bip01"], currentMaidNo, 1);
+                    
+                    ikManage.detachIK(undoList.Add ,this.setIKButtonActiveforUndo,getIKButtonActiveforUndo(), trBone["Bip01"], currentMaidNo, 0,UndofuncName);
 
                     if (posHandle.IKmode ==HandleKun.IKMODE.LeftLeg)
                     {
@@ -4749,9 +1084,10 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                         posHandle.setVisible(false);
                     }
-                   
-                    setIKButtonActive(false);
-                    setButtonColor(UIButton.current, false);
+                    
+                    setIKButtonCursorActive(false);
+                    setIKButtonActive(false, 0);
+
                     posHandle.IKTargetAttachedColor(false);
                 }
             }
@@ -4764,89 +1100,33 @@ namespace CM3D2.AddBoneSlider.Plugin
                 if (UICamera.currentTouchID == -1)
                 {
                     //カーソルの状態で判別
-                    bool bToggle = !FindChild(UIButton.current.gameObject, "SelectCursor").activeSelf;
+                    bool bToggle = !FindChildByTag(UIButton.current.gameObject, "SelectCursor").activeSelf;
 
                     //IKターゲットオブジェクトとターゲット操作用ハンドル君表示
                     if (bToggle)
                     {
 
+                        //Eye to camera をここで止める
+                        maid.body0.m_Bones.animation.Stop();
+                        maid.body0.boHeadToCam = false;
+                        maid.body0.boEyeToCam = false;
+
                         //以下、IK用変数初期化処理
                         Transform[] boneList = { trBone["Bip01 R Thigh"], trBone["Bip01 R Calf"], trBone["Bip01 R Foot"] };
-                        ikManage.initList(trBone["Bip01"], boneList, maid, currentMaidNo, 2);
+                        ikManage.addList(trBone["Bip01"], boneList, maid, currentMaidNo, 1);
 
-                        /*
-                        if (!IKRightLeg.ContainsKey(currentMaidNo))
-                        {
-                            IKCONSTRAINED ikTempRightLeg = new IKCONSTRAINED();
-                            float[,] constrait =
-                              {
-                                    {
-                                        mp.fVmin["Bip01 R Foot"]["Bip01 R Foot.x"] + mp.fVzero["Bip01 R Foot"]["Bip01 R Foot.x"],
-                                        mp.fVmax["Bip01 R Foot"]["Bip01 R Foot.x"] + mp.fVzero["Bip01 R Foot"]["Bip01 R Foot.x"],
-                                        mp.fVmin["Bip01 R Foot"]["Bip01 R Foot.y"] + mp.fVzero["Bip01 R Foot"]["Bip01 R Foot.y"],
-                                        mp.fVmax["Bip01 R Foot"]["Bip01 R Foot.y"] + mp.fVzero["Bip01 R Foot"]["Bip01 R Foot.y"],
-                                        mp.fVmin["Bip01 R Foot"]["Bip01 R Foot.z"] + mp.fVzero["Bip01 R Foot"]["Bip01 R Foot.z"],
-                                        mp.fVmax["Bip01 R Foot"]["Bip01 R Foot.z"] + mp.fVzero["Bip01 R Foot"]["Bip01 R Foot.z"]
-                                    },
-                                    {
-                                        mp.fVmin["Bip01 R Calf"]["Bip01 R Calf.x"] + mp.fVzero["Bip01 R Calf"]["Bip01 R Calf.x"],
-                                        mp.fVmax["Bip01 R Calf"]["Bip01 R Calf.x"] + mp.fVzero["Bip01 R Calf"]["Bip01 R Calf.x"],
-                                        mp.fVmin["Bip01 R Calf"]["Bip01 R Calf.y"] + mp.fVzero["Bip01 R Calf"]["Bip01 R Calf.y"],
-                                        mp.fVmax["Bip01 R Calf"]["Bip01 R Calf.y"] + mp.fVzero["Bip01 R Calf"]["Bip01 R Calf.y"],
-                                        mp.fVmin["Bip01 R Calf"]["Bip01 R Calf.z"] + mp.fVzero["Bip01 R Calf"]["Bip01 R Calf.z"],
-                                        mp.fVmax["Bip01 R Calf"]["Bip01 R Calf.z"] + mp.fVzero["Bip01 R Calf"]["Bip01 R Calf.z"]
-                                    },
-                                    {
-                                        mp.fVmin["Bip01 R Thigh"]["Bip01 R Thigh.x"] + mp.fVzero["Bip01 R Thigh"]["Bip01 R Thigh.x"],
-                                        mp.fVmax["Bip01 R Thigh"]["Bip01 R Thigh.x"] + mp.fVzero["Bip01 R Thigh"]["Bip01 R Thigh.x"],
-                                        mp.fVmin["Bip01 R Thigh"]["Bip01 R Thigh.y"] + mp.fVzero["Bip01 R Thigh"]["Bip01 R Thigh.y"],
-                                        mp.fVmax["Bip01 R Thigh"]["Bip01 R Thigh.y"] + mp.fVzero["Bip01 R Thigh"]["Bip01 R Thigh.y"],
-                                        mp.fVmin["Bip01 R Thigh"]["Bip01 R Thigh.z"] + mp.fVzero["Bip01 R Thigh"]["Bip01 R Thigh.z"],
-                                        mp.fVmax["Bip01 R Thigh"]["Bip01 R Thigh.z"] + mp.fVzero["Bip01 R Thigh"]["Bip01 R Thigh.z"]
-                                    }
-                                };
-                            ikTempRightLeg.Init(trBone["Bip01 R Thigh"], trBone["Bip01 R Calf"], trBone["Bip01 R Foot"], maid.body0, constrait);
-                            IKRightLeg.Add(currentMaidNo, ikTempRightLeg);
-                        }
-
-                        //IK対象ボーンリストが設定されていなければ初期化
-
-                        if (!trIKRightLegBones.ContainsKey(currentMaidNo))
-                        {
-                            Transform[] boneList = { trBone["Bip01 R Thigh"], trBone["Bip01 R Calf"], trBone["Bip01 R Foot"] };
-                            trIKRightLegBones.Add(currentMaidNo, boneList);
-                        }
-
-                        //IKアタッチ状態が設定されていなければ一時表示[None]で初期化設定
-
-                        if (!bIKAttachRightLeg.ContainsKey(currentMaidNo))
-                        {
-                            bIKAttachRightLeg.Add(currentMaidNo, false);
-                        }
-
-                        //IKターゲットが生成されてなければ生成
-
-                        if (!goIKRightLegTarget.ContainsKey(currentMaidNo))
-                        {
-                            GameObject tempIKRightLegTarget = new GameObject();
-                            tempIKRightLegTarget.transform.parent = trBone["Bip01"];
-                            goIKRightLegTarget.Add(currentMaidNo, tempIKRightLegTarget);
-
-                            bIKAttachRightLeg[currentMaidNo] = false;
-                        }
-                        */
 
                         //IK用ハンドル君のターゲットを今のメイドに設定
                         posHandle.ChangeHandleModePosition(true);
                         posHandle.IKmode = HandleKun.IKMODE.RightLeg;
                         //if (!bIKAttachRightLeg.ContainsKey(currentMaidNo) || !bIKAttachRightLeg[currentMaidNo])
-                        if (!ikManage.checkIKAttach(currentMaidNo, 2))
+                        if (!ikManage.checkIKAttach(currentMaidNo, 1))
                         {
                             posHandle.SetMaid(maid, trBone["Bip01 R Foot"]);
                         }
                         else
                         {
-                            posHandle.SetMaid(maid, ikManage.getIKTarget(currentMaidNo, 2));
+                            posHandle.SetMaid(maid, ikManage.getIKTransform(currentMaidNo, 1));
                         }
 
                         //IK用ハンドル君表示
@@ -4864,9 +1144,9 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                     //IKボタン類の表示状態を一括処理
 
-                    setIKButtonActive(bToggle);
+                    setIKButtonCursorActive(bToggle);
 
-                    if (ikManage.checkParentName(currentMaidNo, 2))
+                    if (ikManage.checkParentName(currentMaidNo, 1))
                     {
                         posHandle.IKTargetAttachedColor(true);
                     }
@@ -4877,14 +1157,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                 }
                 else if (UICamera.currentTouchID == -2)
                 {  //右クリックでIK解除
-                    /*
-                    if (bIKAttachRightLeg.ContainsKey(currentMaidNo))
-                    {
-                        bIKAttachRightLeg[currentMaidNo] = false;
-                        goIKRightLegTarget[currentMaidNo].transform.parent = trBone["Bip01"];
-                    }
-                    */
-                    ikManage.detachIK(trBone["Bip01"], currentMaidNo, 2);
+                    
+                    ikManage.detachIK(undoList.Add, this.setIKButtonActiveforUndo, getIKButtonActiveforUndo(), trBone["Bip01"], currentMaidNo, 1,UndofuncName);
 
                     if (posHandle.IKmode == HandleKun.IKMODE.RightLeg)
                     {
@@ -4896,8 +1170,9 @@ namespace CM3D2.AddBoneSlider.Plugin
                         posHandle.setVisible(false);
                     }
 
-                    setIKButtonActive(false);
-                    setButtonColor(UIButton.current, false);
+                    setIKButtonCursorActive(false);
+                    setIKButtonActive(false, 1);
+
                     posHandle.IKTargetAttachedColor(false);
                 }
 
@@ -4911,11 +1186,17 @@ namespace CM3D2.AddBoneSlider.Plugin
                 if (UICamera.currentTouchID == -1)
                 {
                     //カーソルの状態で判別
-                    bool bToggle = !FindChild(UIButton.current.gameObject, "SelectCursor").activeSelf;
+                    bool bToggle = !FindChildByTag(UIButton.current.gameObject, "SelectCursor").activeSelf;
 
                     //IKターゲットオブジェクトとターゲット操作用ハンドル君表示
                     if (bToggle)
                     {
+
+                        //Eye to camera をここで止める
+                        maid.body0.m_Bones.animation.Stop();
+                        maid.body0.boHeadToCam = false;
+                        maid.body0.boEyeToCam = false;
+
                         //本体側で腕IKが設定されていれば解除
                         if (maid.body0.tgtHandL != null || maid.body0.tgtHandL_AttachName != string.Empty)
                         {
@@ -4926,93 +1207,20 @@ namespace CM3D2.AddBoneSlider.Plugin
                         //以下、IK用変数初期化処理
 
                         Transform[] boneList = { trBone["Bip01 L UpperArm"], trBone["Bip01 L Forearm"], trBone["Bip01 L Hand"] };
-                        ikManage.initList(trBone["Bip01"], boneList, maid, currentMaidNo, 3);
+                        ikManage.addList(trBone["Bip01"], boneList, maid, currentMaidNo, 2);
 
-                        //プラグイン側のIKが設定されていなければ初期化設定
-                        /*
-
-                        if (!IKLeftArm.ContainsKey(currentMaidNo))
-                        {
-                            TBody.IKCMO ikTempLeftArm = new TBody.IKCMO();
-                            ikTempLeftArm.Init(trBone["Bip01 L UpperArm"], trBone["Bip01 L Forearm"], trBone["Bip01 L Hand"], maid.body0);
-                            IKLeftArm.Add(currentMaidNo, ikTempLeftArm);
-                        }
-
-                        */
-                        /*
-                        if (!IKLeftArm.ContainsKey(currentMaidNo))
-                        {
-                            IKCONSTRAINED ikTempLeftArm = new IKCONSTRAINED();
-                            float[,] constrait =
-                             {
-
-                                    {
-                                        mp.fVmin["Bip01 L Hand"]["Bip01 L Hand.x"] + mp.fVzero["Bip01 L Hand"]["Bip01 L Hand.x"],
-                                        mp.fVmax["Bip01 L Hand"]["Bip01 L Hand.x"] + mp.fVzero["Bip01 L Hand"]["Bip01 L Hand.x"],
-                                        mp.fVmin["Bip01 L Hand"]["Bip01 L Hand.y"] + mp.fVzero["Bip01 L Hand"]["Bip01 L Hand.y"],
-                                        mp.fVmax["Bip01 L Hand"]["Bip01 L Hand.y"] + mp.fVzero["Bip01 L Hand"]["Bip01 L Hand.y"],
-                                        mp.fVmin["Bip01 L Hand"]["Bip01 L Hand.z"] + mp.fVzero["Bip01 L Hand"]["Bip01 L Hand.z"],
-                                        mp.fVmax["Bip01 L Hand"]["Bip01 L Hand.z"] + mp.fVzero["Bip01 L Hand"]["Bip01 L Hand.z"]
-                                    },
-                                    {
-                                        mp.fVmin["Bip01 L Forearm"]["Bip01 L Forearm.x"] + mp.fVzero["Bip01 L Forearm"]["Bip01 L Forearm.x"],
-                                        mp.fVmax["Bip01 L Forearm"]["Bip01 L Forearm.x"] + mp.fVzero["Bip01 L Forearm"]["Bip01 L Forearm.x"],
-                                        mp.fVmin["Bip01 L Forearm"]["Bip01 L Forearm.y"] + mp.fVzero["Bip01 L Forearm"]["Bip01 L Forearm.y"],
-                                        mp.fVmax["Bip01 L Forearm"]["Bip01 L Forearm.y"] + mp.fVzero["Bip01 L Forearm"]["Bip01 L Forearm.y"],
-                                        mp.fVmin["Bip01 L Forearm"]["Bip01 L Forearm.z"] + mp.fVzero["Bip01 L Forearm"]["Bip01 L Forearm.z"],
-                                        mp.fVmax["Bip01 L Forearm"]["Bip01 L Forearm.z"] + mp.fVzero["Bip01 L Forearm"]["Bip01 L Forearm.z"]
-                                    },
-                                    {
-                                        mp.fVmin["Bip01 L UpperArm"]["Bip01 L UpperArm.x"] + mp.fVzero["Bip01 L UpperArm"]["Bip01 L UpperArm.x"],
-                                        mp.fVmax["Bip01 L UpperArm"]["Bip01 L UpperArm.x"] + mp.fVzero["Bip01 L UpperArm"]["Bip01 L UpperArm.x"],
-                                        mp.fVmin["Bip01 L UpperArm"]["Bip01 L UpperArm.y"] + mp.fVzero["Bip01 L UpperArm"]["Bip01 L UpperArm.y"],
-                                        mp.fVmax["Bip01 L UpperArm"]["Bip01 L UpperArm.y"] + mp.fVzero["Bip01 L UpperArm"]["Bip01 L UpperArm.y"],
-                                        mp.fVmin["Bip01 L UpperArm"]["Bip01 L UpperArm.z"] + mp.fVzero["Bip01 L UpperArm"]["Bip01 L UpperArm.z"],
-                                        mp.fVmax["Bip01 L UpperArm"]["Bip01 L UpperArm.z"] + mp.fVzero["Bip01 L UpperArm"]["Bip01 L UpperArm.z"]
-                                    }
-                                };
-                            ikTempLeftArm.Init(trBone["Bip01 L UpperArm"], trBone["Bip01 L Forearm"], trBone["Bip01 L Hand"], maid.body0, constrait);
-                            IKLeftArm.Add(currentMaidNo, ikTempLeftArm);
-                        }
-
-                        //IK対象ボーンリストが設定されていなければ初期化
-
-                        if (!trIKLeftArmBones.ContainsKey(currentMaidNo))
-                        {
-                            Transform[] boneList = { trBone["Bip01 L UpperArm"], trBone["Bip01 L Forearm"], trBone["Bip01 L Hand"] };
-                            trIKLeftArmBones.Add(currentMaidNo, boneList);
-                        }
-
-                        //IKアタッチ状態が設定されていなければ一時表示[None]で初期化設定
-
-                        if (!bIKAttachLeftArm.ContainsKey(currentMaidNo))
-                        {
-                            bIKAttachLeftArm.Add(currentMaidNo, false);
-                        }
-
-                        //IKターゲットが生成されてなければ生成
-
-                        if (!goIKLeftArmTarget.ContainsKey(currentMaidNo))
-                        {
-                            GameObject tempIKLeftArmTarget = new GameObject();
-                            tempIKLeftArmTarget.transform.parent = trBone["Bip01"];
-                            goIKLeftArmTarget.Add(currentMaidNo, tempIKLeftArmTarget);
-
-                            bIKAttachLeftArm[currentMaidNo] = false;
-                        }
-                        */
 
                         //IK用ハンドル君のターゲットを今のメイドに設定
                         posHandle.ChangeHandleModePosition(true);
                         posHandle.IKmode = HandleKun.IKMODE.LeftArm;
                         //if (!bIKAttachLeftArm.ContainsKey(currentMaidNo) || !bIKAttachLeftArm[currentMaidNo])
-                        if (!ikManage.checkIKAttach(currentMaidNo, 3))
+                        if (!ikManage.checkIKAttach(currentMaidNo, 2))
                         {
                             posHandle.SetMaid(maid, trBone["Bip01 L Hand"]);
                         }
                         else
                         {
-                            posHandle.SetMaid(maid, ikManage.getIKTarget(currentMaidNo, 3));
+                            posHandle.SetMaid(maid, ikManage.getIKTransform(currentMaidNo, 2));
                         }
 
                         //IK用ハンドル君表示
@@ -5030,9 +1238,9 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                     //IKボタン類の表示状態を一括処理
 
-                    setIKButtonActive(bToggle);
+                    setIKButtonCursorActive(bToggle);
 
-                    if (ikManage.checkParentName(currentMaidNo, 3))
+                    if (ikManage.checkParentName(currentMaidNo, 2))
                     {
                         posHandle.IKTargetAttachedColor(true);
                     }
@@ -5043,14 +1251,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                 }
                 else if (UICamera.currentTouchID == -2)
                 {  //右クリックでIK解除
-                    /*
-                    if (bIKAttachLeftArm.ContainsKey(currentMaidNo))
-                    {
-                        bIKAttachLeftArm[currentMaidNo] = false;
-                        goIKLeftArmTarget[currentMaidNo].transform.parent = trBone["Bip01"];
-                    }
-                    */
-                    ikManage.detachIK(trBone["Bip01"], currentMaidNo, 3);
+                   
+                    ikManage.detachIK(undoList.Add, this.setIKButtonActiveforUndo, getIKButtonActiveforUndo(), trBone["Bip01"], currentMaidNo, 2, UndofuncName);
 
                     if (posHandle.IKmode == HandleKun.IKMODE.LeftArm)
                     {
@@ -5062,8 +1264,9 @@ namespace CM3D2.AddBoneSlider.Plugin
                         posHandle.setVisible(false);
                     }
 
-                    setIKButtonActive(false);
-                    setButtonColor(UIButton.current, false);
+                    setIKButtonCursorActive(false);
+                    setIKButtonActive(false, 2);
+
                     posHandle.IKTargetAttachedColor(false);
                 }
 
@@ -5077,11 +1280,17 @@ namespace CM3D2.AddBoneSlider.Plugin
                 if (UICamera.currentTouchID == -1)
                 {
                     //カーソルの状態で判別
-                    bool bToggle = !FindChild(UIButton.current.gameObject, "SelectCursor").activeSelf;
+                    bool bToggle = !FindChildByTag(UIButton.current.gameObject, "SelectCursor").activeSelf;
 
                     //IKターゲットオブジェクトとターゲット操作用ハンドル君表示
                     if (bToggle)
                     {
+
+                        //Eye to camera をここで止める
+                        maid.body0.m_Bones.animation.Stop();
+                        maid.body0.boHeadToCam = false;
+                        maid.body0.boEyeToCam = false;
+
                         //本体側で腕IKが設定されていれば解除
 
                         if (maid.body0.tgtHandR != null || maid.body0.tgtHandR_AttachName != string.Empty)
@@ -5092,107 +1301,19 @@ namespace CM3D2.AddBoneSlider.Plugin
                         //以下、IK用変数初期化処理
 
                         Transform[] boneList = { trBone["Bip01 R UpperArm"], trBone["Bip01 R Forearm"], trBone["Bip01 R Hand"] };
-                        ikManage.initList(trBone["Bip01"], boneList, maid, currentMaidNo, 4);
-
-                        //プラグイン側のIKが設定されていなければ初期化設定
-                        /*
-                        if (!IKLeftLeg.ContainsKey(currentMaidNo))
-                        {
-                            TBody.IKCMO ikTempLeftLeg = new TBody.IKCMO();
-                            ikTempLeftLeg.Init(trBone["Bip01 L Thigh"], trBone["Bip01 L Calf"], trBone["Bip01 L Foot"], maid.body0);
-                            IKLeftLeg.Add(currentMaidNo, ikTempLeftLeg);
-                        }
-                        if (!IKRightLeg.ContainsKey(currentMaidNo))
-                        {
-                            TBody.IKCMO ikTempRightLeg = new TBody.IKCMO();
-                            ikTempRightLeg.Init(trBone["Bip01 R Thigh"], trBone["Bip01 R Calf"], trBone["Bip01 R Foot"], maid.body0);
-                            IKRightLeg.Add(currentMaidNo, ikTempRightLeg);
-                        }
-                        if (!IKLeftArm.ContainsKey(currentMaidNo))
-                        {
-                            TBody.IKCMO ikTempLeftArm = new TBody.IKCMO();
-                            ikTempLeftArm.Init(trBone["Bip01 L UpperArm"], trBone["Bip01 L Forearm"], trBone["Bip01 L Hand"], maid.body0);
-                            IKLeftArm.Add(currentMaidNo, ikTempLeftArm);
-                        }
-                        if (!IKRightArm.ContainsKey(currentMaidNo))
-                        {
-                            TBody.IKCMO ikTempRightArm = new TBody.IKCMO();
-                            ikTempRightArm.Init(trBone["Bip01 R UpperArm"], trBone["Bip01 R Forearm"], trBone["Bip01 R Hand"], maid.body0);
-                            IKRightArm.Add(currentMaidNo, ikTempRightArm);
-                        }
-                        */
-                        /*
-                        if (!IKRightArm.ContainsKey(currentMaidNo))
-                        {
-                            IKCONSTRAINED ikTempRightArm = new IKCONSTRAINED();
-                            float[,] constrait =
-                            {
-                                {
-                                    mp.fVmin["Bip01 R Hand"]["Bip01 R Hand.x"] + mp.fVzero["Bip01 R Hand"]["Bip01 R Hand.x"],
-                                    mp.fVmax["Bip01 R Hand"]["Bip01 R Hand.x"] + mp.fVzero["Bip01 R Hand"]["Bip01 R Hand.x"],
-                                    mp.fVmin["Bip01 R Hand"]["Bip01 R Hand.y"] + mp.fVzero["Bip01 R Hand"]["Bip01 R Hand.y"],
-                                    mp.fVmax["Bip01 R Hand"]["Bip01 R Hand.y"] + mp.fVzero["Bip01 R Hand"]["Bip01 R Hand.y"],
-                                    mp.fVmin["Bip01 R Hand"]["Bip01 R Hand.z"] + mp.fVzero["Bip01 R Hand"]["Bip01 R Hand.z"],
-                                    mp.fVmax["Bip01 R Hand"]["Bip01 R Hand.z"] + mp.fVzero["Bip01 R Hand"]["Bip01 R Hand.z"]
-                                },
-                                {
-                                    mp.fVmin["Bip01 R Forearm"]["Bip01 R Forearm.x"] + mp.fVzero["Bip01 R Forearm"]["Bip01 R Forearm.x"],
-                                    mp.fVmax["Bip01 R Forearm"]["Bip01 R Forearm.x"] + mp.fVzero["Bip01 R Forearm"]["Bip01 R Forearm.x"],
-                                    mp.fVmin["Bip01 R Forearm"]["Bip01 R Forearm.y"] + mp.fVzero["Bip01 R Forearm"]["Bip01 R Forearm.y"],
-                                    mp.fVmax["Bip01 R Forearm"]["Bip01 R Forearm.y"] + mp.fVzero["Bip01 R Forearm"]["Bip01 R Forearm.y"],
-                                    mp.fVmin["Bip01 R Forearm"]["Bip01 R Forearm.z"] + mp.fVzero["Bip01 R Forearm"]["Bip01 R Forearm.z"],
-                                    mp.fVmax["Bip01 R Forearm"]["Bip01 R Forearm.z"] + mp.fVzero["Bip01 R Forearm"]["Bip01 R Forearm.z"]
-                                },
-                                {
-                                    mp.fVmin["Bip01 R UpperArm"]["Bip01 R UpperArm.x"] + mp.fVzero["Bip01 R UpperArm"]["Bip01 R UpperArm.x"],
-                                    mp.fVmax["Bip01 R UpperArm"]["Bip01 R UpperArm.x"] + mp.fVzero["Bip01 R UpperArm"]["Bip01 R UpperArm.x"],
-                                    mp.fVmin["Bip01 R UpperArm"]["Bip01 R UpperArm.y"] + mp.fVzero["Bip01 R UpperArm"]["Bip01 R UpperArm.y"],
-                                    mp.fVmax["Bip01 R UpperArm"]["Bip01 R UpperArm.y"] + mp.fVzero["Bip01 R UpperArm"]["Bip01 R UpperArm.y"],
-                                    mp.fVmin["Bip01 R UpperArm"]["Bip01 R UpperArm.z"] + mp.fVzero["Bip01 R UpperArm"]["Bip01 R UpperArm.z"],
-                                    mp.fVmax["Bip01 R UpperArm"]["Bip01 R UpperArm.z"] + mp.fVzero["Bip01 R UpperArm"]["Bip01 R UpperArm.z"]
-                                }
-                            };
-                            ikTempRightArm.Init(trBone["Bip01 R UpperArm"], trBone["Bip01 R Forearm"], trBone["Bip01 R Hand"], maid.body0, constrait);
-                            IKRightArm.Add(currentMaidNo, ikTempRightArm);
-                        }
-
-                        //IK対象ボーンリストが設定されていなければ初期化
-
-                        if (!trIKRightArmBones.ContainsKey(currentMaidNo))
-                        {
-                            Transform[] boneList = { trBone["Bip01 R UpperArm"], trBone["Bip01 R Forearm"], trBone["Bip01 R Hand"] };
-                            trIKRightArmBones.Add(currentMaidNo, boneList);
-                        }
-
-                        //IKアタッチ状態が設定されていなければ一時表示[None]で初期化設定
-
-                        if (!bIKAttachRightArm.ContainsKey(currentMaidNo))
-                        {
-                            bIKAttachRightArm.Add(currentMaidNo, false);
-                        }
-
-                        //IKターゲットが生成されてなければ生成
-                        if (!goIKRightArmTarget.ContainsKey(currentMaidNo))
-                        {
-                            GameObject tempIKRightArmTarget = new GameObject();
-                            tempIKRightArmTarget.transform.parent = trBone["Bip01"];
-                            goIKRightArmTarget.Add(currentMaidNo, tempIKRightArmTarget);
-
-                            bIKAttachRightArm[currentMaidNo] = false;
-                        }
-                        */
+                        ikManage.addList(trBone["Bip01"], boneList, maid, currentMaidNo, 3);
 
                         //IK用ハンドル君のターゲットを今のメイドに設定
                         posHandle.ChangeHandleModePosition(true);
                         posHandle.IKmode = HandleKun.IKMODE.RightArm;
                         //if (!bIKAttachRightArm.ContainsKey(currentMaidNo) || !bIKAttachRightArm[currentMaidNo])
-                        if (!ikManage.checkIKAttach(currentMaidNo, 4))
+                        if (!ikManage.checkIKAttach(currentMaidNo, 3))
                         {
                             posHandle.SetMaid(maid, trBone["Bip01 R Hand"]);
                         }
                         else
                         {
-                            posHandle.SetMaid(maid, ikManage.getIKTarget(currentMaidNo, 4));
+                            posHandle.SetMaid(maid, ikManage.getIKTransform(currentMaidNo, 3));
                         }
 
                         //IK用ハンドル君表示
@@ -5210,9 +1331,9 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                     //IKボタン類の表示状態を一括処理
 
-                    setIKButtonActive(bToggle);
+                    setIKButtonCursorActive(bToggle);
 
-                    if (ikManage.checkParentName(currentMaidNo, 4))
+                    if (ikManage.checkParentName(currentMaidNo, 3))
                     {
                         posHandle.IKTargetAttachedColor(true);
                     }
@@ -5224,14 +1345,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                 }
                 else if (UICamera.currentTouchID == -2)
                 {  //右クリックでIK解除
-                    /*
-                    if (bIKAttachRightArm.ContainsKey(currentMaidNo))
-                    {
-                        bIKAttachRightArm[currentMaidNo] = false;
-                        goIKRightArmTarget[currentMaidNo].transform.parent = trBone["Bip01"];
-                    }
-                    */
-                    ikManage.detachIK(trBone["Bip01"], currentMaidNo, 4);
+                    
+                    ikManage.detachIK(undoList.Add, this.setIKButtonActiveforUndo, getIKButtonActiveforUndo(), trBone["Bip01"], currentMaidNo, 3, UndofuncName);
 
                     if (posHandle.IKmode == HandleKun.IKMODE.RightArm)
                     {
@@ -5243,8 +1358,9 @@ namespace CM3D2.AddBoneSlider.Plugin
                         posHandle.setVisible(false);
                     }
 
-                    setIKButtonActive(false);
-                    setButtonColor(UIButton.current, false);
+                    setIKButtonCursorActive(false);
+                    setIKButtonActive(false, 3);
+
                     posHandle.IKTargetAttachedColor(false);
                 }
 
@@ -5256,23 +1372,31 @@ namespace CM3D2.AddBoneSlider.Plugin
         {
             try
             {
+
+                //ikManage.setUndoDetachAllSet(undoList.Add, this.setIKButtonActiveforUndo, this.getIKButtonActiveforUndo(), posHandle, maid, currentMaidNo, UndofuncName);
+
+                UndofuncName = ikManage.detachIKAll(undoList.Add, this.setIKButtonActiveforUndo, getIKButtonActiveforUndo(), trBone["Bip01"], currentMaidNo, UndofuncName);
+
+                
+
                 //IKを解除
 
                 //ハンドル君の位置を初期化
                 posHandle.SetParentBone(trBone["Bip01"]);
 
                 //現在のメイドのIK情報をコレクションリストから全削除
-                removeAttachMaidList(currentMaidNo);
-                ikManage.attachIKMaidNo.Remove(currentMaidNo);
+                //ikManage.removeAttachMaidList(currentMaidNo);
+                //ikManage.attachIKMaidNo.Remove(currentMaidNo);
 
                 //IK用ハンドル君非表示
                 posHandle.setVisible(false);
 
                 //IKボタンをオフらせる
-                setIKButtonActive(false,true, ikManage.attachIKMaidNo.Count == 0);
+                setIKButtonCursorActive(false);
+                setIKButtonActive();
 
-                posHandle.IKTargetAttachedColor(false);
-
+                posHandle.IKTargetAttachedColor(false);  
+                                
             }
             catch (Exception ex) { Debug.LogError(LogLabel + "OnClickIKDetach() " + ex); return; }
 
@@ -5282,89 +1406,27 @@ namespace CM3D2.AddBoneSlider.Plugin
         {
             try
             {
+
+                //ikManage.setUndoDetachAllMaidAllSet(undoList.Add, this.setIKButtonActiveforUndo, this.getIKButtonActiveforUndo(), UndofuncName);
+
+
                 //ハンドル君の位置を初期化
                 posHandle.SetParentBone(trBone["Bip01"]);
 
 
                 //全メイドのIK情報をコレクションリストから全削除
-                ikManage.detachAll(currentMaidNo);
-                /*
-                //全ターゲット用オブジェクトを0.5秒後に消す
-                foreach (int removeNo in attachIKMaidNo)
-                {
-                    
-                    //GameObject.Destroy(goIKLeftLegTarget[removeNo], 0.5f);
-                    //GameObject.Destroy(goIKRightLegTarget[removeNo], 0.5f);
-                    //GameObject.Destroy(goIKLeftArmTarget[removeNo], 0.5f);
-                    //GameObject.Destroy(goIKRightArmTarget[removeNo], 0.5f);
-                    
-                    if (goIKLeftLegTarget.ContainsKey(removeNo))
-                    {
-
-                        if (goIKLeftLegTarget[removeNo] != null)
-                        {
-                            goIKLeftLegTarget[removeNo].transform.DetachChildren();
-                            GameObject.Destroy(goIKLeftLegTarget[removeNo], 0.5f);
-                        }
-                    }
-                    if (goIKRightLegTarget.ContainsKey(removeNo))
-                    {
-                        if (goIKRightLegTarget[removeNo] != null)
-                        {
-                            goIKRightLegTarget[removeNo].transform.DetachChildren();
-                            GameObject.Destroy(goIKRightLegTarget[removeNo], 0.5f);
-                        }
-                    }
-                    if (goIKLeftArmTarget.ContainsKey(removeNo))
-                    {
-                        if (goIKLeftArmTarget[removeNo] != null)
-                        {
-                            goIKLeftArmTarget[removeNo].transform.DetachChildren();
-                            GameObject.Destroy(goIKLeftArmTarget[removeNo], 1f);
-                        }
-                    }
-                    if (goIKRightArmTarget.ContainsKey(removeNo))
-                    {
-                        if (goIKRightArmTarget[removeNo] != null)
-                        {
-                            goIKRightArmTarget[removeNo].transform.DetachChildren();
-                            GameObject.Destroy(goIKRightArmTarget[removeNo], 1f);
-                        }
-                    }
-                }
-
-                attachIKMaidNo.Clear();
-                attachIKMaidList.Clear();
-                trTargetIKBones.Clear();
-
-                IKLeftLeg.Clear();
-                IKRightLeg.Clear();
-                IKLeftArm.Clear();
-                IKRightArm.Clear();
-
-                bIKAttachLeftLeg.Clear();
-                bIKAttachRightLeg.Clear();
-                bIKAttachLeftArm.Clear();
-                bIKAttachRightArm.Clear();
-                
-                goIKLeftLegTarget.Clear();
-                goIKRightLegTarget.Clear();
-                goIKLeftArmTarget.Clear();
-                goIKRightArmTarget.Clear();
-
-                trIKLeftLegBones.Clear();
-                trIKRightLegBones.Clear();
-                trIKLeftArmBones.Clear();
-                trIKRightArmBones.Clear();
-                */
-
+                UndofuncName = ikManage.detachAll(undoList.Add, this.setIKButtonActiveforUndo, getIKButtonActiveforUndo(), UndofuncName);
 
                 //IK用ハンドル君非表示
                 posHandle.setVisible(false);
                 posHandle.IKTargetAttachedColor(false);
 
+
                 //IKボタンを全部オフらせる
-                setIKButtonActive(false, true, true);
+                setIKButtonCursorActive(false);
+                setIKButtonActive();
+
+
 
             }
             catch (Exception ex) { Debug.LogError(LogLabel + "OnClickIKDetachAll() " + ex); return; }
@@ -5378,13 +1440,8 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 string bone = getTag(UIButton.current, 1);
 
-<<<<<<< HEAD
-                
 
-                    if (sceneLevel == 5 && bone == "allpos")
-=======
                 if ((sceneLevel == iSceneEdit|| sceneLevel == iSceneEditCBL) && bone == "allpos")
->>>>>>> develop05
                 {
                     setParentAllOffset();
                 }
@@ -5393,18 +1450,22 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 //if (UICamera.currentTouchID == -1)
                 {
-                    if (bone == "secret" || bone == "eye" || bone == "camera" )//|| bone == "offset" || bone == "allpos")
+                    if (bone == "secret" || bone == "eye" || bone == "camera" || bone == "light" || bone == "gravity")//|| bone == "offset" || bone == "allpos")
                         return;
 
                     if (activeHandleName != bone)
                     {
                         if (activeHandleName != "")
                         {
-                            visibleHandle(activeHandleName);
-                            setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "Handle:" + activeHandleName).GetComponent<UIButton>(), false);
+                            imvisibleBothHandle(activeHandleName);
+                            setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "RotHandle:" + activeHandleName).GetComponent<UIButton>(), false);
 
+                            if (activeHandleName == "Bip01" || activeHandleName == "allpos" || activeHandleName == "offset")
+                            {
+                                setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "PosHandle:" + activeHandleName).GetComponent<UIButton>(), false);
+
+                            }
                         }
-
 
                         if(bone == "allpos")
                             posHandle.SetParentBone(maid.gameObject.transform.parent);
@@ -5420,52 +1481,30 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                         if (posHandle.Visible == true && activeHandleName == bone)
                         {
+                            setUnitButtonColor(UIButton.current, true);
+                            GameObject goSelectCursorRot = FindChild(trBoneUnit[bone], "SelectCursorRotHandle:" + bone).gameObject;
+                            goSelectCursorRot.SetActive(true);
+                            if (bone == "allpos" || bone == "offset" || bone == "Bip01")
+                            {
+                                setUnitButtonColor(FindChildByTag(trBoneUnit[bone], "PosHandle:" + bone).GetComponent<UIButton>(), false);
+                                GameObject goSelectCursorPos = FindChild(trBoneUnit[bone], "SelectCursorPosHandle:" + bone).gameObject;
+                                goSelectCursorPos.SetActive(false);
+                            }
                             return;
                         }
                     }
                     
                     //posHandle.Visible = b;
                 }
-                /*
-                else if (UICamera.currentTouchID == -2)
-                {
-                    if (bone != "Bip01" && bone !="allpos" && bone !="offset" )
-                        return;
 
-
-                    if (activeHandleName != bone)
-                    {
-                        if (activeHandleName != "")
-                        {
-                            visibleHandle(activeHandleName);
-                            setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "Handle:" + activeHandleName).GetComponent<UIButton>(), false);
-
-                        }
-
-                        if (bone == "allpos")
-                            posHandle.SetParentBone(maid.gameObject.transform.parent);
-                        else if (bone == "offset")
-                            posHandle.SetParentBone(maid.gameObject.transform);
-                        else
-                            posHandle.SetParentBone(trBone[bone]);
-
-
-                    }
-
-                    if (posHandle.bHandlePositionMode == false )
-                    {
-                        posHandle.ChangeHandleModePosition(true);
-                        if (posHandle.Visible == true && activeHandleName == bone)
-                        {
-                            return;
-                        }
-                    }
-                    
-                }
-                */
-                bool b = visibleHandle(bone);
+                bool b = visibleHandle(bone,false);
                 setUnitButtonColor(UIButton.current, b);
                 //setUnitButtonColor(UIButton.current, b);
+                if (bone == "allpos" || bone == "offset" || bone =="Bip01")
+                {
+                    setUnitButtonColor(FindChildByTag(trBoneUnit[bone], "PosHandle:" + bone).GetComponent<UIButton>(), false);
+                }
+
                 activeHandleName = b ? bone : "";
 
                 posHandle.IKTargetAttachedColor(false);
@@ -5474,19 +1513,16 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 //IKボタンのカーソルだけをオフらせる
                 //setIKButtonActive(true, true);
-                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
-                FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").SetActive(false);
-                FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").SetActive(false);
-                FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursorIKLeftLeg").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursorIKRightLeg").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursorIKLeftArm").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursorIKRightArm").SetActive(false);
 
 
             }
             catch (Exception ex) { Debug.LogError(LogLabel + "OnClickHandleButton() " + ex); return; }
         }
 
-        //todo0014-03
-        //ハンドルボタンを分割したので
-        //色変え処理の変更
         public void OnClickPosHandleButton()
         {
             try
@@ -5499,46 +1535,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                 {
                     setParentAllOffset();
                 }
+                
 
-                //IKハンドルモードからの切り替え処理も書く
-                /*
-                if (UICamera.currentTouchID == -1)
-                {
-                    if (bone == "secret" || bone == "eye" || bone == "camera")//|| bone == "offset" || bone == "allpos")
-                        return;
-
-                    if (activeHandleName != bone)
-                    {
-                        if (activeHandleName != "")
-                        {
-                            visibleHandle(activeHandleName);
-                            setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "Handle:" + activeHandleName).GetComponent<UIButton>(), false);
-
-                        }
-
-
-                        if (bone == "allpos")
-                            posHandle.SetParentBone(maid.gameObject.transform.parent);
-                        else if (bone == "offset")
-                            posHandle.SetParentBone(maid.gameObject.transform);
-                        else
-                            posHandle.SetParentBone(trBone[bone]);
-                    }
-
-                    if (posHandle.bHandlePositionMode == true)
-                    {
-                        posHandle.ChangeHandleModePosition(false);
-
-                        if (posHandle.Visible == true && activeHandleName == bone)
-                        {
-                            return;
-                        }
-                    }
-
-                    //posHandle.Visible = b;
-                }
-                else if (UICamera.currentTouchID == -2)
-                */
                 {
                     
                     if (bone != "Bip01" && bone != "allpos" && bone != "offset")
@@ -5549,10 +1547,18 @@ namespace CM3D2.AddBoneSlider.Plugin
                     {
                         if (activeHandleName != "")
                         {
-                            visibleHandle(activeHandleName);
-                            setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "Handle:" + activeHandleName).GetComponent<UIButton>(), false);
 
+                            imvisibleBothHandle(activeHandleName);
+                            setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "RotHandle:" + activeHandleName).GetComponent<UIButton>(), false);
+                            
+
+                            if (activeHandleName == "Bip01" || activeHandleName == "allpos" || activeHandleName == "offset")
+                            {
+                                setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "PosHandle:" + activeHandleName).GetComponent<UIButton>(), false);
+
+                            }
                         }
+                        
 
                         if (bone == "allpos")
                             posHandle.SetParentBone(maid.gameObject.transform.parent);
@@ -5569,26 +1575,32 @@ namespace CM3D2.AddBoneSlider.Plugin
                         posHandle.ChangeHandleModePosition(true);
                         if (posHandle.Visible == true && activeHandleName == bone)
                         {
+                            setUnitButtonColor(UIButton.current, true);
+                            setUnitButtonColor(FindChildByTag(trBoneUnit[bone], "RotHandle:" + bone).GetComponent<UIButton>(), false);
+                            GameObject goSelectCursorPos = FindChild(trBoneUnit[bone], "SelectCursorPosHandle:" + bone).gameObject;
+                            goSelectCursorPos.SetActive(true);
+                            GameObject goSelectCursorRot = FindChild(trBoneUnit[bone], "SelectCursorRotHandle:" + bone).gameObject;
+                            goSelectCursorRot.SetActive(false);
+
                             return;
                         }
                     }
-                    
                 }
-                
-                bool b = visibleHandle(bone);
+
+                bool b = visibleHandle(bone,true);
                 setUnitButtonColor(UIButton.current, b);
+
                 activeHandleName = b ? bone : "";
 
                 posHandle.IKTargetAttachedColor(false);
                 posHandle.setVisible(b);
 
-
                 //IKボタンのカーソルだけをオフらせる
                 //setIKButtonActive(true, true);
-                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
-                FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").SetActive(false);
-                FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").SetActive(false);
-                FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursorIKLeftLeg").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursorIKRightLeg").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursorIKLeftArm").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursorIKRightArm").SetActive(false);
 
 
             }
@@ -5599,6 +1611,26 @@ namespace CM3D2.AddBoneSlider.Plugin
         {
             try
             {
+                bUndoLock = true;
+                //Undoチェック
+                UndofuncName = "ResetAll:" + maid.name;
+                //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+
+
+
+                jiggleBone jbMuneR = CMT.SearchObjName(maid.body0.m_Bones.transform, "Mune_R", true).gameObject.GetComponent<jiggleBone>();
+                jiggleBone jbMuneL = CMT.SearchObjName(maid.body0.m_Bones.transform, "Mune_L", true).gameObject.GetComponent<jiggleBone>();
+
+
+
+                //Undo履歴に加える                
+                undoList.Add(Undo.createUndoAll(maid,
+                    trBone.ToDictionary(n => n.Value, n => n.Value.localRotation), (trBone.Where(n => n.Value.name == "Bip01").First().Value.localPosition),
+                    GameMain.Instance.CharacterMgr.GetCharaAllPos(), GameMain.Instance.CharacterMgr.GetCharaAllRot(),
+                    maid.transform.localPosition, maid.GetRot(), maid.body0.quaDefEyeR, maid.body0.quaDefEyeL,
+                    jbMuneR, jbMuneR.MuneUpDown, jbMuneR.MuneYori, jbMuneL, jbMuneL.MuneUpDown, jbMuneL.MuneYori
+                    ));
+
                 foreach (string bone in mp.sBone)
                 {
                     if (mp.IsToggle(bone))
@@ -5607,7 +1639,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                         setUnitButtonColor(bone, mp.bEnabled[bone]);
                     }
 
-                    if (mp.IsSlider(bone))
+                    if (mp.IsSlider(bone) && bone != "camera" )
                     {
                         resetSliderValue(bone);
 
@@ -5617,86 +1649,506 @@ namespace CM3D2.AddBoneSlider.Plugin
                         }
                     }
                 }
+                bUndoLock = false;
             }
             catch (Exception ex) { Debug.LogError(LogLabel + "OnClickResetAll() " + ex); return; }
         }
 
         public void OnClickResetButton()
         {
-            resetSliderValue(getTag(UIButton.current, 1));
+            bUndoLock = true;
+
+            string bone = getTag(UIButton.current, 1);
+
+            //Undo履歴に加える
+            switch(bone)
+            {
+                case "Bip01":
+                    //Undoチェック
+                    UndofuncName = "Reset:" + bone + ":" + maid.name;
+                    //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+
+                    undoList.Add(Undo.createUndoBoneBoth(trBone[bone], trBone[bone].localRotation, trBone[bone].localPosition));
+
+                    break;
+
+
+                case "allpos":
+                    //Undoチェック
+                    UndofuncName = "Reset:" + bone;
+                    //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+                    undoList.Add(Undo.createUndoAllposBoth(GameMain.Instance.CharacterMgr.GetCharaAllPos(), GameMain.Instance.CharacterMgr.GetCharaAllRot()));
+
+
+                    break;
+
+                case "offset":
+                    //Undoチェック
+                    UndofuncName = "Reset:" + bone;
+                    //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+                    undoList.Add(Undo.createUndoOffsetBoth(maid, maid.transform.localPosition,maid.GetRot()));
+
+                    break;
+
+                case "eye":
+                    //Undoチェック
+                    UndofuncName = "Reset:" + bone;
+                    //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+                    undoList.Add(Undo.createUndoEyeBoth(maid, maid.body0.quaDefEyeR, maid.body0.quaDefEyeL));
+
+                    break;
+
+                case "secret":
+
+                    //Undoチェック
+                    UndofuncName = "Reset:" + bone;
+                    //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+
+                    jiggleBone jbMuneR = CMT.SearchObjName(maid.body0.m_Bones.transform, "Mune_R", true).gameObject.GetComponent<jiggleBone>();
+                    jiggleBone jbMuneL = CMT.SearchObjName(maid.body0.m_Bones.transform, "Mune_L", true).gameObject.GetComponent<jiggleBone>();
+
+                    undoList.Add(Undo.createUndoSecretBoth(jbMuneR, jbMuneR.MuneUpDown, jbMuneR.MuneYori, jbMuneL, jbMuneL.MuneUpDown, jbMuneL.MuneYori));
+
+
+                    break;
+
+                case "camera":
+                case "light":
+                case "gravity":
+                    
+                    break;
+
+                default:
+                    //Undoチェック
+                    UndofuncName = "Reset:" + bone + ":" + maid.name;
+                    //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+
+                    undoList.Add(Undo.createUndoBone(trBone[bone], trBone[bone].localRotation));
+
+                    break;
+            }
+
+
+            resetSliderValue(bone);
+
+            bUndoLock = false;
         }
 
         public void OnClickMirrorAll()
         {
+            bUndoLock = true;
+
+            //Eye to camera をここで止める
+            maid.body0.m_Bones.animation.Stop();
+            maid.body0.boHeadToCam = false;
+            maid.body0.boEyeToCam = false;
+
+            //Undoチェック
+            UndofuncName = "MirrorAll:" + maid.name;
+            //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+
+            //Undo履歴に加える                
+            undoList.Add(Undo.createUndoBone(trBone));
+
+            foreach (var bone in trBone)
+            {
+                if(bone.Key.Contains("R"))
+                    continue;
+
+                mirrorBone(bone.Key);
+            }
+
+            bUndoLock = false;
+        }
+
+        public void OnClickCopyAll()
+        {
+
+            foreach (var tr in trBone)
+            {
+                if (vCopyBoneAngle.ContainsKey(tr.Key))
+                {
+                    vCopyBoneAngle[tr.Key] = tr.Value.localRotation;
+                }
+                else
+                {
+                    vCopyBoneAngle.Add(tr.Key, tr.Value.localRotation);
+                }
+
+                if (tr.Key == "Bip01")
+                {
+                    vCopyBoneTrans = tr.Value.localPosition ;
+                }
+            }
             
+        }
+        public void OnClickPasteAll()
+        {
+            bUndoLock = true;
+            //Eye to camera をここで止める
+            maid.body0.m_Bones.animation.Stop();
+            maid.body0.boHeadToCam = false;
+            maid.body0.boEyeToCam = false;
+
+            //Undoチェック
+            UndofuncName = "PasteAll:" + maid.name;
+            //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+
+            //Undo履歴に加える
+            undoList.Add(Undo.createUndoBoneAll(trBone));
+
+
+
+            foreach (var tr in trBone)
+            {
+                if (vCopyBoneAngle.ContainsKey(tr.Key))
+                {
+                    tr.Value.localRotation = vCopyBoneAngle[tr.Key];
+                    if (tr.Key == "Bip01")
+                    {
+                        tr.Value.localPosition = vCopyBoneTrans;
+                    }
+                    //スライダーと入力値にも反映
+                    calc_trBone2Param(tr.Key);
+                    SyncTransform2SliderLabel(tr.Key);
+
+                }
+            }
+            bUndoLock = false;
+
+        }
+        public void OnClickFlushAll()
+        {
+            vCopyBoneAngle.Clear();
+            vCopyBoneTrans = Vector3.zero;
+
         }
 
         public void OnClickUndo()
         {
             UndofuncName = "Undo";
+
+
+
             undoList.doUndo();
+
+            //ハンドル君がIKモードで表示されてたら消す
+            if(posHandle.Visible == true && posHandle.IKmode != HandleKun.IKMODE.None)
+            {
+                posHandle.setVisible(false);
+                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursorIKLeftLeg").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursorIKRightLeg").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursorIKLeftArm").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursorIKRightArm").SetActive(false);
+            }
         }
 
         public void OnClickRedo()
         {
             UndofuncName = "Redo";
+
+
+
             undoList.doRedo();
+
+            //ハンドル君がIKモードで表示されてたら消す
+            if (posHandle.Visible == true && posHandle.IKmode != HandleKun.IKMODE.None)
+            {
+                posHandle.setVisible(false);
+                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursorIKLeftLeg").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursorIKRightLeg").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursorIKLeftArm").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursorIKRightArm").SetActive(false);
+            }
+
         }
 
         public void OnClickCopyCategoryButton()
         {
+            if (sCurrentCategory == "Default")
+                return;
+
+            var trCategory = trBone.Where(m => mp.sCategory[m.Key] == sCurrentCategory);
+            
+            foreach (var tr in trCategory)
+            {
+                if (vCopyBoneAngle.ContainsKey(tr.Key))
+                {
+                    vCopyBoneAngle[tr.Key] = tr.Value.localRotation;
+                }
+                else
+                {
+                    vCopyBoneAngle.Add(tr.Key, tr.Value.localRotation);
+                }
+
+                if (tr.Key == "Bip01")
+                {
+                    vCopyBoneTrans = tr.Value.localPosition;
+                }
+            }
 
         }
 
         public void OnClickPasteCategoryButton()
         {
+            if (sCurrentCategory == "Default")
+                return;
+
+            bUndoLock = true;
+            //Eye to camera をここで止める
+            maid.body0.m_Bones.animation.Stop();
+            maid.body0.boHeadToCam = false;
+            maid.body0.boEyeToCam = false;
+
+
+            //Undoチェック
+            UndofuncName = "PasteCategory:" + maid.name;
+            //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+
+            var trCategory = trBone.Where(m => mp.sCategory[m.Key] == sCurrentCategory);
+
+            //Undo履歴に加える
+            if(sCurrentCategory == "Lower")
+                undoList.Add(Undo.createUndoBoneAll(trCategory));
+            else
+                undoList.Add(Undo.createUndoBone(trCategory));
+
+
+            foreach (var tr in trCategory)
+            {
+                if (vCopyBoneAngle.ContainsKey(tr.Key))
+                {
+                    tr.Value.localRotation = vCopyBoneAngle[tr.Key];
+                    if (tr.Key == "Bip01")
+                    {
+                        tr.Value.localPosition = vCopyBoneTrans;
+                    }
+                    //スライダーと入力値にも反映
+                    calc_trBone2Param(tr.Key);
+                    SyncTransform2SliderLabel(tr.Key);
+
+                }
+            }
+            bUndoLock = false;
 
         }
 
-        public void OnClickRight2LeftCategoryButton()
+        public void OnClickFlushCategoryButton()
         {
+            if (sCurrentCategory == "Default")
+                return;
+            
+            var trCategory = trBone.Where(m => mp.sCategory[m.Key] == sCurrentCategory);
 
-        }
-        
-        public void OnClickLeft2RightCategoryButton()
-        {
+
+            foreach (var tr in trCategory)
+            {
+                //if (vCopyBoneAngle.ContainsKey(tr.Key))
+                {
+                    vCopyBoneAngle.Remove(tr.Key);
+
+                    if (tr.Key == "Bip01")
+                    {
+                        vCopyBoneTrans = Vector3.zero;
+                    }
+
+                }
+            }
 
         }
 
         public void OnClickResetCategoryButton()
         {
+            if (sCurrentCategory == "Default")
+                return;
 
+            bUndoLock = true;
+            //Eye to camera をここで止める
+            maid.body0.m_Bones.animation.Stop();
+            maid.body0.boHeadToCam = false;
+            maid.body0.boEyeToCam = false;
+
+            //Undoチェック
+            UndofuncName = "ResetCategory:" + maid.name;
+            //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+
+            var trCategory = trBone.Where(m => mp.sCategory[m.Key] == sCurrentCategory);
+
+            //Undo履歴に加える
+            if (sCurrentCategory == "Lower")
+                undoList.Add(Undo.createUndoBoneAll(trCategory));
+            else
+                undoList.Add(Undo.createUndoBone(trCategory));
+
+
+            foreach (var tr in trCategory)
+            {
+                resetSliderValue(tr.Key);
+            }
+
+            bUndoLock = false;
         }
 
         public void OnClickMirrorCategoryButton()
         {
+            if (sCurrentCategory == "Default")
+                return;
 
+            bUndoLock = true;
+
+            //Eye to camera をここで止める
+            maid.body0.m_Bones.animation.Stop();
+            maid.body0.boHeadToCam = false;
+            maid.body0.boEyeToCam = false;
+
+            //Undoチェック
+            UndofuncName = "MirrorCategory:" + maid.name;
+            //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+
+            var trCategory = trBone.Where(m => mp.sCategory[m.Key] == sCurrentCategory);
+
+            //Undo履歴に加える                
+            undoList.Add(Undo.createUndoBone(trCategory));
+
+            foreach (var bone in trCategory)
+            {
+                if (bone.Key.Contains("R") && sCurrentCategory != "RightFinger")
+                    continue;
+
+                mirrorBone(bone.Key);
+            }
+            bUndoLock = false;
         }
 
         public void OnClickCopyButton()
         {
+            string bone = getTag(UIButton.current, 1);
+
+            //ボーンのみ対応
+            if (!bone.Contains("Bip01") && !bone.Contains("_IK_"))
+                return;
+
+            if (vCopyBoneAngle.ContainsKey(bone))
+            {
+                vCopyBoneAngle[bone] = trBone[bone].localRotation;
+            }
+            else
+            {
+                vCopyBoneAngle.Add(bone,trBone[bone].localRotation);
+
+            }
+
+            if (bone == "Bip01")
+            {
+                vCopyBoneTrans = trBone[bone].localPosition ;
+            }
+
+            //copyType = CopyType.Single;
+            
 
         }
 
         public void OnClickPasteButton()
         {
+            string bone = getTag(UIButton.current, 1);
+
+            //ボーンのみ対応
+            if (!bone.Contains("Bip01") && !bone.Contains("_IK_"))
+                return;
+
+            bUndoLock = true;
+            //Eye to camera をここで止める
+            maid.body0.m_Bones.animation.Stop();
+            maid.body0.boHeadToCam = false;
+            maid.body0.boEyeToCam = false;
+
+            //Undoチェック
+            
+            UndofuncName = "PasteSingle:" + bone + ":" + maid.name;
+            //Debuginfo.Log(LogLabel + "Undo::" +UndofuncName);
+            //Undo履歴に加える
+            if (bone != "Bip01")
+            {
+                undoList.Add(Undo.createUndoBone(trBone[bone],trBone[bone].localRotation));
+            }
+            else
+            {
+                undoList.Add(Undo.createUndoBoneBoth(trBone[bone],trBone[bone].localRotation,trBone[bone].localPosition));
+            }
+
+            if (vCopyBoneAngle.ContainsKey(bone))
+            {
+                trBone[bone].localRotation = vCopyBoneAngle[bone];
+                if (bone == "Bip01")
+                {
+                    trBone[bone].localPosition = vCopyBoneTrans;
+                }
+                //スライダーと入力値にも反映
+                calc_trBone2Param(bone);
+                SyncTransform2SliderLabel(bone);
+
+            }
+            bUndoLock = false;
 
         }
 
-        public void OnClickRight2LeftButton()
+        public void OnClickFlushButton()
         {
+            string bone = getTag(UIButton.current, 1);
+
+            //ボーンのみ対応
+            if (!bone.Contains("Bip01") && !bone.Contains("_IK_"))
+                return;
+
+            //if (vCopyBoneAngle.ContainsKey(bone))
+            {
+                vCopyBoneAngle.Remove(bone);
+            }
+
+            if (bone == "Bip01")
+            {
+                vCopyBoneTrans = Vector3.zero; ;
+            }
 
         }
-
-        public void OnClickLeft2RightButton()
-        {
-
-        }
-
 
         public void OnClickMirrorButton()
         {
+            string bone = getTag(UIButton.current, 1);
 
+            //ボーンのみ対応
+            if (!bone.Contains("Bip01") && !bone.Contains("_IK_"))
+                return;
+
+            bUndoLock = true;
+            //Eye to camera をここで止める
+            maid.body0.m_Bones.animation.Stop();
+            maid.body0.boHeadToCam = false;
+            maid.body0.boEyeToCam = false;
+
+            //Undoチェック
+            UndofuncName = "MirrorSingle:" + bone + ":" + maid.name;
+            //Debuginfo.Log(LogLabel +"Undo::" + UndofuncName);
+
+            if (bone.Contains("L") || bone.Contains("R"))
+            {
+                string mir_bone = bone.Contains("L") ? bone.Replace("L", "R") : bone.Replace("R", "L");
+
+                //Undo履歴に加える                
+                undoList.Add(Undo.createUndoBone(new Dictionary<Transform, Quaternion>()
+                {
+                    {trBone[bone],trBone[bone].localRotation },
+                    {trBone[mir_bone],trBone[mir_bone].localRotation }
+                }));
+            }
+            else
+            {
+                //Undo履歴に加える                
+                undoList.Add(Undo.createUndoBone(trBone[bone],trBone[bone].localRotation ));
+            }
+            mirrorBone(bone);
+
+            bUndoLock = false;
         }
 
         public void OnClickOutputOkANM()
@@ -5732,7 +2184,25 @@ namespace CM3D2.AddBoneSlider.Plugin
                 string vType = mp.sVType[bone][prop];
                 float vZero = mp.fVzero[bone][prop];
 
-                checkUndo("slider",bone,prop);
+
+                //スライダー初期化時に呼ばれた時はUndoに登録しない
+                if (bone != "secret" && bone != "eye" && bone != "allpos" && bone != "offset" && bone != "camera" && bone != "gravity" && bone != "light")
+                {
+                    if(vPastBoneAngle[bone] != trBone[bone].localRotation)
+                        checkUndo("slider", bone, prop);
+
+
+                    if(bone == "Bip01" && vPastBoneTrans != trBone[bone].localPosition)
+                        checkUndo("slider", bone, prop);
+                }
+                else
+                {
+                    if (iOtherSliderInit[bone] == 0)
+                        checkUndo("slider", bone, prop);
+                    else
+                        --iOtherSliderInit[bone];
+                }
+                
 
                 //       undoValue[bone][prop] = mp.fValue[bone][prop];
                 uiValueLable[bone][prop].text = value.ToString("F4");
@@ -5753,7 +2223,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 //捻りボーンのオート調整
                 //maid.body0.AutoTwist();
 
-                if (bone != "secret" && bone != "eye" && bone != "allpos" && bone != "offset" && bone != "camera")
+                if (bone != "secret" && bone != "eye" && bone != "allpos" && bone != "offset" && bone != "camera" && bone != "gravity" && bone != "light")
                 {
                     vPastBoneAngle[bone] = trBone[bone].localRotation;
                 }
@@ -5779,7 +2249,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 string bone = getTag(UIInput.current, 1);
                 string prop = getTag(UIInput.current, 2);
                 UISlider slider = null;
-
+                
                 checkUndo("input", bone, prop);
 
                 foreach (Transform t in UIInput.current.transform.parent.parent)
@@ -5800,7 +2270,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 }
                 rotateBone(bone, prop);
 
-                if (bone != "secret" && bone != "eye" && bone != "allpos" && bone != "offset" && bone != "camera")
+                if (bone != "secret" && bone != "eye" && bone != "allpos" && bone != "offset" && bone != "camera" && bone != "light" && bone != "gravity")
                 {
                     vPastBoneAngle[bone] = trBone[bone].localRotation;
                 }
@@ -5861,14 +2331,14 @@ namespace CM3D2.AddBoneSlider.Plugin
             UIButton.current.defaultColor = new Color(color.r, color.g, color.b, 1f);
 
 
-            FindChild(uiButtonBoneCategory0.gameObject, "SelectCursor").SetActive(false);
-            FindChild(uiButtonBoneCategory1.gameObject, "SelectCursor").SetActive(false);
-            FindChild(uiButtonBoneCategory2.gameObject, "SelectCursor").SetActive(false);
-            FindChild(uiButtonBoneCategory3.gameObject, "SelectCursor").SetActive(false);
-            FindChild(uiButtonBoneCategory4.gameObject, "SelectCursor").SetActive(false);
-            FindChild(uiButtonBoneCategory5.gameObject, "SelectCursor").SetActive(false);
+            FindChild(uiButtonBoneCategory0.gameObject, "SelectCursorBoneCategory0").SetActive(false);
+            FindChild(uiButtonBoneCategory1.gameObject, "SelectCursorBoneCategory1").SetActive(false);
+            FindChild(uiButtonBoneCategory2.gameObject, "SelectCursorBoneCategory2").SetActive(false);
+            FindChild(uiButtonBoneCategory3.gameObject, "SelectCursorBoneCategory3").SetActive(false);
+            FindChild(uiButtonBoneCategory4.gameObject, "SelectCursorBoneCategory4").SetActive(false);
+            FindChild(uiButtonBoneCategory5.gameObject, "SelectCursorBoneCategory5").SetActive(false);
 
-            FindChild(UIButton.current.gameObject, "SelectCursor").SetActive(true);
+            FindChildByTag(UIButton.current.gameObject, "SelectCursor").SetActive(true);
 
 
 
@@ -5876,12 +2346,37 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 go.SetActive(false);
             }
-            if (UIButton.current == uiButtonBoneCategory0) goScrollViewTable[0].SetActive(true);
-            else if (UIButton.current == uiButtonBoneCategory1) goScrollViewTable[1].SetActive(true);
-            else if (UIButton.current == uiButtonBoneCategory2) goScrollViewTable[2].SetActive(true);
-            else if (UIButton.current == uiButtonBoneCategory3) goScrollViewTable[3].SetActive(true);
-            else if (UIButton.current == uiButtonBoneCategory4) goScrollViewTable[4].SetActive(true);
-            else if (UIButton.current == uiButtonBoneCategory5) goScrollViewTable[5].SetActive(true);
+
+            if (UIButton.current == uiButtonBoneCategory0)
+            {
+                goScrollViewTable[0].SetActive(true);
+                sCurrentCategory = "Default";
+            }
+            else if (UIButton.current == uiButtonBoneCategory1)
+            {
+                goScrollViewTable[1].SetActive(true);
+                sCurrentCategory = "Upper";
+            }
+            else if (UIButton.current == uiButtonBoneCategory2)
+            {
+                goScrollViewTable[2].SetActive(true);
+                sCurrentCategory = "Lower";
+            }
+            else if (UIButton.current == uiButtonBoneCategory3)
+            {
+                goScrollViewTable[3].SetActive(true);
+                sCurrentCategory = "Toe";
+            }
+            else if (UIButton.current == uiButtonBoneCategory4)
+            {
+                goScrollViewTable[4].SetActive(true);
+                sCurrentCategory = "LeftFinger";
+            }
+            else if (UIButton.current == uiButtonBoneCategory5)
+            {
+                goScrollViewTable[5].SetActive(true);
+                sCurrentCategory = "RightFinger";
+            }
 
             uiScrollView.OnScrollBar();
             uiScrollBar.value = 0f;
@@ -5915,105 +2410,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 Debuginfo.Log(LogLabel + "Initialization start.", 1);
 
-                string currentDirectory;
-
-                //ここでiniファイル読み込み処理
-                //Sybaris環境かどうかチェック
-                bool bExistSybaris;
-                if (File.Exists(Directory.GetCurrentDirectory() + @"\opengl32.dll") && Directory.Exists(Directory.GetCurrentDirectory() + @"\Sybaris"))
-                {
-                    currentDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\Plugins";
-                    bExistSybaris = true;
- 
-                }
-                else
-                {
-                    currentDirectory = Directory.GetCurrentDirectory();
-                    bExistSybaris = false;
-
-                }
-
-
-                iniFileName = currentDirectory + @"\UnityInjector\Config\boneslider.ini";
-                //iniファイルがない場合は作成
-                if (!File.Exists(iniFileName))
-                {
-                    settingIni = new SettingIni();
-                    settingIni.PoseXmlDirectory = currentDirectory + @"\UnityInjector\Config";
-                    settingIni.PoseImgDirectory = currentDirectory + @"\UnityInjector\Config\PoseImg";
-                    if(bExistSybaris)
-                    {
-                        settingIni.AnmOutputmode = "sybaris";
-                        settingIni.OutputJsonDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\Poses";
-                        settingIni.OutputAnmSybarisDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\GameData\Samples";
-                    }
-                    else
-                    {
-                        settingIni.AnmOutputmode = "photomode";
-                        settingIni.OutputJsonDirectory = "none";
-                        settingIni.OutputAnmSybarisDirectory = "none";
-                    }
-
-                    //CBL版をサポートに加えたのでフォルダ決め打ちしないでここで参照＆設定
-                    settingIni.OutputAnmDirectory = Directory.GetCurrentDirectory() + @"\PhotoModeData\Mod\Motion";
-
-                }
-                else
-                {
-                    //iniファイルがある場合は設定されてない項目を補完
-
-                    settingIni = IniFileHelper.Read<SettingIni>("setting", iniFileName);
-                    if (settingIni.PoseXmlDirectory == "")
-                        settingIni.PoseXmlDirectory = currentDirectory + @"\UnityInjector\Config";
-                    if (settingIni.PoseImgDirectory == "")
-                        settingIni.PoseImgDirectory = currentDirectory + @"\UnityInjector\Config\PoseImg";
-
-                    settingIni.AnmOutputmode = settingIni.AnmOutputmode.ToLower();
-                    if (settingIni.AnmOutputmode != "both" && settingIni.AnmOutputmode != "photomode"&& settingIni.AnmOutputmode != "sybaris")
-                    {
-                        if(bExistSybaris)
-                        {
-                            settingIni.AnmOutputmode = "sybaris";
-                        }
-                        else
-                        {
-                            settingIni.AnmOutputmode = "photomode";
-                        }
-                    }
-
-                    if (settingIni.OutputJsonDirectory == "")
-                    {
-                        if (bExistSybaris)
-                        {
-                            settingIni.OutputJsonDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\Poses";
-                        }
-                        else
-                        {
-                            settingIni.OutputJsonDirectory = "none";
-                        }
-                    }
-
-                    if (settingIni.OutputAnmSybarisDirectory == "")
-                    {
-                        if (bExistSybaris)
-                        {
-                            settingIni.OutputAnmSybarisDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\GameData\Samples";
-                        }
-                        else
-                        {
-                            settingIni.OutputAnmSybarisDirectory = "none";
-                        }
-                    }
-
-                    
-                    settingIni.ToggleKey = settingIni.ToggleKey.ToLower();
-
-
-
-
-
-                }
-                IniFileHelper.Write<SettingIni>("setting", settingIni, iniFileName);
+                setInifile();
 
                 Debuginfo.settingLevel = settingIni.DebugLogLevel;
 
@@ -6257,7 +2654,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 //ボタン類を追加したときはここを調整
                 uiScrollPanel.clipping = UIDrawCall.Clipping.SoftClip;
-                uiScrollPanel.SetRect(0f, 0f, uiBGSprite.width, uiBGSprite.height - 130 - systemUnitHeight * 7.5f);
+                uiScrollPanel.SetRect(0f, 0f, uiBGSprite.width, uiBGSprite.height - 130 - systemUnitHeight * 9.5f);
                 uiScrollPanel.transform.localPosition = new Vector3(-25f, -systemUnitHeight * 5.5f, 0f);
                 goScrollView = uiScrollPanel.gameObject;
 
@@ -6458,18 +2855,10 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                     XmlNodeList BonesNodeS = poses.SelectNodes("/poses/bones");
 
-<<<<<<< HEAD
-                    //todo0.0.1.5-01
-                    //サムネポーズ画像がないときに
-                    //起動失敗する問題の修正
-=======
 
                     //サムネポーズ紛失した時用
                     List<XmlNode> deleteNodes = new List<XmlNode>();
 
-
-
->>>>>>> develop05
                     foreach (XmlNode bonesNode in BonesNodeS)
                     {
                         
@@ -6530,75 +2919,27 @@ namespace CM3D2.AddBoneSlider.Plugin
                 Debuginfo.Log(LogLabel + " goPoseImgButton complete.");
                 ///////////////////////////////////////////////
                 //PoseLoadボタン
-                GameObject goLoadPose = SetCloneChild(goSystemUnit, goProfileTabCopy, "LoadPose");
-                goLoadPose.transform.localPosition = new Vector3(-conWidth * 0.25f - 6, baseTop - systemUnitHeight / 2f, 0f);
-
-                UISprite uiSpriteLoadPose = goLoadPose.GetComponent<UISprite>();
-                uiSpriteLoadPose.SetDimensions((int)(conWidth * 0.5f) - 2, systemUnitHeight);
-
-                UILabel uiLabelLoadPose = FindChild(goLoadPose, "Name").GetComponent<UILabel>();
-
-                uiLabelLoadPose.width = uiSpriteLoadPose.width - 10;
-                uiLabelLoadPose.fontSize = 22;
-                uiLabelLoadPose.spacingX = 0;
-                uiLabelLoadPose.supportEncoding = true;
-                uiLabelLoadPose.text = "[111111]LoadPose";
-
-                UIButton uiButtonLoadPose = goLoadPose.GetComponent<UIButton>();
-                uiButtonLoadPose.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonLoadPose.onClick, new EventDelegate.Callback(this.OnClickLoadPose));
-                FindChild(goLoadPose, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.5f) - 2 - 4, systemUnitHeight - 4);
-                FindChild(goLoadPose, "SelectCursor").SetActive(false);
-                NGUITools.UpdateWidgetCollider(goLoadPose);
-                goLoadPose.SetActive(true);
-
-                Debuginfo.Log(LogLabel + " goLoadPose complete.");
+                generateUnitButton(SetCloneChild(goSystemUnit, goProfileTabCopy, "LoadPose"),
+                    new Vector3(-conWidth * 0.25f - 6, baseTop - systemUnitHeight / 2f, 0f), (int)(conWidth * 0.5f) - 2, systemUnitHeight,22, "[111111]LoadPose",true, this.OnClickLoadPose);
 
                 //PoseSaveボタン
-                GameObject goSavePose = SetCloneChild(goSystemUnit, goLoadPose, "SavePose");
-                goSavePose.transform.localPosition = new Vector3(conWidth * 0.25f - 4, baseTop - systemUnitHeight / 2f, 0f);
+                generateUnitButton(SetCloneChild(goSystemUnit, goProfileTabCopy, "SavePose"),
+                    new Vector3(conWidth * 0.125f - 5, baseTop - systemUnitHeight / 2f, 0f), (int)(conWidth * 0.25f) - 4, systemUnitHeight, 22,  "[111111]SavePose", true, this.OnClickSavePose);
 
-                UILabel uiLabelSavePose = FindChild(goSavePose, "Name").GetComponent<UILabel>();
-                uiLabelSavePose.text = "[111111]SavePose";
+                //OutputPoseボタン
+                generateUnitButton(SetCloneChild(goSystemUnit, goProfileTabCopy, "OutputPose"),
+                    new Vector3(conWidth * 0.375f - 4, baseTop - systemUnitHeight / 2f, 0f), (int)(conWidth * 0.25f) - 4, systemUnitHeight, 22, "[111111]OutputPose", true, this.OnClickOutputPose);
 
-                UIButton uiButtonSavePose = goSavePose.GetComponent<UIButton>();
-                uiButtonSavePose.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonSavePose.onClick, new EventDelegate.Callback(this.OnClickSavePose));
-
-                NGUITools.UpdateWidgetCollider(goSavePose);
-                goSavePose.SetActive(true);
 
                 Debuginfo.Log(LogLabel + " goSavePose complete.");
 
                 ///////////////////////////////////////////////
 
-
-
                 // 前メイド選択ボタン
                 GameObject goPrevMaid = SetCloneChild(goSystemUnit, goProfileTabCopy, "PrevMaid");
-                goPrevMaid.transform.localPosition = new Vector3(-conWidth * 0.375f - 6, baseTop - systemUnitHeight * 5 / 2f - 2, 0f);
+                generateUnitButton(goPrevMaid,
+                    new Vector3(-conWidth * 0.375f - 6, baseTop - systemUnitHeight * 2.5f - 2, 0f), (int)(conWidth * 0.25f) - 4, systemUnitHeight * 3, 22, "[111111]前のメイド", true, this.OnClickPrevMaid);
 
-
-                UISprite uiSpritePrevMaid = goPrevMaid.GetComponent<UISprite>();
-                uiSpritePrevMaid.SetDimensions((int)(conWidth * 0.25f) - 2, systemUnitHeight * 3);
-
-                UILabel uiLabelPrevMaid = FindChild(goPrevMaid, "Name").GetComponent<UILabel>();
-
-                uiLabelPrevMaid.width = uiSpritePrevMaid.width - 10;
-                uiLabelPrevMaid.fontSize = 22;
-                uiLabelPrevMaid.spacingX = 0;
-                uiLabelPrevMaid.supportEncoding = true;
-                uiLabelPrevMaid.text = "[111111]前のメイド";
-
-                UIButton uiButtonPrevMaid = goPrevMaid.GetComponent<UIButton>();
-                uiButtonPrevMaid.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonPrevMaid.onClick, new EventDelegate.Callback(this.OnClickPrevMaid));
-
-                FindChild(goPrevMaid, "SelectCursor").GetComponent<UISprite>().SetDimensions(16, 16);
-                FindChild(goPrevMaid, "SelectCursor").SetActive(false);
-
-                NGUITools.UpdateWidgetCollider(goPrevMaid);
-                goPrevMaid.SetActive(true);
 
                 // メイド選択決定ボタン
                 GameObject goCurrentMaid = SetCloneChild(goSystemUnit, goProfileTabCopy, "CurrentMaid");
@@ -6646,7 +2987,6 @@ namespace CM3D2.AddBoneSlider.Plugin
                 uiButtonCurrentMaid.enabled = false;
                 FindChild(goCurrentMaid, "SelectCursor").GetComponent<UISprite>().SetDimensions(16, 16);
                 FindChild(goCurrentMaid, "SelectCursor").SetActive(false);
-                NGUITools.UpdateWidgetCollider(goPrevMaid);
 
                 NGUITools.UpdateWidgetCollider(goCurrentMaid);
                 goCurrentMaid.SetActive(true);
@@ -6654,395 +2994,125 @@ namespace CM3D2.AddBoneSlider.Plugin
                 Debuginfo.Log(LogLabel + " goCurrentMaid complete.");
 
                 // 次メイド選択ボタン
-                GameObject goNextMaid = SetCloneChild(goSystemUnit, goPrevMaid, "NextMaid");
-                goNextMaid.transform.localPosition = new Vector3(conWidth * 0.375f - 4f, baseTop - systemUnitHeight * 5 / 2f - 2f, 0f);
+                generateUnitButton(SetCloneChild(goSystemUnit, goPrevMaid, "NextMaid"),
+                     new Vector3(conWidth * 0.375f - 4, baseTop - systemUnitHeight * 2.5f - 2, 0f), "[111111]次のメイド",true , this.OnClickNextMaid);
 
-
-                UILabel uiLabelNextMaid = FindChild(goNextMaid, "Name").GetComponent<UILabel>();
-                uiLabelNextMaid.text = "[111111]次のメイド";
-
-                UIButton uiButtonNextMaid = goNextMaid.GetComponent<UIButton>();
-                uiButtonNextMaid.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonNextMaid.onClick, new EventDelegate.Callback(this.OnClickNextMaid));
-
-                FindChild(goNextMaid, "SelectCursor").GetComponent<UISprite>().SetDimensions(16, 16);
-                FindChild(goNextMaid, "SelectCursor").SetActive(false);
-                NGUITools.UpdateWidgetCollider(goNextMaid);
-                goNextMaid.SetActive(true);
-
-
+                Debuginfo.Log(LogLabel + " goNextMaid complete.");
+                ///////////////////////////////////////////////
 
                 // Undoボタン
                 GameObject goUndo = SetCloneChild(goSystemUnit, goProfileTabCopy, "Undo");
-                goUndo.transform.localPosition = new Vector3(-conWidth * 0.375f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 4 - 6f, 0f);
-
-                UISprite uiSpriteUndo = goUndo.GetComponent<UISprite>();
-                uiSpriteUndo.SetDimensions((int)(conWidth * 0.25f) - 4, systemUnitHeight);
-
-                UILabel uiLabelUndo = FindChild(goUndo, "Name").GetComponent<UILabel>();
-                uiLabelUndo.width = uiSpriteUndo.width - 10;
-                uiLabelUndo.fontSize = 22;
-                uiLabelUndo.spacingX = 0;
-                uiLabelUndo.supportEncoding = true;
-                uiLabelUndo.text = "[111111]Undo";
-
-                UIButton uiButtonUndo = goUndo.GetComponent<UIButton>();
-                uiButtonUndo.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonUndo.onClick, new EventDelegate.Callback(this.OnClickUndo));
-
-                FindChild(goUndo, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.5f) - 6, systemUnitHeight - 4);
-                FindChild(goUndo, "SelectCursor").SetActive(false);
-
-                NGUITools.UpdateWidgetCollider(goUndo);
-                goUndo.SetActive(true);
-
+                generateUnitButton(goUndo,
+                    new Vector3(-conWidth * 0.375f - 6, baseTop - systemUnitHeight * 4.5f - 6f, 0f), (int)(conWidth * 0.25f) - 4, systemUnitHeight, 22, "[111111]Undo", true, this.OnClickUndo);
+                
                 // Redoボタン
-                GameObject goRedo = SetCloneChild(goSystemUnit, goProfileTabCopy, "Redo");
-                goRedo.transform.localPosition = new Vector3(-conWidth * 0.125f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 4 - 6f, 0f);
-
-                UISprite uiSpriteRedo = goRedo.GetComponent<UISprite>();
-                uiSpriteRedo.SetDimensions((int)(conWidth * 0.25f) - 4, systemUnitHeight);
-
-                UILabel uiLabelRedo = FindChild(goRedo, "Name").GetComponent<UILabel>();
-                uiLabelRedo.width = uiSpriteRedo.width - 10;
-                uiLabelRedo.fontSize = 22;
-                uiLabelRedo.spacingX = 0;
-                uiLabelRedo.supportEncoding = true;
-                uiLabelRedo.text = "[111111]Redo";
-
-                UIButton uiButtonRedo = goRedo.GetComponent<UIButton>();
-                uiButtonRedo.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonRedo.onClick, new EventDelegate.Callback(this.OnClickRedo));
-
-                FindChild(goRedo, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.5f) - 6, systemUnitHeight - 4);
-                FindChild(goRedo, "SelectCursor").SetActive(false);
-
-                NGUITools.UpdateWidgetCollider(goRedo);
-                goRedo.SetActive(true);
-
-
+                generateUnitButton(SetCloneChild(goSystemUnit, goUndo, "Redo"),
+                    new Vector3(-conWidth * 0.125f - 5, baseTop - systemUnitHeight * 4.5f - 6f, 0f), "[111111]Redo", true, this.OnClickRedo);
+                
                 // MirrorAllボタン
-                GameObject goMirrorAll = SetCloneChild(goSystemUnit, goProfileTabCopy, "MirrorAll");
-                goMirrorAll.transform.localPosition = new Vector3(conWidth * 0.125f - 4, baseTop - systemUnitHeight / 2f - systemUnitHeight * 4 - 6f, 0f);
-
-                UISprite uiSpriteMirrorAll = goMirrorAll.GetComponent<UISprite>();
-                uiSpriteMirrorAll.SetDimensions((int)(conWidth * 0.25f) - 6, systemUnitHeight);
-
-                UILabel uiLabelMirrorAll = FindChild(goMirrorAll, "Name").GetComponent<UILabel>();
-                uiLabelMirrorAll.width = uiSpriteMirrorAll.width - 10;
-                uiLabelMirrorAll.fontSize = 22;
-                uiLabelMirrorAll.spacingX = 0;
-                uiLabelMirrorAll.supportEncoding = true;
-                uiLabelMirrorAll.text = "[111111]MirrorAll";
-
-                UIButton uiButtonMirrorAll = goMirrorAll.GetComponent<UIButton>();
-                uiButtonMirrorAll.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonMirrorAll.onClick, new EventDelegate.Callback(this.OnClickMirrorAll));
-
-                FindChild(goMirrorAll, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.5f) - 6, systemUnitHeight - 4);
-                FindChild(goMirrorAll, "SelectCursor").SetActive(false);
-
-                NGUITools.UpdateWidgetCollider(goMirrorAll);
-                goMirrorAll.SetActive(true);
-
-
+                generateUnitButton(SetCloneChild(goSystemUnit, goUndo, "MirrorAll"),
+                    new Vector3(conWidth * 0.125f - 5, baseTop - systemUnitHeight * 4.5f - 6f, 0f), "[111111]MirrorAll", true, this.OnClickMirrorAll);
+                
                 // ResetAllボタン
-                GameObject goResetAll = SetCloneChild(goSystemUnit, goProfileTabCopy, "ResetAll");
-                goResetAll.transform.localPosition = new Vector3(conWidth * 0.375f - 4, baseTop - systemUnitHeight / 2f - systemUnitHeight * 4 - 6f, 0f);
+                generateUnitButton(SetCloneChild(goSystemUnit, goUndo, "ResetAll"),
+                    new Vector3(conWidth * 0.375f - 4, baseTop - systemUnitHeight * 4.5f - 6f, 0f), "[111111]ResetAll", true, this.OnClickResetAll);
 
-                UISprite uiSpriteResetAll = goResetAll.GetComponent<UISprite>();
-                uiSpriteResetAll.SetDimensions((int)(conWidth * 0.25f) - 2, systemUnitHeight);
-
-                UILabel uiLabelResetAll = FindChild(goResetAll, "Name").GetComponent<UILabel>();
-                uiLabelResetAll.width = uiSpriteResetAll.width - 10;
-                uiLabelResetAll.fontSize = 22;
-                uiLabelResetAll.spacingX = 0;
-                uiLabelResetAll.supportEncoding = true;
-                uiLabelResetAll.text = "[111111]ResetAll";
-
-                UIButton uiButtonResetAll = goResetAll.GetComponent<UIButton>();
-                uiButtonResetAll.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonResetAll.onClick, new EventDelegate.Callback(this.OnClickResetAll));
-
-                FindChild(goResetAll, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.5f) - 6, systemUnitHeight - 4);
-                FindChild(goResetAll, "SelectCursor").SetActive(false);
-
-                NGUITools.UpdateWidgetCollider(goResetAll);
-                goResetAll.SetActive(true);
-
-                Debuginfo.Log(LogLabel + " goResetAll complete.");
-
+                ///////////////////////////////////////////////
 
                 // 全IK解除ボタン
-                GameObject goIKDetachAll = SetCloneChild(goSystemUnit, goProfileTabCopy, "IKDetachAll");
-                //goIKDetachAll.transform.localPosition = new Vector3(-conWidth * 0.375f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 4 - 6f, 0f);
-                goIKDetachAll.transform.localPosition = new Vector3(-conWidth * 0.4167f - 7, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
-
-                UISprite uiSpriteIKDetachAll = goIKDetachAll.GetComponent<UISprite>();
-                //uiSpriteIKDetachAll.SetDimensions((int)(conWidth * 0.25f) - 4, systemUnitHeight);
-                uiSpriteIKDetachAll.SetDimensions((int)(conWidth * 0.1667f) - 5, systemUnitHeight);
-
-                UILabel uiLabelIKDetachAll = FindChild(goIKDetachAll, "Name").GetComponent<UILabel>();
-                uiLabelIKDetachAll.width = uiSpriteIKDetachAll.width - 10;
-                uiLabelIKDetachAll.fontSize = 22;
-                uiLabelIKDetachAll.spacingX = 0;
-                uiLabelIKDetachAll.supportEncoding = true;
-                uiLabelIKDetachAll.text = "[111111]全解除";
-
-                UIButton uiButtonIKDetachAll = goIKDetachAll.GetComponent<UIButton>();
-                uiButtonIKDetachAll.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonIKDetachAll.onClick, new EventDelegate.Callback(this.OnClickIKDetachAll));
-
-                //FindChild(goIKDetachAll, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.25f) - 10, systemUnitHeight - 4);
-                FindChild(goIKDetachAll, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.1667f) - 14, systemUnitHeight - 4);
-
-                FindChild(goIKDetachAll, "SelectCursor").SetActive(false);
-
-                NGUITools.UpdateWidgetCollider(goIKDetachAll);
-                goIKDetachAll.SetActive(true);
+                generateUnitButton(SetCloneChild(goSystemUnit, goUndo, "IKDetachAll"),
+                    new Vector3(-conWidth * 0.375f - 6, baseTop - systemUnitHeight * 5.5f - 10f, 0f), "[111111]全解除", true, this.OnClickIKDetachAll);
 
                 // IKアタッチ解除ボタン
-                GameObject goIKDetach = SetCloneChild(goSystemUnit, goIKDetachAll, "IKDetach");
-                //goIKDetach.transform.localPosition = new Vector3(-conWidth * 0.125f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 4 - 6f, 0f);
-                goIKDetach.transform.localPosition = new Vector3(-conWidth * 0.25f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
+                generateUnitButton(SetCloneChild(goSystemUnit, goUndo, "IKDetach"),
+                    new Vector3(-conWidth * 0.125f - 5, baseTop - systemUnitHeight * 5.5f - 10f, 0f), "[111111]IK解除", true, this.OnClickIKDetach);
 
-                UILabel uiLabelIKDetach = FindChild(goIKDetach, "Name").GetComponent<UILabel>();
-                uiLabelIKDetach.text = "[111111]IK解除";
+                //CopyAllボタン
+                GameObject goCopyAll = SetCloneChild(goSystemUnit, goProfileTabCopy, "goCopyAll");
+                generateUnitButton(goCopyAll,
+                    new Vector3(conWidth * 0.08333f - 5, baseTop - systemUnitHeight * 5.5f - 10f, 0f), (int)(conWidth * 0.1667f) - 5, systemUnitHeight, 17, "[111111]AllCopy", true, this.OnClickCopyAll);
 
-                UIButton uiButtonIKDetach = goIKDetach.GetComponent<UIButton>();
-                uiButtonIKDetach.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonIKDetach.onClick, new EventDelegate.Callback(this.OnClickIKDetach));
+                //PasteAllボタン
+                generateUnitButton(SetCloneChild(goSystemUnit, goCopyAll, "goPasteAll"),
+                    new Vector3(conWidth * 0.25f - 4, baseTop - systemUnitHeight * 5.5f - 10f, 0f), "[111111]AllPaste", true, this.OnClickPasteAll);
 
-                FindChild(goIKDetach, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.25f) - 10, systemUnitHeight - 4);
-                FindChild(goIKDetach, "SelectCursor").SetActive(false);
+                //FlushAllボタン
+                generateUnitButton(SetCloneChild(goSystemUnit, goCopyAll, "goFlushAll"),
+                    new Vector3(conWidth * 0.4167f - 3, baseTop - systemUnitHeight * 5.5f - 10f, 0f), "[111111]AllFlush", true, this.OnClickFlushAll);
 
-                NGUITools.UpdateWidgetCollider(goIKDetach);
-                goIKDetach.SetActive(true);
+
+                ///////////////////////////////////////////////
 
                 // 左足IKボタン
-                GameObject goIKLeftLeg = SetCloneChild(goSystemUnit, goIKDetachAll, "IKLeftLeg");
-                //goIKLeftLeg.transform.localPosition = new Vector3(-conWidth * 0.375f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
-                goIKLeftLeg.transform.localPosition = new Vector3(-conWidth * 0.08333f - 5, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
-
-                UILabel uiLabelIKLeftLeg = FindChild(goIKLeftLeg, "Name").GetComponent<UILabel>();
-                uiLabelIKLeftLeg.text = "[111111]左足IK";
-
-                UIButton uiButtonIKLeftLeg = goIKLeftLeg.GetComponent<UIButton>();
-                uiButtonIKLeftLeg.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonIKLeftLeg.onClick, new EventDelegate.Callback(this.OnClickIKLeftLeg));
-
-                FindChild(goIKLeftLeg, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.25f) - 10, systemUnitHeight - 4);
-                FindChild(goIKLeftLeg, "SelectCursor").SetActive(false);
-
-                NGUITools.UpdateWidgetCollider(goIKLeftLeg);
-                goIKLeftLeg.SetActive(true);
+                generateUnitButton(SetCloneChild(goSystemUnit, goUndo, "IKLeftLeg"),
+                    new Vector3(-conWidth * 0.375f - 6, baseTop - systemUnitHeight * 6.5f - 14f, 0f), "[111111]左足IK", true, this.OnClickIKLeftLeg);
 
                 // 右足IKボタン
-                GameObject goIKRightLeg = SetCloneChild(goSystemUnit, goIKDetachAll, "IKRightLeg");
-                //goIKRightLeg.transform.localPosition = new Vector3(-conWidth * 0.125f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
-                goIKRightLeg.transform.localPosition = new Vector3(conWidth * 0.08333f - 4, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
-
-                UILabel uiLabelIKRightLeg = FindChild(goIKRightLeg, "Name").GetComponent<UILabel>();
-                uiLabelIKRightLeg.text = "[111111]右足IK";
-
-                UIButton uiButtonIKRightLeg = goIKRightLeg.GetComponent<UIButton>();
-                uiButtonIKRightLeg.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonIKRightLeg.onClick, new EventDelegate.Callback(this.OnClickIKRightLeg));
-
-                FindChild(goIKRightLeg, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.25f) - 10, systemUnitHeight - 4);
-                FindChild(goIKRightLeg, "SelectCursor").SetActive(false);
-
-                NGUITools.UpdateWidgetCollider(goIKRightLeg);
-                goIKRightLeg.SetActive(true);
-
+                generateUnitButton(SetCloneChild(goSystemUnit, goUndo, "IKRightLeg"),
+                    new Vector3(-conWidth * 0.125f - 5, baseTop - systemUnitHeight * 6.5f - 14f, 0f), "[111111]右足IK", true, this.OnClickIKRightLeg);
+                
                 // 左手IKボタン
-                GameObject goIKLeftArm = SetCloneChild(goSystemUnit, goIKDetachAll, "IKLeftArm");
-                //goIKLeftArm.transform.localPosition = new Vector3(conWidth * 0.125f - 3, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
-                goIKLeftArm.transform.localPosition = new Vector3(conWidth * 0.25f - 3, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
-
-                UILabel uiLabelIKLeftArm = FindChild(goIKLeftArm, "Name").GetComponent<UILabel>();
-                uiLabelIKLeftArm.text = "[111111]左手IK";
-
-                UIButton uiButtonIKLeftArm = goIKLeftArm.GetComponent<UIButton>();
-                uiButtonIKLeftArm.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonIKLeftArm.onClick, new EventDelegate.Callback(this.OnClickIKLeftArm));
-
-                FindChild(goIKLeftArm, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.25f) - 10, systemUnitHeight - 4);
-                FindChild(goIKLeftArm, "SelectCursor").SetActive(false);
-
-                NGUITools.UpdateWidgetCollider(goIKLeftArm);
-                goIKLeftArm.SetActive(true);
+                generateUnitButton(SetCloneChild(goSystemUnit, goUndo, "IKLeftArm"),
+                    new Vector3(conWidth * 0.125f - 5, baseTop - systemUnitHeight * 6.5f - 14f, 0f), "[111111]左手IK", true, this.OnClickIKLeftArm);
 
                 // 右手IKボタン
-                GameObject goIKRightArm = SetCloneChild(goSystemUnit, goIKDetachAll, "IKRightArm");
-                //goIKRightArm.transform.localPosition = new Vector3(conWidth * 0.375f - 3, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
-                goIKRightArm.transform.localPosition = new Vector3(conWidth * 0.4167f - 2, baseTop - systemUnitHeight / 2f - systemUnitHeight * 5 - 10f, 0f);
+                generateUnitButton(SetCloneChild(goSystemUnit, goUndo, "IKRightArm"),
+                    new Vector3(conWidth * 0.375f - 4, baseTop - systemUnitHeight * 6.5f - 14f, 0f), "[111111]右手IK", true, this.OnClickIKRightArm);
 
-                UILabel uiLabelIKRightArm = FindChild(goIKRightArm, "Name").GetComponent<UILabel>();
-                uiLabelIKRightArm.text = "[111111]右手IK";
-
-                UIButton uiButtonIKRightArm = goIKRightArm.GetComponent<UIButton>();
-                uiButtonIKRightArm.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-                EventDelegate.Set(uiButtonIKRightArm.onClick, new EventDelegate.Callback(this.OnClickIKRightArm));
-
-                FindChild(goIKRightArm, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.25f) - 10, systemUnitHeight - 4);
-                FindChild(goIKRightArm, "SelectCursor").SetActive(false);
-
-                NGUITools.UpdateWidgetCollider(goIKRightArm);
-                goIKRightArm.SetActive(true);
+                
+                ///////////////////////////////////////////////
 
                 //ボーンカテゴリー切り替えボタン
+                GameObject goBoneCategory0 = SetCloneChild(goSystemUnit, goProfileTabCopy, "BoneCategory0");
+                generateUnitButton(goBoneCategory0,
+                    new Vector3(-conWidth * 0.4167f - 7, baseTop - systemUnitHeight * 7.5f - 18f, 0f), (int)(conWidth * 0.1667f) - 5, systemUnitHeight, 20, "[111111]その他", true, this.OnClickBoneCategory);
 
-                GameObject goBoneCategory0 = SetCloneChild(goSystemUnit, goLoadPose, "BoneCategory0");
-                goBoneCategory0.transform.localPosition = new Vector3(-conWidth * 0.4167f - 7, baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 14f, 0f);
-                UISprite uiSpriteBoneCategory0 = goBoneCategory0.GetComponent<UISprite>();
-                uiSpriteBoneCategory0.SetDimensions((int)(conWidth * 0.1667f) - 5, systemUnitHeight);
-                UILabel uiLabelBoneCategory0 = FindChild(goBoneCategory0, "Name").GetComponent<UILabel>();
-                uiLabelBoneCategory0.width = uiLabelBoneCategory0.width - 10;
-                uiLabelBoneCategory0.fontSize = 20;
-                uiLabelBoneCategory0.text = "[111111]その他";
+                generateUnitButton(SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory1"),
+                    new Vector3(-conWidth * 0.25f - 6, baseTop - systemUnitHeight * 7.5f - 18f, 0f), "[111111]上半身", true, this.OnClickBoneCategory);
+
+                generateUnitButton(SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory2"),
+                    new Vector3(-conWidth * 0.08333f - 4, baseTop - systemUnitHeight * 7.5f - 18f, 0f), "[111111]下半身", true, this.OnClickBoneCategory);
+
+                generateUnitButton(SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory3"),
+                    new Vector3(conWidth * 0.08333f - 5, baseTop - systemUnitHeight * 7.5f - 18f, 0f), "[111111]足指", true, this.OnClickBoneCategory);
+                
+                generateUnitButton(SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory4"),
+                    new Vector3(conWidth * 0.25f - 4, baseTop - systemUnitHeight * 7.5f - 18f, 0f), "[111111]左手指", true, this.OnClickBoneCategory);
+
+                generateUnitButton(SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory5"),
+                    new Vector3(conWidth * 0.4167f - 3, baseTop - systemUnitHeight * 7.5f - 18f, 0f), "[111111]右手指", true, this.OnClickBoneCategory);
+
                 UIButton uiButtonBoneCategory0 = goBoneCategory0.GetComponent<UIButton>();
-                EventDelegate.Set(uiButtonBoneCategory0.onClick, new EventDelegate.Callback(this.OnClickBoneCategory));
-                FindChild(goBoneCategory0, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.1667f) - 10 - 4, systemUnitHeight - 4);
-                NGUITools.UpdateWidgetCollider(goBoneCategory0);
-                goBoneCategory0.SetActive(true);
-
-
-                GameObject goBoneCategory1 = SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory1");
-                goBoneCategory1.transform.localPosition = new Vector3(-conWidth * 0.25f - 6, baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 14f, 0f);
-                UILabel uiLabelBoneCategory1 = FindChild(goBoneCategory1, "Name").GetComponent<UILabel>();
-                uiLabelBoneCategory1.text = "[111111]上半身";
-                UIButton uiButtonBoneCategory1 = goBoneCategory1.GetComponent<UIButton>();
-                EventDelegate.Set(uiButtonBoneCategory1.onClick, new EventDelegate.Callback(this.OnClickBoneCategory));
-                NGUITools.UpdateWidgetCollider(goBoneCategory1);
-                goBoneCategory1.SetActive(true);
-
-                GameObject goBoneCategory2 = SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory2");
-                goBoneCategory2.transform.localPosition = new Vector3(-conWidth * 0.08333f - 5, baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 14f, 0f);
-                UILabel uiLabelBoneCategory2 = FindChild(goBoneCategory2, "Name").GetComponent<UILabel>();
-                uiLabelBoneCategory2.text = "[111111]下半身";
-                UIButton uiButtonBoneCategory2 = goBoneCategory2.GetComponent<UIButton>();
-                EventDelegate.Set(uiButtonBoneCategory2.onClick, new EventDelegate.Callback(this.OnClickBoneCategory));
-                NGUITools.UpdateWidgetCollider(goBoneCategory2);
-                goBoneCategory2.SetActive(true);
-
-                GameObject goBoneCategory3 = SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory3");
-                goBoneCategory3.transform.localPosition = new Vector3(conWidth * 0.08333f - 4, baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 14f, 0f);
-                UILabel uiLabelBoneCategory3 = FindChild(goBoneCategory3, "Name").GetComponent<UILabel>();
-                uiLabelBoneCategory3.text = "[111111]足指";
-                UIButton uiButtonBoneCategory3 = goBoneCategory1.GetComponent<UIButton>();
-                EventDelegate.Set(uiButtonBoneCategory3.onClick, new EventDelegate.Callback(this.OnClickBoneCategory));
-                NGUITools.UpdateWidgetCollider(goBoneCategory3);
-                goBoneCategory3.SetActive(true);
-
-                GameObject goBoneCategory4 = SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory4");
-                goBoneCategory4.transform.localPosition = new Vector3(conWidth * 0.25f - 3, baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 14f, 0f);
-                UILabel uiLabelBoneCategory4 = FindChild(goBoneCategory4, "Name").GetComponent<UILabel>();
-                uiLabelBoneCategory4.text = "[111111]左手指";
-                UIButton uiButtonBoneCategory4 = goBoneCategory4.GetComponent<UIButton>();
-                EventDelegate.Set(uiButtonBoneCategory4.onClick, new EventDelegate.Callback(this.OnClickBoneCategory));
-                NGUITools.UpdateWidgetCollider(goBoneCategory4);
-                goBoneCategory4.SetActive(true);
-
-                GameObject goBoneCategory5 = SetCloneChild(goSystemUnit, goBoneCategory0, "BoneCategory5");
-                goBoneCategory5.transform.localPosition = new Vector3(conWidth * 0.4167f - 2, baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 14f, 0f);
-                UILabel uiLabelBoneCategory5 = FindChild(goBoneCategory5, "Name").GetComponent<UILabel>();
-                uiLabelBoneCategory5.text = "[111111]右手指";
-                UIButton uiButtonBoneCategory5 = goBoneCategory5.GetComponent<UIButton>();
-                EventDelegate.Set(uiButtonBoneCategory5.onClick, new EventDelegate.Callback(this.OnClickBoneCategory));
-                NGUITools.UpdateWidgetCollider(goBoneCategory5);
-                goBoneCategory5.SetActive(true);
-
                 uiButtonBoneCategory0.defaultColor = new Color(uiButtonBoneCategory0.defaultColor.r, uiButtonBoneCategory0.defaultColor.g, uiButtonBoneCategory0.defaultColor.b, 1.0f);
-                FindChild(uiButtonBoneCategory0.gameObject, "SelectCursor").SetActive(true);
+                FindChild(uiButtonBoneCategory0.gameObject, "SelectCursorBoneCategory0").SetActive(true);
 
-                float CategoryFuncBase = baseTop - systemUnitHeight / 2f - systemUnitHeight * 6 - 56f;
+                ///////////////////////////////////////////////
+
+                float CategoryFuncBase = baseTop - systemUnitHeight * 8.5f - 30f;
+
+                // MirrorCategoryボタン
+                GameObject goMirrorCategory = SetCloneChild(goSystemUnit, goProfileTabCopy, "MirrorCategory");
+                generateUnitButton(goMirrorCategory,
+                    new Vector3(-conWidth * 0.25f - 6, 11f + CategoryFuncBase, 0f), (int)(conWidth * 0.5f) - 2, 19, 14, "[111111]CategoryMirror", true, this.OnClickMirrorCategoryButton);
+
+                // ResetCategoryボタン
+                generateUnitButton(SetCloneChild(goSystemUnit, goMirrorCategory, "ResetCategory"),
+                    new Vector3(conWidth * 0.25f - 4, 11f + CategoryFuncBase, 0f), "[111111]CategoryReset", true, this.OnClickResetCategoryButton);
 
                 // CopyCategoryボタン
                 GameObject goCopyCategory = SetCloneChild(goSystemUnit, goProfileTabCopy, "CopyCategory");
-                goCopyCategory.transform.localPosition = new Vector3(-conWidth * 0.3333f - 4, 11f + CategoryFuncBase, 0f);
-                goCopyCategory.AddComponent<UIDragScrollView>().scrollView = uiScrollView;
-
-                UISprite uiSpriteCopyCategory = goCopyCategory.GetComponent<UISprite>();
-                uiSpriteCopyCategory.SetDimensions((int)(conWidth * 0.3333f) - 4, 19);
-
-                UILabel uiLabelCopyCategory = FindChild(goCopyCategory, "Name").GetComponent<UILabel>();
-                uiLabelCopyCategory.width = uiSpriteCopyCategory.width - 10;
-                uiLabelCopyCategory.fontSize = 14;
-                uiLabelCopyCategory.spacingX = 0;
-                uiLabelCopyCategory.supportEncoding = true;
-                uiLabelCopyCategory.text = "[111111]CategoryCopy";
-
-                UIButton uiButtonCopyCategory = goCopyCategory.GetComponent<UIButton>();
-                uiButtonCopyCategory.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-
-                EventDelegate.Set(uiButtonCopyCategory.onClick, new EventDelegate.Callback(this.OnClickCopyCategoryButton));
-                FindChild(goCopyCategory, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.2f) - 12, 15);
-                FindChild(goCopyCategory, "SelectCursor").SetActive(false);
-                FindChild(goCopyCategory, "SelectCursor").name = "SelectCursorCopyCategory";
-                NGUITools.UpdateWidgetCollider(goCopyCategory);
-                goCopyCategory.SetActive(true);
-
-                // Right2LeftCategoryボタン
-                GameObject goRight2LeftCategory = SetCloneChild(goSystemUnit, goCopyCategory, "Right2LeftCategory");
-                goRight2LeftCategory.transform.localPosition = new Vector3(-conWidth * 0.3333f - 4, -11f + CategoryFuncBase, 0f);
-
-                UILabel uiLabelRight2LeftCategory = FindChild(goRight2LeftCategory, "Name").GetComponent<UILabel>();
-                uiLabelRight2LeftCategory.text = "[111111]右→左Paste";
-
-                EventDelegate.Set(goRight2LeftCategory.GetComponent<UIButton>().onClick, new EventDelegate.Callback(this.OnClickRight2LeftCategoryButton));
-
-                NGUITools.UpdateWidgetCollider(goRight2LeftCategory);
-                goRight2LeftCategory.SetActive(true);
-
+                generateUnitButton(goCopyCategory,
+                    new Vector3(-conWidth * 0.3333f -6 , -11f + CategoryFuncBase, 0f), (int)(conWidth * 0.3333f) - 2, 19, 14, "[111111]CategoryCopy", true, this.OnClickCopyCategoryButton);
+                
                 // PasteCategoryボタン
-                GameObject goPasteCategory = SetCloneChild(goSystemUnit, goCopyCategory, "PasteCategory");
-                goPasteCategory.transform.localPosition = new Vector3(-4f, 11f + CategoryFuncBase, 0f);
+                generateUnitButton(SetCloneChild(goSystemUnit, goCopyCategory, "PasteCategory"),
+                    new Vector3(-5, -11f + CategoryFuncBase, 0f), "[111111]CategoryPaste", true, this.OnClickPasteCategoryButton);
 
-                UILabel uiLabelPasteCategory = FindChild(goPasteCategory, "Name").GetComponent<UILabel>();
-                uiLabelPasteCategory.text = "[111111]CategoryPaste";
-
-                EventDelegate.Set(goPasteCategory.GetComponent<UIButton>().onClick, new EventDelegate.Callback(this.OnClickPasteCategoryButton));
-
-                NGUITools.UpdateWidgetCollider(goPasteCategory);
-                goPasteCategory.SetActive(true);
-
-                // Left2RightCategoryボタン
-                GameObject goLeft2RightCategory = SetCloneChild(goSystemUnit, goCopyCategory, "Left2RightCategory");
-                goLeft2RightCategory.transform.localPosition = new Vector3(-4f, -11f + CategoryFuncBase, 0f);
-
-                UILabel uiLabelLeft2RightCategory = FindChild(goLeft2RightCategory, "Name").GetComponent<UILabel>();
-                uiLabelLeft2RightCategory.text = "[111111]右←左Paste";
-
-                EventDelegate.Set(goLeft2RightCategory.GetComponent<UIButton>().onClick, new EventDelegate.Callback(this.OnClickLeft2RightCategoryButton));
-
-                NGUITools.UpdateWidgetCollider(goLeft2RightCategory);
-                goLeft2RightCategory.SetActive(true);
-
-                // ResetCategoryボタン
-                GameObject goResetCategory = SetCloneChild(goSystemUnit, goCopyCategory, "ResetCategory");
-                goResetCategory.transform.localPosition = new Vector3(conWidth * 0.3333f -4, 11f + CategoryFuncBase, 0f);
-
-                UILabel uiLabelResetCategory = FindChild(goResetCategory, "Name").GetComponent<UILabel>();
-                uiLabelResetCategory.text = "[111111]CategoryReset";
-
-                EventDelegate.Set(goResetCategory.GetComponent<UIButton>().onClick, new EventDelegate.Callback(this.OnClickResetCategoryButton));
-
-                NGUITools.UpdateWidgetCollider(goResetCategory);
-                goResetCategory.SetActive(true);
+                // FlushCategoryボタン
+                generateUnitButton(SetCloneChild(goSystemUnit, goCopyCategory, "FlushCategory"),
+                    new Vector3(conWidth * 0.3333f - 4, -11f + CategoryFuncBase, 0f), "[111111]CategoryFlush", true, this.OnClickFlushCategoryButton);
 
 
-                // MirrorCategoryボタン
-                GameObject goMirrorCategory = SetCloneChild(goSystemUnit, goCopyCategory, "MirrorCategory");
-                goMirrorCategory.transform.localPosition = new Vector3(conWidth * 0.3333f -4, -11f + CategoryFuncBase, 0f);
-
-                UILabel uiLabelMirrorCategory = FindChild(goMirrorCategory, "Name").GetComponent<UILabel>();
-                uiLabelMirrorCategory.text = "[111111]CategoryMirror";
-
-                EventDelegate.Set(goMirrorCategory.GetComponent<UIButton>().onClick, new EventDelegate.Callback(this.OnClickMirrorCategoryButton));
-
-                NGUITools.UpdateWidgetCollider(goMirrorCategory);
-                goMirrorCategory.SetActive(true);
 
 
                 #endregion
@@ -7077,6 +3147,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                     if (!mp.bVisible[bone]) continue;
 
                     uiValueLable[bone] = new Dictionary<string, UILabel>();
+                    uiSlider[bone] = new Dictionary<string, UISlider>();
                     string modeDesc = mp.sDescription[bone] + " (" + bone + ")";
 
                     // ModUnit：modタグ単位のまとめオブジェクト ScrollViewGridの子
@@ -7143,145 +3214,53 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                         NGUITools.UpdateWidgetCollider(goHeaderButton);
 
-                        // Handleボタン
-                        GameObject goHandle = SetCloneChild(goModUnit, goProfileTabCopy, "Handle:" + bone);
-                        goHandle.transform.localPosition = new Vector3(conWidth * 0.4f + 2, 10.5f, 0f);
-                        goHandle.AddComponent<UIDragScrollView>().scrollView = uiScrollView;
+                        if (bone == "camera" || bone == "eye" || bone == "secret" || bone == "light" || bone == "gravity")
+                        {
 
-                        UISprite uiSpriteHandle = goHandle.GetComponent<UISprite>();
-                        uiSpriteHandle.SetDimensions((int)(conWidth * 0.2f) - 2, 19);
+                        }
+                        else if (bone == "Bip01" || bone == "allpos" || bone == "offset")
+                        {
+                            // Handleボタン
+                            generateUnitButton(SetCloneChild(goModUnit, goProfileTabCopy, "RotHandle:" + bone),
+                                new Vector3(conWidth * 0.4f + 2, 10.5f, 0f), (int)(conWidth * 0.2f) - 2, 19, 14, "[111111]RotHandle", true, this.OnClickHandleButton);
 
-                        UILabel uiLabelHandle = FindChild(goHandle, "Name").GetComponent<UILabel>();
-                        uiLabelHandle.width = uiSpriteHandle.width - 10;
-                        uiLabelHandle.fontSize = 14;
-                        uiLabelHandle.spacingX = 0;
-                        uiLabelHandle.supportEncoding = true;
-                        uiLabelHandle.text = "[111111]Handle";
+                            // PosHandleボタン
+                            generateUnitButton(SetCloneChild(goModUnit, goProfileTabCopy, "PosHandle:" + bone),
+                                new Vector3(conWidth * 0.4f + 2, -10.5f, 0f), (int)(conWidth * 0.2f) - 2, 19, 14, "[111111]PosHandle", true, this.OnClickPosHandleButton);
+                        }
+                        else
+                        {
+                            // Handleボタン
+                            generateUnitButton(SetCloneChild(goModUnit, goProfileTabCopy, "RotHandle:" + bone),
+                                new Vector3(conWidth * 0.4f + 2, 0, 0f), (int)(conWidth * 0.2f) - 2, 40, 22, "[111111]Handle", true, this.OnClickHandleButton);
 
-                        UIButton uiButtonHandle = goHandle.GetComponent<UIButton>();
-                        uiButtonHandle.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-
-                        EventDelegate.Set(uiButtonHandle.onClick, new EventDelegate.Callback(this.OnClickHandleButton));
-                        FindChild(goHandle, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.2f) - 12, 15);
-                        FindChild(goHandle, "SelectCursor").SetActive(false);
-                        FindChild(goHandle, "SelectCursor").name = "SelectCursorHandle";
-                        NGUITools.UpdateWidgetCollider(goHandle);
-                        goHandle.SetActive(true);
-
-                        // PosHandleボタン
-                        GameObject goPosHandle = SetCloneChild(goModUnit, goProfileTabCopy, "PosHandle:" + bone);
-                        goPosHandle.AddComponent<UIDragScrollView>().scrollView = uiScrollView;
-                        goPosHandle.transform.localPosition = new Vector3(conWidth * 0.4f + 2, -10.5f, 0f);
-
-                        UISprite uiSpritePosHandle = goPosHandle.GetComponent<UISprite>();
-                        uiSpritePosHandle.SetDimensions((int)(conWidth * 0.2f) - 2, 19);
-
-                        UILabel uiLabelPosHandle = FindChild(goPosHandle, "Name").GetComponent<UILabel>();
-                        uiLabelPosHandle.width = uiSpritePosHandle.width - 10;
-                        uiLabelPosHandle.fontSize = 14;
-                        uiLabelPosHandle.spacingX = 0;
-                        uiLabelPosHandle.supportEncoding = true;
-                        uiLabelPosHandle.text = "[111111]PosHandle";
-
-                        UIButton uiButtonPosHandle = goPosHandle.GetComponent<UIButton>();
-                        uiButtonPosHandle.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-
-                        EventDelegate.Set(uiButtonPosHandle.onClick, new EventDelegate.Callback(this.OnClickPosHandleButton));
-                        FindChild(goPosHandle, "SelectCursor").GetComponent<UISprite>().SetDimensions(16, 16);
-                        FindChild(goPosHandle, "SelectCursor").SetActive(false);
-                        NGUITools.UpdateWidgetCollider(goPosHandle);
-                        goPosHandle.SetActive(true);
+                        }
 
                         //各パネルの下にボタン追加
 
                         float PanelFuncBase = -44f;
 
-                        // Copyボタン
-                        GameObject goCopy = SetCloneChild(goModUnit, goProfileTabCopy, "Copy:" + bone);
-                        goCopy.transform.localPosition = new Vector3(-conWidth * 0.3333f, 11f + PanelFuncBase, 0f);
-                        goCopy.AddComponent<UIDragScrollView>().scrollView = uiScrollView;
-
-                        UISprite uiSpriteCopy = goCopy.GetComponent<UISprite>();
-                        uiSpriteCopy.SetDimensions((int)(conWidth * 0.3333f) - 4, 19);
-
-                        UILabel uiLabelCopy = FindChild(goCopy, "Name").GetComponent<UILabel>();
-                        uiLabelCopy.width = uiSpriteCopy.width - 10;
-                        uiLabelCopy.fontSize = 14;
-                        uiLabelCopy.spacingX = 0;
-                        uiLabelCopy.supportEncoding = true;
-                        uiLabelCopy.text = "[111111]Copy";
-
-                        UIButton uiButtonCopy = goCopy.GetComponent<UIButton>();
-                        uiButtonCopy.defaultColor = new Color(1f, 1f, 1f, 0.8f);
-
-                        EventDelegate.Set(uiButtonCopy.onClick, new EventDelegate.Callback(this.OnClickCopyButton));
-                        FindChild(goCopy, "SelectCursor").GetComponent<UISprite>().SetDimensions((int)(conWidth * 0.2f) - 12, 15);
-                        FindChild(goCopy, "SelectCursor").SetActive(false);
-                        FindChild(goCopy, "SelectCursor").name = "SelectCursorCopy";
-                        NGUITools.UpdateWidgetCollider(goCopy);
-                        goCopy.SetActive(false);
-
-                        // Right2Leftボタン
-                        GameObject goRight2Left = SetCloneChild(goModUnit, goCopy, "Right2Left:" + bone);
-                        goRight2Left.transform.localPosition = new Vector3(-conWidth * 0.3333f, -11f + PanelFuncBase, 0f);
-
-                        UILabel uiLabelRight2Left = FindChild(goRight2Left, "Name").GetComponent<UILabel>();
-                        uiLabelRight2Left.text = "[111111]右→左Paste";
-
-                        EventDelegate.Set(goRight2Left.GetComponent<UIButton>().onClick, new EventDelegate.Callback(this.OnClickRight2LeftButton));
-
-                        NGUITools.UpdateWidgetCollider(goRight2Left);
-                        goRight2Left.SetActive(false);
-
-                        // Pasteボタン
-                        GameObject goPaste = SetCloneChild(goModUnit, goCopy, "Paste:" + bone);
-                        goPaste.transform.localPosition = new Vector3(0f, 11f + PanelFuncBase, 0f);
-
-                        UILabel uiLabelPaste = FindChild(goPaste, "Name").GetComponent<UILabel>();
-                        uiLabelPaste.text = "[111111]Paste";
-
-                        EventDelegate.Set(goPaste.GetComponent<UIButton>().onClick, new EventDelegate.Callback(this.OnClickPasteButton));
-
-                        NGUITools.UpdateWidgetCollider(goPaste);
-                        goPaste.SetActive(false);
-
-                        // Left2Rightボタン
-                        GameObject goLeft2Right = SetCloneChild(goModUnit, goCopy, "Left2Right:" + bone);
-                        goLeft2Right.transform.localPosition = new Vector3(0f, -11f + PanelFuncBase, 0f);
-
-                        UILabel uiLabelLeft2Right = FindChild(goLeft2Right, "Name").GetComponent<UILabel>();
-                        uiLabelLeft2Right.text = "[111111]右←左Paste";
-
-                        EventDelegate.Set(goLeft2Right.GetComponent<UIButton>().onClick, new EventDelegate.Callback(this.OnClickLeft2RightButton));
-
-                        NGUITools.UpdateWidgetCollider(goLeft2Right);
-                        goLeft2Right.SetActive(false);
+                        // Mirrorボタン
+                        GameObject goMirror = SetCloneChild(goModUnit, goProfileTabCopy, "Mirror:" + bone);
+                        generateUnitButton(goMirror,
+                            new Vector3(-conWidth * 0.25f - 1f, 11f + PanelFuncBase, 0f), (int)(conWidth * 0.5f) - 2, 19, 14, "[111111]Mirror", false, this.OnClickMirrorButton);
 
                         // Resetボタン
-                        GameObject goReset = SetCloneChild(goModUnit, goCopy, "Reset:"+bone);
-                        goReset.transform.localPosition = new Vector3(conWidth * 0.3333f, 11f + PanelFuncBase, 0f);
-
-                        UILabel uiLabelReset = FindChild(goReset, "Name").GetComponent<UILabel>();
-                        uiLabelReset.text = "[111111]Reset";
-
-                        EventDelegate.Set(goReset.GetComponent<UIButton>().onClick, new EventDelegate.Callback(this.OnClickResetButton));
-
-                        NGUITools.UpdateWidgetCollider(goReset);
-                        goReset.SetActive(false);
-
-
-                        // Mirrorボタン
-                        GameObject goMirror = SetCloneChild(goModUnit, goCopy, "Mirror:" + bone);
-                        goMirror.transform.localPosition = new Vector3(conWidth * 0.3333f , -11f + PanelFuncBase, 0f);
-
-                        UILabel uiLabelMirror = FindChild(goMirror, "Name").GetComponent<UILabel>();
-                        uiLabelMirror.text = "[111111]Mirror";
-
-                        EventDelegate.Set(goMirror.GetComponent<UIButton>().onClick, new EventDelegate.Callback(this.OnClickMirrorButton));
-
-                        NGUITools.UpdateWidgetCollider(goMirror);
-                        goMirror.SetActive(false);
+                        generateUnitButton(SetCloneChild(goModUnit, goMirror, "Reset:" + bone),
+                            new Vector3(conWidth * 0.25f + 1f, 11f + PanelFuncBase, 0f), "[111111]Reset", false, this.OnClickResetButton);
                         
+                        // Copyボタン
+                        GameObject goCopy = SetCloneChild(goModUnit, goProfileTabCopy, "Copy:" + bone);
+                        generateUnitButton(goCopy,
+                            new Vector3(-conWidth * 0.3333f -1, -11f + PanelFuncBase, 0f), (int)(conWidth * 0.3333f) - 2, 19, 14,"[111111]Copy", false, this.OnClickCopyButton);
+
+                        // Pasteボタン
+                        generateUnitButton(SetCloneChild(goModUnit, goCopy, "Paste:" + bone),
+                        　  new Vector3(                     0f, -11f + PanelFuncBase, 0f), "[111111]Paste", false, this.OnClickPasteButton);
+
+                        // Flushボタン
+                        generateUnitButton(SetCloneChild(goModUnit, goCopy, "Flush:" + bone),
+                            new Vector3( conWidth * 0.3333f +1, -11f + PanelFuncBase, 0f), "[111111]Flush", false, this.OnClickFlushButton);
 
 
                         for (int j = 0; j < mp.ValCount(bone); j++)
@@ -7305,13 +3284,13 @@ namespace CM3D2.AddBoneSlider.Plugin
                             goSliderUnit.GetComponent<UISprite>().SetDimensions(conWidth, 50);
 
                             // スライダー設定
-                            UISlider uiModSlider = FindChild(goSliderUnit, "Slider").GetComponent<UISlider>();
-                            uiModSlider.name = "Slider:" + bone + ":" + prop;
-                            uiModSlider.value = codecSliderValue(bone, prop);
+                            uiSlider[bone][prop] = FindChild(goSliderUnit, "Slider").GetComponent<UISlider>();
+                            uiSlider[bone][prop].name = "Slider:" + bone + ":" + prop;
+                            uiSlider[bone][prop].value = codecSliderValue(bone, prop);
 
 
-                            if (vType == "int") uiModSlider.numberOfSteps = (int)(vmax - vmin + 1);
-                            EventDelegate.Add(uiModSlider.onChange, new EventDelegate.Callback(this.OnChangeSlider));
+                            if (vType == "int") uiSlider[bone][prop].numberOfSteps = (int)(vmax - vmin + 1);
+                            EventDelegate.Add(uiSlider[bone][prop].onChange, new EventDelegate.Callback(this.OnChangeSlider));
 
                             // スライダーラベル設定
                             FindChild(goSliderUnit, "Label").GetComponent<UILabel>().text = label;
@@ -7583,8 +3562,20 @@ namespace CM3D2.AddBoneSlider.Plugin
                         }
                     };
 
-                ikManage = new IKManage(_constraitLeftLeg, _constraitRightLeg,_constraitLeftArm,_constraitRightArm);
+                ikManage = new IKManage(_constraitLeftLeg, _constraitRightLeg,_constraitLeftArm,_constraitRightArm,this.GetMaid);
 
+                undoList = new UndoList(settingIni.UndoCount);
+
+                iOtherSliderInit = new Dictionary<string, int>()
+                {
+                    {"allpos",6 },
+                    {"offset",6 },
+                    {"eye",4 },
+                    {"secret",4 },
+                    {"camera",8 },
+                    {"light",8 },
+                    {"gravity",3 }
+                };
             }
             catch (Exception ex) { Debug.LogError(LogLabel + "initialize()" + ex); return false; }
 
@@ -7620,15 +3611,124 @@ namespace CM3D2.AddBoneSlider.Plugin
 
 
             ikManage.Destroy();
-            
-            uiValueLable.Clear(); 
+
+
+            ikManage = null;
+            posHandle = null;
+
+            uiValueLable.Clear();
+            uiSlider.Clear();
+        }
+
+        private void setInifile()
+        {
+
+            string currentDirectory;
+
+            //ここでiniファイル読み込み処理
+            //Sybaris環境かどうかチェック
+            bool bExistSybaris;
+            if (File.Exists(Directory.GetCurrentDirectory() + @"\opengl32.dll") && Directory.Exists(Directory.GetCurrentDirectory() + @"\Sybaris"))
+            {
+                currentDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\Plugins";
+                bExistSybaris = true;
+
+            }
+            else
+            {
+                currentDirectory = Directory.GetCurrentDirectory();
+                bExistSybaris = false;
+
+            }
+
+
+            iniFileName = currentDirectory + @"\UnityInjector\Config\boneslider.ini";
+            //iniファイルがない場合は作成
+            if (!File.Exists(iniFileName))
+            {
+                settingIni = new SettingIni();
+                settingIni.PoseXmlDirectory = currentDirectory + @"\UnityInjector\Config";
+                settingIni.PoseImgDirectory = currentDirectory + @"\UnityInjector\Config\PoseImg";
+                if (bExistSybaris)
+                {
+                    settingIni.AnmOutputmode = "sybaris";
+                    settingIni.OutputJsonDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\Poses";
+                    settingIni.OutputAnmSybarisDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\GameData\Samples";
+                }
+                else
+                {
+                    settingIni.AnmOutputmode = "photomode";
+                    settingIni.OutputJsonDirectory = "none";
+                    settingIni.OutputAnmSybarisDirectory = "none";
+                }
+
+                //CBL版をサポートに加えたのでフォルダ決め打ちしないでここで参照＆設定
+                settingIni.OutputAnmDirectory = Directory.GetCurrentDirectory() + @"\PhotoModeData\Mod\Motion";
+
+            }
+            else
+            {
+                //iniファイルがある場合は設定されてない項目を補完
+
+                settingIni = IniFileHelper.Read<SettingIni>("setting", iniFileName);
+                if (settingIni.PoseXmlDirectory == "")
+                    settingIni.PoseXmlDirectory = currentDirectory + @"\UnityInjector\Config";
+                if (settingIni.PoseImgDirectory == "")
+                    settingIni.PoseImgDirectory = currentDirectory + @"\UnityInjector\Config\PoseImg";
+
+                settingIni.AnmOutputmode = settingIni.AnmOutputmode.ToLower();
+                if (settingIni.AnmOutputmode != "both" && settingIni.AnmOutputmode != "photomode" && settingIni.AnmOutputmode != "sybaris")
+                {
+                    if (bExistSybaris)
+                    {
+                        settingIni.AnmOutputmode = "sybaris";
+                    }
+                    else
+                    {
+                        settingIni.AnmOutputmode = "photomode";
+                    }
+                }
+
+                if (settingIni.OutputJsonDirectory == "")
+                {
+                    if (bExistSybaris)
+                    {
+                        settingIni.OutputJsonDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\Poses";
+                    }
+                    else
+                    {
+                        settingIni.OutputJsonDirectory = "none";
+                    }
+                }
+
+                if (settingIni.OutputAnmSybarisDirectory == "")
+                {
+                    if (bExistSybaris)
+                    {
+                        settingIni.OutputAnmSybarisDirectory = Directory.GetCurrentDirectory() + @"\Sybaris\GameData\Samples";
+                    }
+                    else
+                    {
+                        settingIni.OutputAnmSybarisDirectory = "none";
+                    }
+                }
+
+
+                settingIni.ToggleKey = settingIni.ToggleKey.ToLower();
+
+                if (settingIni.UndoCount == 0)
+                    settingIni.UndoCount = 10;
+
+            }
+            IniFileHelper.Write<SettingIni>("setting", settingIni, iniFileName);
+
         }
 
         //----
 
         public void rebootHandle()
         {
-            if (FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").activeInHierarchy == true)
+            if (FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursorIKLeftLeg").activeInHierarchy == true)
             {
                 posHandle.SetMaid(maid, trBone["Bip01 L Foot"]);
                 posHandle.IKTargetAttachedColor(false);
@@ -7636,9 +3736,9 @@ namespace CM3D2.AddBoneSlider.Plugin
                 //posHandle.setVisible(false);
                 posHandle.setVisible(false);
 
-                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursorIKLeftLeg").SetActive(false);
             }
-            else if (FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").activeInHierarchy == true)
+            else if (FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursorIKRightLeg").activeInHierarchy == true)
             {
                 posHandle.SetMaid(maid, trBone["Bip01 R Foot"]);
                 posHandle.IKTargetAttachedColor(false);
@@ -7646,9 +3746,9 @@ namespace CM3D2.AddBoneSlider.Plugin
                 //posHandle.setVisible(false);
                 posHandle.setVisible(false);
 
-                FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursorIKRightLeg").SetActive(false);
             }
-            else if (FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").activeInHierarchy == true)
+            else if (FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursorIKLeftArm").activeInHierarchy == true)
             {
                 posHandle.SetMaid(maid, trBone["Bip01 L Arm"]);
                 posHandle.IKTargetAttachedColor(false);
@@ -7656,9 +3756,9 @@ namespace CM3D2.AddBoneSlider.Plugin
                 //posHandle.setVisible(false);
                 posHandle.setVisible(false);
 
-                FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursorIKLeftArm").SetActive(false);
             }
-            else if (FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").activeInHierarchy == true)
+            else if (FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursorIKRightArm").activeInHierarchy == true)
             {
                 posHandle.SetMaid(maid, trBone["Bip01 R Arm"]);
                 posHandle.IKTargetAttachedColor(false);
@@ -7666,7 +3766,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 //posHandle.setVisible(false);
                 posHandle.setVisible(false);
 
-                FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").SetActive(false);
+                FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursorIKRightArm").SetActive(false);
             }
             else
             {
@@ -7720,130 +3820,36 @@ namespace CM3D2.AddBoneSlider.Plugin
         private void removeAttachMaidList(int removeNo)
         {
             ikManage.removeAttachMaidList(removeNo);
-            /*
-            if (attachIKMaidNo.Contains(removeNo))
-            {
-                //attachIKMaidNo.Remove(removeNo);
-                attachIKMaidList.Remove(removeNo);
-                trTargetIKBones.Remove(removeNo);
-                
-
-                IKLeftLeg.Remove(removeNo);
-                IKRightLeg.Remove(removeNo);
-                IKLeftArm.Remove(removeNo);
-                IKRightArm.Remove(removeNo);
-                
-
-                bIKAttachLeftLeg.Remove(removeNo);
-                bIKAttachRightLeg.Remove(removeNo);
-                bIKAttachLeftArm.Remove(removeNo);
-                bIKAttachRightArm.Remove(removeNo);
-
-                
-
-                //ターゲット用オブジェクトを1秒後に消す
-                if (goIKLeftLegTarget.ContainsKey(removeNo))
-                {
-                    if (goIKLeftLegTarget[removeNo] != null)
-                    {
-                        goIKLeftLegTarget[removeNo].transform.DetachChildren();
-
-                        GameObject.Destroy(goIKLeftLegTarget[removeNo], 1f);
-                    }
-                }
-                if (goIKRightLegTarget.ContainsKey(removeNo))
-                {
-                    if (goIKRightLegTarget[removeNo] != null)
-                    {
-                        goIKRightLegTarget[removeNo].transform.DetachChildren();
-                        GameObject.Destroy(goIKRightLegTarget[removeNo], 1f);
-                    }
-                }
-                if (goIKLeftArmTarget.ContainsKey(removeNo))
-                {
-                    if (goIKLeftArmTarget[removeNo] != null)
-                    {
-                        goIKLeftArmTarget[removeNo].transform.DetachChildren();
-                        GameObject.Destroy(goIKLeftArmTarget[removeNo], 1f);
-                    }
-                }
-                if (goIKRightArmTarget.ContainsKey(removeNo))
-                {
-                    if (goIKRightArmTarget[removeNo] != null)
-                    {
-                        goIKRightArmTarget[removeNo].transform.DetachChildren();
-                        GameObject.Destroy(goIKRightArmTarget[removeNo], 1f);
-                    }
-                }
-                
-
-                goIKLeftLegTarget.Remove(removeNo);
-                goIKRightLegTarget.Remove(removeNo);
-                goIKLeftArmTarget.Remove(removeNo);
-                goIKRightArmTarget.Remove(removeNo);
-                
-
-                trIKLeftLegBones.Remove(removeNo);
-                trIKRightLegBones.Remove(removeNo);
-                trIKLeftArmBones.Remove(removeNo);
-                trIKRightArmBones.Remove(removeNo);
-                
-
-            }
-            */
         }
 
-        private bool visibleHandle(string bone)
+        private bool visibleHandle(string bone,bool isPosHandle)
         {
             try
             {
-                GameObject goSelectCursor = FindChild(trBoneUnit[bone], "SelectCursorHandle").gameObject;
+                //GameObject goSelectCursor = FindChildByTag(trBoneUnit[bone], "SelectCursorRotHandle").gameObject;
+                GameObject goSelectCursor = isPosHandle? FindChild(UIButton.current.gameObject, "SelectCursorPosHandle:" + bone).gameObject : FindChild(UIButton.current.gameObject, "SelectCursorRotHandle:" + bone).gameObject;
                 bool b = goSelectCursor.activeSelf;
                 goSelectCursor.SetActive(!b);
                 return !b;
             }
             catch (Exception ex) { Debug.LogError(LogLabel + "visibleHandle() " + ex); return false; }
         }
-
-        private void undoSliderValue(string bone)
+        private void imvisibleBothHandle(string bone)
         {
-            /*
             try
             {
-                bLocked = true;
-                foreach (Transform tr in trModUnit[bone])
+                Transform tr = FindChild(trBoneUnit[bone], "SelectCursorRotHandle:" + bone);
+                GameObject goSelectCursorAng = tr.gameObject;
+                goSelectCursorAng.SetActive(false);
+                if (bone == "Bip01" || bone == "offset" || bone == "allpos")
                 {
-                    if (tr.name == "SliderUnit")
-                    {
-                        UISlider slider = FindChildByTag(tr, "Slider").GetComponent<UISlider>();
-                        string prop = getTag(slider, 2);
-
-                        float preValue = mp.fValue[bone][prop];
-                        mp.fValue[bone][prop] = undoValue[bone][prop];
-                        slider.value = codecSliderValue(bone, prop);
-                        uiValueLable[bone][prop].text = mp.fValue[bone][prop].ToString("F4");
-                        uiValueLable[bone][prop].gameObject.GetComponent<UIInput>().value = mp.fValue[bone][prop].ToString("F4");
-                    }
+                    GameObject goSelectCursorPos = FindChild(trBoneUnit[bone], "SelectCursorPosHandle:" + bone).gameObject;
+                    goSelectCursorPos.SetActive(false);
                 }
-
-                rotateBone(bone);
-
-                if (bone != "secret" && bone != "eye" && bone != "allpos" && bone != "offset" && bone != "camera")
-                {
-                    vPastBoneAngle[bone] = trBone[bone].localEulerAngles;
-                }
-
-                if (bone == "Bip01")
-                {
-                    vPastBoneTrans = trBone["Bip01"].localPosition;
-                }
-
-                bLocked = false;
-
             }
-            catch (Exception ex) { Debug.LogError(LogLabel + "undoSliderValue() " + ex); bLocked = false; return; }
-            */
+            catch (Exception ex) { Debug.LogError(LogLabel + "imvisibleBothHandle() " + ex);  }
         }
+
 
         private void resetSliderValue(string bone)
         {
@@ -7869,7 +3875,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 rotateBone(bone);
 
-                if (bone != "secret" && bone != "eye" && bone != "allpos" && bone != "offset" && bone != "camera")
+                if (bone != "secret" && bone != "eye" && bone != "allpos" && bone != "offset" && bone != "camera" && bone != "light" && bone != "gravity")
                 {
                     vPastBoneAngle[bone] = trBone[bone].localRotation;
                 }
@@ -7901,13 +3907,19 @@ namespace CM3D2.AddBoneSlider.Plugin
         //カーソル無しの場合　→ボタン白、カーソル有りにする
         //カーソル有りの場合　→ボタン白、カーソル無しにする
 
-        private void setIKButtonActive(/*GameObject _ButtonObj,*/　bool _enableCursor, bool _allikdisable = false ,bool _allmaiddisable = false)
+        private void setIKButtonActive(bool _enableCursor, bool _allikdisable = false ,bool _allmaiddisable = false)
         {
             //ハンドルボタンが表示されてたら消す
             if (activeHandleName != "")
             {
-                visibleHandle(activeHandleName);
-                setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "Handle:" + activeHandleName).GetComponent<UIButton>(), false);
+                imvisibleBothHandle(activeHandleName);
+                setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "RotHandle:" + activeHandleName).GetComponent<UIButton>(), false);
+                if(activeHandleName == "Bip01" || activeHandleName == "offset" || activeHandleName == "allpos" )
+                {
+                    setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "PosHandle:" + activeHandleName).GetComponent<UIButton>(), false);
+
+                }
+
                 activeHandleName = "";
             }
             
@@ -7952,20 +3964,141 @@ namespace CM3D2.AddBoneSlider.Plugin
                 uiButton5.defaultColor = color;
             }
 
-            FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
-            FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").SetActive(false);
-            FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").SetActive(false);
-            FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursorIKLeftLeg").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursorIKRightLeg").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursorIKLeftArm").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursorIKRightArm").SetActive(false);
 
             //カーソルは今操作中のIKボタンのものだけ表示
             if (!_allikdisable)
             {
-                FindChild(UIButton.current.gameObject, "SelectCursor").SetActive(_enableCursor);
+                FindChildByTag(UIButton.current.gameObject, "SelectCursor").SetActive(_enableCursor);
             }
 
 
             //ついでにIKボーンアタッチ用オブジェクトも消す
             posHandle.IKTargetVisible = false;
+        }
+
+        private void setIKButtonCursorActive(bool _enableCursor)
+        {
+            //ハンドルボタンが表示されてたら消す
+            if (activeHandleName != "")
+            {
+                imvisibleBothHandle(activeHandleName);
+                setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "RotHandle:" + activeHandleName).GetComponent<UIButton>(), false);
+                if (activeHandleName == "Bip01" || activeHandleName == "offset" || activeHandleName == "allpos")
+                {
+                    setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "PosHandle:" + activeHandleName).GetComponent<UIButton>(), false);
+
+                }
+
+                activeHandleName = "";
+            }
+            
+            FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursorIKLeftLeg").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursorIKRightLeg").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursorIKLeftArm").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursorIKRightArm").SetActive(false);
+
+            //カーソルは今操作中のIKボタンのものだけ表示
+
+            FindChildByTag(UIButton.current.gameObject, "SelectCursor").SetActive(_enableCursor);
+
+
+
+            //ついでにIKボーンアタッチ用オブジェクトも消す
+            posHandle.IKTargetVisible = false;
+        }
+
+        private void setIKButtonActive(bool _active = false,int No = 99)
+        {
+            UIButton[] uiButton = { FindChild(goAMSPanel, "IKLeftLeg").GetComponent<UIButton>(),
+            FindChild(goAMSPanel, "IKRightLeg").GetComponent<UIButton>(),
+            FindChild(goAMSPanel, "IKLeftArm").GetComponent<UIButton>(),
+            FindChild(goAMSPanel, "IKRightArm").GetComponent<UIButton>() };
+
+            Color def_Color; 
+
+            if (No <= 3)
+            {
+                def_Color = uiButton[No].defaultColor;
+                uiButton[No].defaultColor = new Color(def_Color.r, def_Color.g, def_Color.b, _active ? 1.0f : 0.8f);
+            }
+            else
+            {
+                def_Color = uiButton[0].defaultColor;
+                Array.ForEach(uiButton, n => 
+                {
+                    n.defaultColor = new Color(def_Color.r, def_Color.g, def_Color.b, 0.8f);
+                } );
+            }
+
+
+            if(uiButton.All(n => n.defaultColor.a == 0.8f) )
+            {
+                FindChild(goAMSPanel, "IKDetach").GetComponent<UIButton>().defaultColor = new Color(def_Color.r, def_Color.g, def_Color.b,  0.8f);
+                FindChild(goAMSPanel, "IKDetachAll").GetComponent<UIButton>().defaultColor = new Color(def_Color.r, def_Color.g, def_Color.b, (ikManage.attachIKMaidNo.Count != 0) ? 1.0f : 0.8f);
+            }
+
+
+        }
+
+        private bool[] setIKButtonActiveforUndo(bool[] _boolList)
+        {
+
+            UIButton uiButton0 = FindChild(goAMSPanel, "IKDetach").GetComponent<UIButton>();
+            UIButton uiButton1 = FindChild(goAMSPanel, "IKDetachAll").GetComponent<UIButton>();
+
+            UIButton uiButton2 = FindChild(goAMSPanel, "IKLeftLeg").GetComponent<UIButton>();
+            UIButton uiButton3 = FindChild(goAMSPanel, "IKRightLeg").GetComponent<UIButton>();
+            UIButton uiButton4 = FindChild(goAMSPanel, "IKLeftArm").GetComponent<UIButton>();
+            UIButton uiButton5 = FindChild(goAMSPanel, "IKRightArm").GetComponent<UIButton>();
+
+            bool[] currentBoolList = 
+            {
+                uiButton2.defaultColor.a == 1.0f,
+                uiButton3.defaultColor.a == 1.0f,
+                uiButton4.defaultColor.a == 1.0f,
+                uiButton5.defaultColor.a == 1.0f
+            }; 
+            
+            Color color = uiButton0.defaultColor;
+                    
+            uiButton0.defaultColor = new Color(color.r, color.g, color.b, (_boolList[0] || _boolList[1] || _boolList[2] || _boolList[3]) ? 1.0f : 0.8f);
+            uiButton1.defaultColor = new Color(color.r, color.g, color.b, (ikManage.attachIKMaidNo.Count != 0) ? 1.0f : 0.8f);
+
+            uiButton2.defaultColor = new Color(color.r, color.g, color.b, _boolList[0] ? 1.0f : 0.8f);
+            uiButton3.defaultColor = new Color(color.r, color.g, color.b, _boolList[1] ? 1.0f : 0.8f);
+            uiButton4.defaultColor = new Color(color.r, color.g, color.b, _boolList[2] ? 1.0f : 0.8f);
+            uiButton5.defaultColor = new Color(color.r, color.g, color.b, _boolList[3] ? 1.0f : 0.8f);
+
+
+            FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursorIKLeftLeg").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursorIKRightLeg").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursorIKLeftArm").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursorIKRightArm").SetActive(false);
+
+            return currentBoolList;
+
+        }
+
+        private bool[] getIKButtonActiveforUndo()
+        {
+            UIButton uiButton2 = FindChild(goAMSPanel, "IKLeftLeg").GetComponent<UIButton>();
+            UIButton uiButton3 = FindChild(goAMSPanel, "IKRightLeg").GetComponent<UIButton>();
+            UIButton uiButton4 = FindChild(goAMSPanel, "IKLeftArm").GetComponent<UIButton>();
+            UIButton uiButton5 = FindChild(goAMSPanel, "IKRightArm").GetComponent<UIButton>();
+
+            bool[] currentBoolList =
+            {
+                uiButton2.defaultColor.a == 1.0f,
+                uiButton3.defaultColor.a == 1.0f,
+                uiButton4.defaultColor.a == 1.0f,
+                uiButton5.defaultColor.a == 1.0f
+            };
+
+            return currentBoolList;
         }
 
         //現在のメイドのIKアタッチ情報に合わせてIKボタンの状態を再設定
@@ -8005,10 +4138,10 @@ namespace CM3D2.AddBoneSlider.Plugin
             
 
             //カーソル全非表示
-            FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursor").SetActive(false);
-            FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursor").SetActive(false);
-            FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursor").SetActive(false);
-            FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursor").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursorIKLeftLeg").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKRightLeg"), "SelectCursorIKRightLeg").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKLeftArm"), "SelectCursorIKLeftArm").SetActive(false);
+            FindChild(FindChild(goAMSPanel, "IKRightArm"), "SelectCursorIKRightArm").SetActive(false);
 
 
             //ついでにIKボーンアタッチ用オブジェクトも消す
@@ -8055,7 +4188,7 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 string type = getTag(tc, 0);
                 if (type == "SliderUnit" || type == "Spacer" || type == "Copy" || type == "Paste" || 
-                    type == "Right2Left" || type == "Left2Right" || type == "Mirror" || type == "Reset")
+                    type == "Mirror" || type == "Reset" || type == "Flush")
                     tc.gameObject.SetActive(b);
             }
 
@@ -8085,12 +4218,59 @@ namespace CM3D2.AddBoneSlider.Plugin
             if (mp.IsToggle(getTag(button, 1)))
             {
                 button.defaultColor = new Color(color.r, color.g, color.b, b ? 1f : 0.5f);
-                FindChild(button.gameObject, "SelectCursor").SetActive(b);
+                FindChildByTag(button.gameObject, "SelectCursor").SetActive(b);
             }
             else
             {
                 button.defaultColor = new Color(color.r, color.g, color.b, b ? 1f : 0.75f);
             }
+        }
+
+        private void generateUnitButton(GameObject goButton,Vector3 _localPosition,int dimensionW,int dimensionH,int fontsize,string _text,bool _active, Action _callback)
+        {
+            // 違うサイズのボタン作成（正確にはコピー作成）
+            
+            goButton.transform.localPosition = _localPosition;
+            goButton.AddComponent<UIDragScrollView>().scrollView = uiScrollView;
+
+            UISprite uiSpriteHandle = goButton.GetComponent<UISprite>();
+            uiSpriteHandle.SetDimensions(dimensionW, dimensionH);
+
+            UILabel uiLabel = FindChild(goButton, "Name").GetComponent<UILabel>();
+            uiLabel.width = uiSpriteHandle.width - 10;
+            uiLabel.fontSize = fontsize;
+            uiLabel.spacingX = 0;
+            uiLabel.supportEncoding = true;
+            uiLabel.text = _text;
+
+            UIButton uiButton = goButton.GetComponent<UIButton>();
+            uiButton.defaultColor = new Color(1f, 1f, 1f, 0.8f);
+
+            EventDelegate.Set(uiButton.onClick, new EventDelegate.Callback(_callback));
+            FindChild(goButton, "SelectCursor").GetComponent<UISprite>().SetDimensions(dimensionW - 4, dimensionH - 4);
+            FindChild(goButton, "SelectCursor").SetActive(false);
+            FindChild(goButton, "SelectCursor").name = "SelectCursor" + goButton.name;
+            NGUITools.UpdateWidgetCollider(goButton);
+            goButton.SetActive(_active);
+        }
+        private void generateUnitButton(GameObject goButton, Vector3 _localPosition, string _text, bool _active, Action _callback)
+        {
+            // 同じサイズのボタン作成（正確にはコピー作成）
+
+            goButton.transform.localPosition = _localPosition;
+
+            UILabel uiLabel = FindChild(goButton, "Name").GetComponent<UILabel>();
+            uiLabel.text = _text;
+
+            UIButton uiButton = goButton.GetComponent<UIButton>();
+            uiButton.defaultColor = new Color(1f, 1f, 1f, 0.8f);
+
+            EventDelegate.Set(uiButton.onClick, new EventDelegate.Callback(_callback));
+
+            FindChildByTag(goButton, "SelectCursor").name = "SelectCursor" + goButton.name;
+
+            NGUITools.UpdateWidgetCollider(goButton);
+            goButton.SetActive(_active);
         }
 
         private void windowTweenFinished()
@@ -8178,85 +4358,6 @@ namespace CM3D2.AddBoneSlider.Plugin
             return -1;
             
 
-            /*
-            if (sceneLevel == 27)
-            {
-                //公式撮影モード（メイド最大12人）
-                if (add == 0)
-                {
-                    Maid maid = GameMain.Instance.CharacterMgr.GetMaid(startNo);
-                    if (maid.Visible)
-                        return startNo;
-                    else
-                        return -1;
-                }
-
-                add /= Math.Abs(add);
-
-
-                int MaidCount = GameMain.Instance.CharacterMgr.GetMaidCount();
-                int maidNo = startNo;
-                for (int i = 0; i < MaidCount; i += Math.Abs(add))
-                {
-                    if (maidNo >= MaidCount)
-                    {
-                        maidNo = 0;
-                    }
-                    else if (maidNo < 0)
-                    {
-                        maidNo = MaidCount - 1;
-                    }
-
-                    Maid maid = GameMain.Instance.CharacterMgr.GetMaid(maidNo);
-                    if (maid != null && maid.Visible)
-                    {
-                        return maidNo;
-                    }
-
-                    maidNo += add;
-                }
-                return -1;
-            }
-            else
-            {
-                //複数撮影モード(メイド最大13人以上対応)
-                if (add == 0)
-                {
-                    Maid maid = GameMain.Instance.CharacterMgr.GetStockMaid(startNo);
-                    if (maid.Visible)
-                        return startNo;
-                    else
-                        return -1;
-                }
-
-
-                add /= Math.Abs(add);
-
-
-                int MaidCount = GameMain.Instance.CharacterMgr.GetStockMaidCount();
-                int maidNo = startNo;
-                for (int i = 0; i < MaidCount; i += Math.Abs(add))
-                {
-                    if (maidNo >= MaidCount)
-                    {
-                        maidNo = 0;
-                    }
-                    else if (maidNo < 0)
-                    {
-                        maidNo = MaidCount - 1;
-                    }
-
-                    Maid maid = GameMain.Instance.CharacterMgr.GetStockMaid(maidNo);
-                    if (maid != null && maid.Visible)
-                    {
-                        return maidNo;
-                    }
-
-                    maidNo += add;
-                }
-                return -1;
-            }*/
-
         }
 
         //公式撮影と複数撮影でメイドさんやメイドさんの数の取得方法が違うので
@@ -8281,19 +4382,6 @@ namespace CM3D2.AddBoneSlider.Plugin
         {
 
             maid = GetMaid(currentMaidNo);
-            /*
-            if (sceneLevel == 27)
-            {
-                //公式撮影モード
-                maid = GameMain.Instance.CharacterMgr.GetMaid(currentMaidNo);
-            }
-            else
-            {
-                //複数撮影モード
-                maid = GameMain.Instance.CharacterMgr.GetStockMaid(currentMaidNo);
-            }
-            */
-
 
             if (maid != null && maid.Visible == true && maid.body0.m_Bones != null)
             {
@@ -8315,21 +4403,17 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 posHandle.SetMaid(maid);
 
-                //LeftLegHandle.SetMaid(maid);
-                //RightLegHandle.SetMaid(maid);
-                //LeftArmHandle.SetMaid(maid);
-                //RightArmHandle.SetMaid(maid);
+                
+                syncSlider(true,true);
 
-
-                //ikLeftLeg = new TBody.IKCMO();
-                //ikRightLeg = new TBody.IKCMO();
-
-                syncSlider(true);
 
                 if (activeHandleName != "")
                 {
-                    visibleHandle(activeHandleName);
-                    setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "Handle:" + activeHandleName).GetComponent<UIButton>(), false);
+                    imvisibleBothHandle(activeHandleName);
+                    setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "RotHandle:" + activeHandleName).GetComponent<UIButton>(), false);
+
+                    if(activeHandleName == "Bip01"|| activeHandleName == "offset"|| activeHandleName == "allpos")
+                        setUnitButtonColor(FindChildByTag(trBoneUnit[activeHandleName], "PosHandle:" + activeHandleName).GetComponent<UIButton>(), false);
                     activeHandleName = "";
                 }
 
@@ -8400,6 +4484,151 @@ namespace CM3D2.AddBoneSlider.Plugin
             }
         }
 
+        //
+        public Quaternion[] getCurrentIKBone(int _maidNo, int No)
+        {
+            if(_maidNo == currentMaidNo)
+            {
+                switch (No)
+                {
+                    case 0:
+                        Quaternion[] tempTransformList0 = { trBone["Bip01 L Thigh"].localRotation, trBone["Bip01 L Calf"].localRotation, trBone["Bip01 L Foot"].localRotation };
+                        return tempTransformList0;
+                    case 1:
+                        Quaternion[] tempTransformList1 = { trBone["Bip01 R Thigh"].localRotation, trBone["Bip01 R Calf"].localRotation, trBone["Bip01 R Foot"].localRotation };
+                        return tempTransformList1;
+                    case 2:
+                        Quaternion[] tempTransformList2 = { trBone["Bip01 L UpperArm"].localRotation, trBone["Bip01 L Forearm"].localRotation, trBone["Bip01 L Hand"].localRotation };
+                        return tempTransformList2;
+                    case 3:
+                        Quaternion[] tempTransformList3 = { trBone["Bip01 R UpperArm"].localRotation, trBone["Bip01 R Forearm"].localRotation, trBone["Bip01 R Hand"].localRotation };
+                        return tempTransformList3;
+                    default:
+                        return null;
+                }
+            }
+            else
+            {
+                Maid tempmaid = GetMaid(_maidNo);
+                if (tempmaid == null || tempmaid.Visible != true)
+                    return null;
+
+                switch (No)
+                {
+                    case 0:
+                        Quaternion[] tempTransformList0 =
+                        {
+                            CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 L Thigh", true).localRotation,
+                            CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 L Calf", true).localRotation,
+                            CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 L Foot", true).localRotation
+                        };
+                        return tempTransformList0;
+                    case 1:
+                        Quaternion[] tempTransformList1 =
+                        {
+                            CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 R Thigh", true).localRotation,
+                            CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 R Calf", true).localRotation,
+                            CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 R Foot", true).localRotation
+                        };
+                        return tempTransformList1;
+                    case 2:
+                        Quaternion[] tempTransformList2 =
+                        {
+                            CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 L UpperArm", true).localRotation,
+                            CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 L Forearm", true).localRotation,
+                            CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 L Hand", true).localRotation
+                        };
+                        return tempTransformList2;
+                    case 3:
+                        Quaternion[] tempTransformList3 =
+                        {
+                            CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 R UpperArm", true).localRotation,
+                            CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 R Forearm", true).localRotation,
+                            CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 R Hand", true).localRotation
+                        };
+                        return tempTransformList3;
+                    default:
+                        return null;
+                }
+            }
+        }
+
+        public void setCurrentIKBone(int _maidNo, int No,Quaternion[] _bones)
+        {
+            if (_maidNo == currentMaidNo)
+            {
+                switch (No)
+                {
+                    case 0:
+                        trBone["Bip01 L Thigh"].localRotation = _bones[0];
+                        trBone["Bip01 L Calf"].localRotation = _bones[1];
+                        trBone["Bip01 L Foot"].localRotation = _bones[2];
+                        SyncTransform2SliderLabel("Bip01 L Thigh");
+                        SyncTransform2SliderLabel("Bip01 L Calf");
+                        SyncTransform2SliderLabel("Bip01 L Foot");
+                        break;
+                    case 1:
+                        trBone["Bip01 R Thigh"].localRotation = _bones[0];
+                        trBone["Bip01 R Calf"].localRotation = _bones[1];
+                        trBone["Bip01 R Foot"].localRotation = _bones[2];
+                        SyncTransform2SliderLabel("Bip01 R Thigh");
+                        SyncTransform2SliderLabel("Bip01 R Calf");
+                        SyncTransform2SliderLabel("Bip01 R Foot");
+                        break;
+                    case 2:
+                        trBone["Bip01 L UpperArm"].localRotation = _bones[0];
+                        trBone["Bip01 L Forearm"].localRotation = _bones[1];
+                        trBone["Bip01 L Hand"].localRotation = _bones[2];
+                        SyncTransform2SliderLabel("Bip01 L UpperArm");
+                        SyncTransform2SliderLabel("Bip01 L Forearm");
+                        SyncTransform2SliderLabel("Bip01 L Hand");
+                        break;
+                    case 3:
+                        trBone["Bip01 R UpperArm"].localRotation = _bones[0];
+                        trBone["Bip01 R Forearm"].localRotation = _bones[1];
+                        trBone["Bip01 R Hand"].localRotation = _bones[2];
+                        SyncTransform2SliderLabel("Bip01 R UpperArm");
+                        SyncTransform2SliderLabel("Bip01 R Forearm");
+                        SyncTransform2SliderLabel("Bip01 R Hand");
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else
+            {
+                Maid tempmaid = GetMaid(_maidNo);
+                if (tempmaid == null || tempmaid.Visible != true)
+                    return;
+                switch (No)
+                {
+                    case 0:
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 L Thigh", true).localRotation = _bones[0];
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 L Calf", true).localRotation = _bones[1];
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 L Foot", true).localRotation = _bones[2];
+                        break;
+                    case 1:
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 R Thigh", true).localRotation = _bones[0];
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 R Calf", true).localRotation = _bones[1];
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 R Foot", true).localRotation = _bones[2];
+                        break;
+                    case 2:
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 L UpperArm", true).localRotation = _bones[0];
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 L Forearm", true).localRotation = _bones[1];
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 L Hand", true).localRotation = _bones[2];
+                        break;
+                    case 3:
+
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 R UpperArm", true).localRotation = _bones[0];
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 R Forearm", true).localRotation = _bones[1];
+                        CMT.SearchObjName(tempmaid.body0.m_Bones.transform, "Bip01 R Hand", true).localRotation = _bones[2];
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
 
         //この関数は複数撮影対策なのでメイドさん取得関数はそのままでおｋ
         private void setParentAllOffset()
@@ -8435,7 +4664,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 if (mp.IsSlider(bone))
                 {
-                    if (bone == "secret" || bone == "eye" || bone == "allpos" || bone == "offset" || bone == "camera") continue;
+                    if (bone == "secret" || bone == "eye" || bone == "allpos" || bone == "offset" || bone == "camera" || bone == "light" || bone == "gravity") continue;
 
 
                     trBone[bone] = CMT.SearchObjName(maid.body0.m_Bones.transform, bone, true);
@@ -8475,6 +4704,10 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         private void checkUndo(string _Func,string _bone, string _prop = "")
         {
+            //二重Undo登録対策
+            if (bUndoLock)
+                return;
+
             if (_bone.Contains("Bip") || _bone.Contains("_IK_"))
             {
                 if (_prop.Contains(".p"))
@@ -8482,12 +4715,12 @@ namespace CM3D2.AddBoneSlider.Plugin
                     //Undoチェック
                     if (UndofuncName != _Func + "_pos:" + _bone + ":" + _prop + ":" + maid.name)
                     {
-                        Debuginfo.Log(LogLabel + _Func + "_pos:" + _bone + ":" + _prop + ":" + maid.name);
                         UndofuncName = _Func + "_pos:" + _bone + ":" + _prop + ":" + maid.name;
-
+                        //Debuginfo.Log(LogLabel + "Undo::"+UndofuncName);
+                        
                         //Undo履歴に加える
-                        undoList.Add(new UndoBonePos(trBone[_bone], trBone[_bone].localPosition));
-
+                        //undoList.Add(new UndoBonePos(trBone[_bone], trBone[_bone].localPosition));
+                        undoList.Add(Undo.createUndoBonePos(trBone[_bone], trBone[_bone].localPosition));
                     }
                 }
                 else
@@ -8495,27 +4728,29 @@ namespace CM3D2.AddBoneSlider.Plugin
                     //Undoチェック
                     if (UndofuncName != _Func + "_rot:" + _bone + ":" + _prop + ":" + maid.name)
                     {
-                        Debuginfo.Log(LogLabel + _Func + "_rot:" + _bone + ":" + _prop + ":" + maid.name);
                         UndofuncName = _Func + "_rot:" + _bone + ":" + _prop + ":" + maid.name;
+                        //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+                        
 
                         //Undo履歴に加える
-                        undoList.Add(new UndoBone(trBone[_bone], trBone[_bone].localRotation));
-
+                        //undoList.Add(new UndoBone(trBone[_bone], trBone[_bone].localRotation));
+                        undoList.Add(Undo.createUndoBone(trBone[_bone], trBone[_bone].localRotation));
                     }
                 }
             }
-            else if (_bone == "alllpos")
+            else if (_bone == "allpos")
             {
                 if (_prop.Contains(".p"))
                 {
                     //Undoチェック
                     if (UndofuncName != _Func + "_pos:Allpos:" + _prop)
                     {
-                        Debuginfo.Log(LogLabel + _Func + "_pos:Allpos:" + _prop);
                         UndofuncName = _Func + "_pos:Allpos:" + _prop;
+                        //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                         //Undo履歴に加える
-                        undoList.Add(new UndoAllpos(GameMain.Instance.CharacterMgr.GetCharaAllOfsetPos(), true));
+                        //undoList.Add(new UndoAllpos(GameMain.Instance.CharacterMgr.GetCharaAllPos(), true));
+                        undoList.Add(Undo.createUndoAllpos(GameMain.Instance.CharacterMgr.GetCharaAllPos(), true));
 
                     }
                 }
@@ -8524,11 +4759,12 @@ namespace CM3D2.AddBoneSlider.Plugin
                     //Undoチェック
                     if (UndofuncName != _Func + "_rot:Allpos:" + _prop)
                     {
-                        Debuginfo.Log(LogLabel + _Func + "_rot:Allpos:" + _prop);
                         UndofuncName = _Func + "_rot:Allpos:" + _prop;
+                        //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                         //Undo履歴に加える
-                        undoList.Add(new UndoAllpos(GameMain.Instance.CharacterMgr.GetCharaAllOfsetRot(), false));
+                        //undoList.Add(new UndoAllpos(GameMain.Instance.CharacterMgr.GetCharaAllRot(), false));
+                        undoList.Add(Undo.createUndoAllpos(GameMain.Instance.CharacterMgr.GetCharaAllRot(), false));
 
                     }
                 }
@@ -8540,11 +4776,12 @@ namespace CM3D2.AddBoneSlider.Plugin
                     //Undoチェック
                     if (UndofuncName != _Func + "_pos:offset:" + _prop + ":" + maid.name)
                     {
-                        Debuginfo.Log(LogLabel + _Func + "_pos:offset:" + _prop + ":" + maid.name);
                         UndofuncName = _Func + "_pos:offset:" + _prop + ":" + maid.name;
+                        //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                         //Undo履歴に加える
-                        undoList.Add(new UndoOffset(maid, maid.transform.localPosition, true));
+                        //undoList.Add(new UndoOffset(maid, maid.transform.localPosition, true));
+                        undoList.Add(Undo.createUndoOffset(maid, maid.transform.localPosition, true));
 
                     }
                 }
@@ -8553,11 +4790,12 @@ namespace CM3D2.AddBoneSlider.Plugin
                     //Undoチェック
                     if (UndofuncName != _Func + "_rot:offset:" + _prop + ":" + maid.name)
                     {
-                        Debuginfo.Log(LogLabel + _Func + "_rot:offset:" + _prop + ":" + maid.name);
                         UndofuncName = _Func + "_rot:offset:" + _prop + ":" + maid.name;
+                        //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                         //Undo履歴に加える
-                        undoList.Add(new UndoOffset(maid, maid.GetRot(), false));
+                        //undoList.Add(new UndoOffset(maid, maid.GetRot(), false));
+                        undoList.Add(Undo.createUndoOffset(maid, maid.GetRot(), false));
 
                     }
                 }
@@ -8569,11 +4807,12 @@ namespace CM3D2.AddBoneSlider.Plugin
                     //Undoチェック
                     if (UndofuncName != _Func + "_eye:" + _prop + ":" + maid.name)
                     {
-                        Debuginfo.Log(LogLabel + _Func + "_eye:" + _prop + ":" + maid.name);
                         UndofuncName = _Func + "_eye:" + _prop + ":" + maid.name;
+                        //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                         //Undo履歴に加える
-                        undoList.Add(new UndoEye(maid, maid.body0.quaDefEyeL, false));
+                        //undoList.Add(new UndoEye(maid, maid.body0.quaDefEyeL, false));
+                        undoList.Add(Undo.createUndoEye(maid, maid.body0.quaDefEyeL, false));
 
                     }
                 }
@@ -8582,11 +4821,12 @@ namespace CM3D2.AddBoneSlider.Plugin
                     //Undoチェック
                     if (UndofuncName != _Func + "_eye:" + _prop + ":" + maid.name)
                     {
-                        Debuginfo.Log(LogLabel + _Func + "_eye:" + _prop + ":" + maid.name);
                         UndofuncName = _Func + "_eye:" + _prop + ":" + maid.name;
+                        //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                         //Undo履歴に加える
-                        undoList.Add(new UndoEye(maid, maid.body0.quaDefEyeR, true));
+                        //undoList.Add(new UndoEye(maid, maid.body0.quaDefEyeR, true));
+                        undoList.Add(Undo.createUndoEye(maid, maid.body0.quaDefEyeR, true));
 
                     }
                 }
@@ -8598,12 +4838,13 @@ namespace CM3D2.AddBoneSlider.Plugin
                     //Undoチェック
                     if (UndofuncName != _Func + "_secret:" + _prop + ":" + maid.name)
                     {
-                        Debuginfo.Log(LogLabel + _Func + "_secret:" + _prop + ":" + maid.name);
                         UndofuncName = _Func + "_secret:" + _prop + ":" + maid.name;
+                        //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                         //Undo履歴に加える
                         jiggleBone jbMuneL = CMT.SearchObjName(maid.body0.m_Bones.transform, "Mune_L", true).gameObject.GetComponent<jiggleBone>();
-                        undoList.Add(new UndoSecret(jbMuneL, jbMuneL.MuneUpDown, jbMuneL.MuneYori));
+                        //undoList.Add(new UndoSecret(jbMuneL, jbMuneL.MuneUpDown, jbMuneL.MuneYori));
+                        undoList.Add(Undo.createUndoSecret(jbMuneL, jbMuneL.MuneUpDown, jbMuneL.MuneYori));
 
                     }
                 }
@@ -8612,15 +4853,80 @@ namespace CM3D2.AddBoneSlider.Plugin
                     //Undoチェック
                     if (UndofuncName != _Func + "_secret:" + _prop + ":" + maid.name)
                     {
-                        Debuginfo.Log(LogLabel + _Func + "_secret:" + _prop + ":" + maid.name);
                         UndofuncName = _Func + "_secret:" + _prop + ":" + maid.name;
+                        //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                         //Undo履歴に加える
                         jiggleBone jbMuneR = CMT.SearchObjName(maid.body0.m_Bones.transform, "Mune_R", true).gameObject.GetComponent<jiggleBone>();
-                        undoList.Add(new UndoSecret(jbMuneR, jbMuneR.MuneUpDown, jbMuneR.MuneYori));
+                        //undoList.Add(new UndoSecret(jbMuneR, jbMuneR.MuneUpDown, jbMuneR.MuneYori));
+                        undoList.Add(Undo.createUndoSecret(jbMuneR, jbMuneR.MuneUpDown, jbMuneR.MuneYori));
 
                     }
                 }
+            }
+            else if (_bone == "light")
+            {
+
+            }
+            else if (_bone == "gravity")
+            {
+
+            }
+        }
+
+        private void mirrorBone(string bone)
+        {
+
+            if (bone.Contains("L") || bone.Contains("R"))
+            {
+                string mir_bone = bone.Contains("L") ? bone.Replace("L", "R") : bone.Replace("R", "L");
+
+                //クォータニオンで反転するとボーンごとに反転する軸が違ってきて
+                //わけわかんなくなるからオイラー角で反転する
+
+                float mir_x = -mp.fValue[bone][bone + ".x"];
+                mp.fValue[bone][bone + ".x"] = -mp.fValue[mir_bone][mir_bone + ".x"];
+                mp.fValue[mir_bone][mir_bone + ".x"] = mir_x;
+
+                float mir_y = -mp.fValue[bone][bone + ".y"];
+                mp.fValue[bone][bone + ".y"] = -mp.fValue[mir_bone][mir_bone + ".y"];
+                mp.fValue[mir_bone][mir_bone + ".y"] = mir_y;
+
+                float mir_z = mp.fValue[bone][bone + ".z"];
+                mp.fValue[bone][bone + ".z"] = mp.fValue[mir_bone][mir_bone + ".z"];
+                mp.fValue[mir_bone][mir_bone + ".z"] = mir_z;
+
+                rotateBone(bone);
+                rotateBone(mir_bone);
+
+                SyncTransform2SliderLabel(bone);
+                SyncTransform2SliderLabel(mir_bone);
+
+            }
+            else
+            {
+
+                if (bone == "Bip01")
+                {
+                    mp.fValue[bone][bone + ".z"] = -mp.fValue[bone][bone + ".z"];
+                    mp.fValue[bone][bone + ".x"] = -mp.fValue[bone][bone + ".x"];
+                }
+                else
+                {
+                    if ( bone == "Bip01 Spine" || bone == "Bip01 Pelvis")
+                    {
+                        mp.fValue[bone][bone + ".z"] = -mp.fValue[bone][bone + ".z"];
+                    }
+                    else
+                    {
+                        mp.fValue[bone][bone + ".x"] = -mp.fValue[bone][bone + ".x"];
+                    }
+
+                    mp.fValue[bone][bone + ".y"] = -mp.fValue[bone][bone + ".y"];
+                }
+                rotateBone(bone);
+                SyncTransform2SliderLabel(bone);
+
             }
         }
 
@@ -8644,7 +4950,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 GameMain.Instance.CharacterMgr.SetCharaAllPos(new Vector3(mp.fValue[bone][bone + ".px"] + mp.fVzero[bone][bone + ".px"], mp.fValue[bone][bone + ".py"] + mp.fVzero[bone][bone + ".py"], mp.fValue[bone][bone + ".pz"] + mp.fVzero[bone][bone + ".pz"]));
                 GameMain.Instance.CharacterMgr.SetCharaAllRot(new Vector3(mp.fValue[bone][bone + ".x"] + mp.fVzero[bone][bone + ".x"], mp.fValue[bone][bone + ".y"] + mp.fVzero[bone][bone + ".y"], mp.fValue[bone][bone + ".z"] + mp.fVzero[bone][bone + ".z"]));
 
-             
+
 
             }
             else if (bone == "offset")
@@ -8662,6 +4968,42 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 GameMain.Instance.MainCamera.SetRotation(new Vector3(mp.fValue[bone][bone + ".rx"] + mp.fVzero[bone][bone + ".rx"], mp.fValue[bone][bone + ".ry"] + mp.fVzero[bone][bone + ".ry"], mp.fValue[bone][bone + ".rz"] + mp.fVzero[bone][bone + ".rz"]));
 
+            }
+            else if (bone == "light")
+            {
+                GameMain.Instance.MainLight.SetRotation(new Vector3(mp.fValue[bone][bone + ".x"] + mp.fVzero[bone][bone + ".x"], mp.fValue[bone][bone + ".y"] + mp.fVzero[bone][bone + ".y"], mp.fValue[bone][bone + ".z"] + mp.fVzero[bone][bone + ".z"]));
+
+                GameMain.Instance.MainLight.SetColor(new Color(mp.fValue[bone][bone + ".r"] + mp.fVzero[bone][bone + ".r"], mp.fValue[bone][bone + ".g"] + mp.fVzero[bone][bone + ".g"], mp.fValue[bone][bone + ".b"] + mp.fVzero[bone][bone + ".b"]));
+
+                GameMain.Instance.MainLight.SetIntensity(mp.fValue[bone][bone + ".int"] + mp.fVzero[bone][bone + ".int"]);
+
+                GameMain.Instance.MainLight.SetShadowStrength(mp.fValue[bone][bone + ".ss"] + mp.fVzero[bone][bone + ".ss"]);
+
+            }
+            else if (bone == "gravity")
+            {
+
+                Vector3 baseG = new Vector3(mp.fValue[bone][bone + ".x"] + mp.fVzero[bone][bone + ".x"], mp.fValue[bone][bone + ".y"] + mp.fVzero[bone][bone + ".y"], mp.fValue[bone][bone + ".z"] + mp.fVzero[bone][bone + ".z"]).normalized * -0.01f;
+
+                maid.body0.goSlot.ForEach(tbs =>
+                {
+                    if (tbs.bonehair.boSkirt)
+                    {
+                        var field = tbs.bonehair.GetType().GetField("SkirtList", BindingFlags.Instance | BindingFlags.NonPublic);
+                        var list = (field.GetValue(tbs.bonehair)) as THair1[];
+                        Array.ForEach(list, m => m.SoftG = baseG);
+                        field.SetValue(tbs.bonehair, list);
+                    }
+
+                    {
+                        var field = tbs.bonehair.GetType().GetField("hair1list", BindingFlags.Instance | BindingFlags.NonPublic);
+                        var list = (field.GetValue(tbs.bonehair)) as List<THair1>;
+                        list.ForEach(m => m.SoftG = 0.3f * baseG);
+                        field.SetValue(tbs.bonehair, list);
+
+                    }
+
+                });
 
             }
             else if (bone == "eye")
@@ -8709,9 +5051,39 @@ namespace CM3D2.AddBoneSlider.Plugin
                 trBone[bone].localRotation *= Quaternion.AngleAxis((mp.fValue[bone][bone + ".y"] + mp.fVzero[bone][bone + ".y"]), Vector3.up);
             }
         }
+        //IK処理後の値を本体とスライダーに反映
+        private void syncFromIK()
+        {
+            if(ikManage.checkIKAttach(currentMaidNo,0))
+            {
+                SyncTransform2SliderLabel("Bip01 L Thigh");
+                SyncTransform2SliderLabel("Bip01 L Calf");
+                SyncTransform2SliderLabel("Bip01 L Foot");
+            }
+            if (ikManage.checkIKAttach(currentMaidNo, 1))
+            {
+                SyncTransform2SliderLabel("Bip01 R Thigh");
+                SyncTransform2SliderLabel("Bip01 R Calf");
+                SyncTransform2SliderLabel("Bip01 R Foot");
+            }
+            if (ikManage.checkIKAttach(currentMaidNo, 2))
+            {
+                SyncTransform2SliderLabel("Bip01 L UpperArm");
+                SyncTransform2SliderLabel("Bip01 L Forearm");
+                SyncTransform2SliderLabel("Bip01 L Hand");
+            }
+            if (ikManage.checkIKAttach(currentMaidNo, 3))
+            {
+                SyncTransform2SliderLabel("Bip01 R UpperArm");
+                SyncTransform2SliderLabel("Bip01 R Forearm");
+                SyncTransform2SliderLabel("Bip01 R Hand");
+            }
+        }
+
         //ハンドルの値を本体とスライダーに反映
         private void syncFromHandle()
         {
+            
             if (posHandle.controllDragged())
             {
                 bLocked = true;
@@ -8731,11 +5103,12 @@ namespace CM3D2.AddBoneSlider.Plugin
                         //Undoチェック
                         if (UndofuncName != "handle_rot:allpos")
                         {
-                            Debuginfo.Log(LogLabel + "handle_rot:allpos");
                             UndofuncName = "handle_rot:allpos";
+                            //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                             //Undo履歴に加える
-                            undoList.Add(new UndoAllpos(GameMain.Instance.CharacterMgr.GetCharaAllOfsetRot(), false));
+                            //undoList.Add(new UndoAllpos(GameMain.Instance.CharacterMgr.GetCharaAllRot(), false));
+                            undoList.Add(Undo.createUndoAllpos(GameMain.Instance.CharacterMgr.GetCharaAllRot(), false));
 
                         }
 
@@ -8751,7 +5124,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                         //回転結果をプラグイン側の数値に反映
 
 
-                        //Vector3 tmpAllRot = GameMain.Instance.CharacterMgr.GetCharaAllRot();
+                        tmpAllRot = GameMain.Instance.CharacterMgr.GetCharaAllRot();
 
 
                         mp.fValue["allpos"]["allpos" + ".x"] = tmpAllRot.x - mp.fVzero["allpos"]["allpos" + ".x"];
@@ -8764,7 +5137,10 @@ namespace CM3D2.AddBoneSlider.Plugin
                             {
                                 UISlider slider = FindChildByTag(tr, "Slider").GetComponent<UISlider>();
                                 string prop = getTag(slider, 2);
+                                
                                 slider.value = codecSliderValue("allpos", prop);
+                                
+
                                 uiValueLable["allpos"][prop].text = mp.fValue["allpos"][prop].ToString("F4");
                                 uiValueLable["allpos"][prop].gameObject.GetComponent<UIInput>().value = mp.fValue["allpos"][prop].ToString("F4");
 
@@ -8779,11 +5155,13 @@ namespace CM3D2.AddBoneSlider.Plugin
                         //Undoチェック
                         if (UndofuncName != "handle_rot:offset" + ":" + maid.name)
                         {
-                            Debuginfo.Log(LogLabel + "handle_rot:offset" + ":" + maid.name);
                             UndofuncName = "handle_rot:offset" + ":" + maid.name;
+                            //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+
 
                             //Undo履歴に加える
-                            undoList.Add(new UndoOffset(maid, maid.GetRot(), false));
+                            //undoList.Add(new UndoOffset(maid, maid.GetRot(), false));
+                            undoList.Add(Undo.createUndoOffset(maid, maid.GetRot(), false));
 
                         }
 
@@ -8813,15 +5191,20 @@ namespace CM3D2.AddBoneSlider.Plugin
                     }
                     else
                     {
+                        
+
+
                         //Undoチェック
                         if (UndofuncName != "handle_rot:" + bone + ":" + maid.name)
                         {
-                            Debuginfo.Log(LogLabel + "handle_rot:" + bone + ":" + maid.name);
                             UndofuncName = "handle_rot:" + bone + ":" + maid.name;
+                            //Debuginfo.Log(LogLabel + "Undo::" +UndofuncName);
+                            
 
                             //Undo履歴に加える
-                            undoList.Add( new UndoBone(trBone[bone],trBone[bone].localRotation));
-                            
+                            //undoList.Add( new UndoBone(trBone[bone],trBone[bone].localRotation));
+                            undoList.Add(Undo.createUndoBone(trBone[bone], trBone[bone].localRotation));
+
                         }
 
 
@@ -8895,23 +5278,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                         if (!reRotate)
                         {
                             //限界値をこえてなかったらスライダーと入力ラベルに反映
-                            foreach (Transform tr in trBoneUnit[bone])
-                            {
-                                if (tr.name == "SliderUnit")
-                                {
-
-                                    UISlider slider = FindChildByTag(tr, "Slider").GetComponent<UISlider>();
-                                    string prop = getTag(slider, 2);
-
-                                    
-                                    slider.value = codecSliderValue(bone, prop);
-                                    uiValueLable[bone][prop].text = mp.fValue[bone][prop].ToString("F4");
-                                    uiValueLable[bone][prop].gameObject.GetComponent<UIInput>().value = mp.fValue[bone][prop].ToString("F4");
-
-
-                                }
-                            }
-                            vPastBoneAngle[bone] = trBone[bone].localRotation;
+                            SyncTransform2SliderLabel(bone);
                         }
                         else
                         {
@@ -8927,6 +5294,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                             mp.fValue[bone][bone + ".y"] = past_y;
                             mp.fValue[bone][bone + ".z"] = past_z;
                         }
+
+                    
                     }
                 }
                 else
@@ -8936,11 +5305,13 @@ namespace CM3D2.AddBoneSlider.Plugin
                         //Undoチェック
                         if (UndofuncName != "handle_pos:allpos")
                         {
-                            Debuginfo.Log(LogLabel + "handle_pos:allpos");
                             UndofuncName = "handle_pos:allpos";
+                            //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+                            
 
                             //Undo履歴に加える
-                            undoList.Add(new UndoAllpos(GameMain.Instance.CharacterMgr.GetCharaAllOfsetPos(), true));
+                            //undoList.Add(new UndoAllpos(GameMain.Instance.CharacterMgr.GetCharaAlltPos(), true));
+                            undoList.Add(Undo.createUndoAllpos(GameMain.Instance.CharacterMgr.GetCharaAllPos(), true));
 
                         }
 
@@ -8977,11 +5348,13 @@ namespace CM3D2.AddBoneSlider.Plugin
                         //Undoチェック
                         if (UndofuncName != "handle_pos:offset" + ":" + maid.name)
                         {
-                            Debuginfo.Log(LogLabel + "Undo:handle_pos:offset" + ":" + maid.name);
                             UndofuncName = "handle_pos:offset" + ":" + maid.name;
+                            //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+                            
 
                             //Undo履歴に加える
-                            undoList.Add(new UndoOffset(maid,maid.transform.localPosition,true) );
+                            //undoList.Add(new UndoOffset(maid,maid.transform.localPosition,true) );
+                            undoList.Add(Undo.createUndoOffset(maid, maid.transform.localPosition, true));
 
                         }
 
@@ -9015,11 +5388,13 @@ namespace CM3D2.AddBoneSlider.Plugin
                         //Undoチェック
                         if (UndofuncName != "handle_pos:" + bone + ":" + maid.name)
                         {
-                            Debuginfo.Log(LogLabel + "handle_pos:" + bone + ":" + maid.name);
                             UndofuncName = "handle_pos:" + bone + ":" + maid.name;
+                            //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+                            
 
                             //Undo履歴に加える
-                            undoList.Add(new UndoBonePos(trBone[bone], trBone[bone].localPosition));
+                            //undoList.Add(new UndoBonePos(trBone[bone], trBone[bone].localPosition));
+                            undoList.Add(Undo.createUndoBonePos(trBone[bone], trBone[bone].localPosition));
 
                         }
 
@@ -9071,21 +5446,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                         if (!reTrans)
                         {
                             //限界値をこえてなかったらスライダーと入力ラベルに反映
-                            foreach (Transform tr in trBoneUnit[bone])
-                            {
-                                if (tr.name == "SliderUnit")
-                                {
-
-                                    UISlider slider = FindChildByTag(tr, "Slider").GetComponent<UISlider>();
-                                    string prop = getTag(slider, 2);
-
-                                    slider.value = codecSliderValue(bone, prop);
-                                    uiValueLable[bone][prop].text = mp.fValue[bone][prop].ToString("F4");
-                                    uiValueLable[bone][prop].gameObject.GetComponent<UIInput>().value = mp.fValue[bone][prop].ToString("F4");
-
-                                }
-                            }
-                            vPastBoneTrans = trBone[bone].localPosition;
+                            SyncTransform2SliderLabel(bone);
                         }
                         else
                         {
@@ -9104,23 +5465,24 @@ namespace CM3D2.AddBoneSlider.Plugin
                 }
                 bLocked = false;
             }
+            
         }
 
         //本体側の数値をスライダーとプラグイン側の数値に反映
-        private void syncSlider(bool allSlider)
+        private void syncSlider(bool allSlider,bool _noUndo = false)
         {
             bLocked = true;
 
             //前回の操作がUndoかRedoであれば履歴に記録しない
             bool notUndo = true; 
-            if(UndofuncName == "Undo" || UndofuncName == "Redo")
+            if(UndofuncName == "Undo" || UndofuncName == "Redo" || _noUndo == true)
             {
                 notUndo = false;
             }
 
             foreach (string bone in mp.sBone)
             {
-                if (bone != "secret" && bone != "eye" && bone != "allpos" && bone != "offset" && bone != "camera")
+                if (bone != "secret" && bone != "eye" && bone != "allpos" && bone != "offset" && bone != "camera" && bone != "light" && bone != "gravity")
                 {
                     if (bone == "Bip01")
                     {
@@ -9128,13 +5490,14 @@ namespace CM3D2.AddBoneSlider.Plugin
                         {
                             
                             //Undoチェック
-                            if ((UndofuncName != "syncAllBone:" + maid.name) && notUndo)
+                            if ((UndofuncName != "syncAllBone:" + maid.name) && notUndo )
                             {
-                                Debuginfo.Log(LogLabel + "syncAllBone:" + maid.name+":"+bone);
                                 UndofuncName = "syncAllBone:" + maid.name;
+                                //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                                 //Undo履歴に加える
-                                undoList.Add(new UndoBoneAll(trBone,vPastBoneAngle, vPastBoneTrans));
+                                //undoList.Add(new UndoBoneAll(trBone,vPastBoneAngle, vPastBoneTrans));
+                                undoList.Add(Undo.createUndoBoneAll(trBone, vPastBoneAngle, vPastBoneTrans));
 
                             }
 
@@ -9160,7 +5523,6 @@ namespace CM3D2.AddBoneSlider.Plugin
                                     {
                                         mp.fValue[bone][prop] += 360f;
                                     }
-
                                     slider.value = codecSliderValue(bone, prop);
                                     uiValueLable[bone][prop].text = mp.fValue[bone][prop].ToString("F4");
                                     uiValueLable[bone][prop].gameObject.GetComponent<UIInput>().value = mp.fValue[bone][prop].ToString("F4");
@@ -9180,13 +5542,15 @@ namespace CM3D2.AddBoneSlider.Plugin
                             //Undoチェック
                             if ((UndofuncName != "syncAllBone:" + maid.name) && notUndo)
                             {
-                                Debuginfo.Log(LogLabel + "syncAllBone:" + maid.name + ":" + bone);
                                 UndofuncName = "syncAllBone:" + maid.name;
+                                //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                                 //Undo履歴に加える
-                                undoList.Add(new UndoBoneAll(trBone, vPastBoneAngle, vPastBoneTrans));
+                                //undoList.Add(new UndoBoneAll(trBone, vPastBoneAngle, vPastBoneTrans));
+                                undoList.Add(Undo.createUndoBoneAll(trBone, vPastBoneAngle, vPastBoneTrans));
 
                             }
+                            
 
                             calc_trBone2Param(bone);
                             foreach (Transform tr in trBoneUnit[bone])
@@ -9204,7 +5568,6 @@ namespace CM3D2.AddBoneSlider.Plugin
                                     {
                                         mp.fValue[bone][prop] += 360f;
                                     }
-
                                     slider.value = codecSliderValue(bone, prop);
                                     uiValueLable[bone][prop].text = mp.fValue[bone][prop].ToString("F4");
                                     uiValueLable[bone][prop].gameObject.GetComponent<UIInput>().value = mp.fValue[bone][prop].ToString("F4");
@@ -9239,16 +5602,17 @@ namespace CM3D2.AddBoneSlider.Plugin
                             )
                         {
                             //Undoチェック
-                            if (UndofuncName != "sync:Allpos:Pos:" + maid.name && notUndo)
+                            if (UndofuncName != "sync:Allpos:Pos" && notUndo)
                             {
-                                Debuginfo.Log(LogLabel + "sync:Allpos:Pos:" + maid.name);
-                                UndofuncName = "sync:Allpos:Pos:" + maid.name;
+                                UndofuncName = "sync:Allpos:Pos";
+                                //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
                                 //Undo履歴に加える
                                 Vector3 oldPos = new Vector3(mp.fValue[bone][bone + ".px"] + mp.fVzero[bone][bone + ".px"],
                                     mp.fValue[bone][bone + ".py"] + mp.fVzero[bone][bone + ".py"],
                                     mp.fValue[bone][bone + ".pz"] + mp.fVzero[bone][bone + ".pz"]);
-                                undoList.Add(new UndoAllpos(oldPos, true));
+                                //undoList.Add(new UndoAllpos(oldPos, true));
+                                undoList.Add(Undo.createUndoAllpos(oldPos, true));
 
                             }
 
@@ -9259,21 +5623,23 @@ namespace CM3D2.AddBoneSlider.Plugin
                             b_changed = true;
                         }
                         if (
-                            tmpAllRot.x != mp.fValue[bone][bone + ".x"] + mp.fVzero[bone][bone + ".x"] ||
-                            tmpAllRot.y != mp.fValue[bone][bone + ".y"] + mp.fVzero[bone][bone + ".y"] ||
-                            tmpAllRot.z != mp.fValue[bone][bone + ".z"] + mp.fVzero[bone][bone + ".z"]
+                             System.Math.Floor(mp.fValue[bone][bone + ".x"] * 1000) != System.Math.Floor((tmpAllRot.x - mp.fVzero[bone][bone + ".x"])*1000) ||
+                             System.Math.Floor(mp.fValue[bone][bone + ".y"] * 1000) != System.Math.Floor((tmpAllRot.y - mp.fVzero[bone][bone + ".y"])*1000) ||
+                             System.Math.Floor(mp.fValue[bone][bone + ".z"] * 1000) != System.Math.Floor((tmpAllRot.z - mp.fVzero[bone][bone + ".z"])*1000)
                             )
                         {
                             //Undoチェック
-                            if (UndofuncName != "sync:Allpos:Rot:" + maid.name && notUndo)
+                            if (UndofuncName != "sync:Allpos:Rot" && notUndo)
                             {
-                                Debuginfo.Log(LogLabel + "sync:Allpos:Rot:" + maid.name);
-                                UndofuncName = "sync:Allpos:Rot:" + maid.name;
+                                UndofuncName = "sync:Allpos:Rot" ;
+                                //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
+
                                 Vector3 oldRot = new Vector3(mp.fValue[bone][bone + ".x"] + mp.fVzero[bone][bone + ".x"],
                                     mp.fValue[bone][bone + ".y"] + mp.fVzero[bone][bone + ".y"],
                                     mp.fValue[bone][bone + ".z"] + mp.fVzero[bone][bone + ".z"]);
                                 //Undo履歴に加える
-                                undoList.Add(new UndoAllpos(oldRot, false));
+                                //undoList.Add(new UndoAllpos(oldRot, false));
+                                undoList.Add(Undo.createUndoAllpos(oldRot, false));
 
                             }
 
@@ -9300,15 +5666,16 @@ namespace CM3D2.AddBoneSlider.Plugin
                             //Undoチェック
                             if (UndofuncName != "sync:Offset:Pos:" + maid.name && notUndo)
                             {
-                                Debuginfo.Log(LogLabel + "sync:Offset:Pos:" + maid.name);
                                 UndofuncName = "sync:Offset:Pos:" + maid.name;
+                                //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
 
                                 Vector3 oldPos = new Vector3(mp.fValue[bone][bone + ".px"] + mp.fVzero[bone][bone + ".px"],
                                     mp.fValue[bone][bone + ".py"] + mp.fVzero[bone][bone + ".py"],
                                     mp.fValue[bone][bone + ".pz"] + mp.fVzero[bone][bone + ".pz"]);
                                 //Undo履歴に加える
-                                undoList.Add(new UndoOffset(maid, oldPos, true));
+                                //undoList.Add(new UndoOffset(maid, oldPos, true));
+                                undoList.Add(Undo.createUndoOffset(maid, oldPos, true));
 
                             }
 
@@ -9328,15 +5695,16 @@ namespace CM3D2.AddBoneSlider.Plugin
                             //Undoチェック
                             if (UndofuncName != "sync:Offset:Rot:" + maid.name && notUndo)
                             {
-                                Debuginfo.Log(LogLabel + "sync:Offset:Rot:" + maid.name);
                                 UndofuncName = "sync:Offset:Rot:" + maid.name;
+                                //Debuginfo.Log(LogLabel + "Undo::" + UndofuncName);
 
 
                                 Vector3 oldRot = new Vector3(mp.fValue[bone][bone + ".x"] + mp.fVzero[bone][bone + ".x"],
                                     mp.fValue[bone][bone + ".y"] + mp.fVzero[bone][bone + ".y"],
                                     mp.fValue[bone][bone + ".z"] + mp.fVzero[bone][bone + ".z"]);
                                 //Undo履歴に加える
-                                undoList.Add(new UndoOffset(maid, oldRot, false));
+                                //undoList.Add(new UndoOffset(maid, oldRot, false));
+                                undoList.Add(Undo.createUndoOffset(maid, oldRot, false));
 
                             }
 
@@ -9403,6 +5771,102 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                             b_changed = true;
                         }
+
+                    }
+                    else if (bone == "light")
+                    {
+
+                        Quaternion LightRot = GameMain.Instance.MainLight.gameObject.transform.rotation;
+                        Color LightColor = GameMain.Instance.MainLight.GetColor();
+                        float Intensity = GameMain.Instance.MainLight.GetIntensity();
+                        float ShadowStrength = GameMain.Instance.MainLight.GetShadowStrength();
+
+
+                        bool f1 = LightRot != Quaternion.Euler(new Vector3(mp.fValue[bone][bone + ".x"] + mp.fVzero[bone][bone + ".x"], mp.fValue[bone][bone + ".y"] + mp.fVzero[bone][bone + ".y"], mp.fValue[bone][bone + ".z"] + mp.fVzero[bone][bone + ".z"]));
+                        bool f2 = LightColor.r != mp.fValue[bone][bone + ".r"] + mp.fVzero[bone][bone + ".r"];
+                        bool f3 = LightColor.g != mp.fValue[bone][bone + ".g"] + mp.fVzero[bone][bone + ".g"];
+                        bool f4 = LightColor.b != mp.fValue[bone][bone + ".b"] + mp.fVzero[bone][bone + ".b"];
+
+                        bool f5 = Intensity != mp.fValue[bone][bone + ".int"] + mp.fVzero[bone][bone + ".int"];
+                        bool f6 = ShadowStrength != mp.fValue[bone][bone + ".ss"] + mp.fVzero[bone][bone + ".ss"];
+
+                        if (f1 || f2 || f3 || f4 || f5 || f6)
+                        {
+                            float tempx = LightRot.eulerAngles.x - mp.fVzero[bone][bone + ".x"];
+                            float tempy = LightRot.eulerAngles.y - mp.fVzero[bone][bone + ".y"];
+                            float tempz = LightRot.eulerAngles.z - mp.fVzero[bone][bone + ".z"];
+
+                            //クォータニオンからオイラーに変換したときに値がずれることがあるため
+                            //値が動かないZ軸の値を調べてずれを直す
+                            if (LightRot.eulerAngles.z > 180)
+                            {
+                                tempz -= 180;
+                                tempy -= 180;
+                                tempx = 180 - tempx;
+                            }
+                            if (tempy < 0 )
+                            {
+                                tempy += 360;
+                            }
+                                
+
+                            mp.fValue[bone][bone + ".x"] = tempx;
+                            mp.fValue[bone][bone + ".y"] = tempy;
+                            mp.fValue[bone][bone + ".z"] = tempz;
+
+
+                            GameMain.Instance.MainLight.SetRotation(new Vector3(mp.fValue[bone][bone + ".x"] + mp.fVzero[bone][bone + ".x"], mp.fValue[bone][bone + ".y"] + mp.fVzero[bone][bone + ".y"], mp.fValue[bone][bone + ".z"] + mp.fVzero[bone][bone + ".z"]));
+
+
+                            mp.fValue[bone][bone + ".r"] = LightColor.r - mp.fVzero[bone][bone + ".r"];
+                            mp.fValue[bone][bone + ".g"] = LightColor.g - mp.fVzero[bone][bone + ".g"];
+                            mp.fValue[bone][bone + ".b"] = LightColor.b - mp.fVzero[bone][bone + ".b"];
+
+                            mp.fValue[bone][bone + ".int"] = Intensity - mp.fVzero[bone][bone + ".int"];
+                            mp.fValue[bone][bone + ".ss"] = ShadowStrength - mp.fVzero[bone][bone + ".ss"];
+                            
+                            b_changed = true;
+                        }
+
+                    }
+                    else if (bone == "gravity")
+                    {
+                        /* クッソ重そうなので重力のフィードバックはしない
+                        THair1 getG = null;
+                        maid.body0.goSlot.ForEach(tbs =>
+                        {
+                           if (tbs.bonehair.boSkirt)
+                           {
+                               var field = tbs.bonehair.GetType().GetField("SkirtList", BindingFlags.Instance | BindingFlags.NonPublic);
+                               var list = (field.GetValue(tbs.bonehair)) as THair1[];
+                               getG =  Array.Find(list, m =>
+                               m.SoftG.x != mp.fValue[bone][bone + ".x"] + mp.fVzero[bone][bone + ".x"] ||
+                               m.SoftG.y != mp.fValue[bone][bone + ".y"] + mp.fVzero[bone][bone + ".y"] ||
+                               m.SoftG.x != mp.fValue[bone][bone + ".z"] + mp.fVzero[bone][bone + ".z"]
+                               );
+                           }
+                           else
+                           {
+                               var field = tbs.bonehair.GetType().GetField("hair1list", BindingFlags.Instance | BindingFlags.NonPublic);
+                               var list = (field.GetValue(tbs.bonehair)) as List<THair1>;
+                               getG =  list.Find(m =>
+                               m.SoftG.x != 0.3f * (mp.fValue[bone][bone + ".x"] + mp.fVzero[bone][bone + ".x"]) ||
+                               m.SoftG.y != 0.3f * (mp.fValue[bone][bone + ".y"] + mp.fVzero[bone][bone + ".y"]) ||
+                               m.SoftG.x != 0.3f * (mp.fValue[bone][bone + ".z"] + mp.fVzero[bone][bone + ".z"])
+                               );
+
+                           }
+                        }); 
+                        if(getG != null)
+                        {
+                            mp.fValue[bone][bone + ".x"] = getG.SoftG.x - mp.fVzero[bone][bone + ".x"];
+                            mp.fValue[bone][bone + ".y"] = getG.SoftG.y - mp.fVzero[bone][bone + ".y"];
+                            mp.fValue[bone][bone + ".z"] = getG.SoftG.z - mp.fVzero[bone][bone + ".z"];
+
+                            b_changed = true;
+                        }
+                        */
+
 
                     }
 
@@ -9502,6 +5966,43 @@ namespace CM3D2.AddBoneSlider.Plugin
 
             bLocked = false;
 
+        }
+        void SyncTransform2SliderLabel(string bone)
+        {
+            //スライダーと入力ラベルに反映
+            /*
+            foreach (Transform tr in trBoneUnit[bone])
+            {
+                if (tr.name == "SliderUnit")
+                {
+
+                    UISlider slider = FindChildByTag(tr, "Slider").GetComponent<UISlider>();
+
+                    string prop = getTag(slider, 2);
+                    
+                    slider.value = codecSliderValue(bone, prop);
+                    uiValueLable[bone][prop].text = mp.fValue[bone][prop].ToString("F4");
+                    uiValueLable[bone][prop].gameObject.GetComponent<UIInput>().value = mp.fValue[bone][prop].ToString("F4");
+
+
+                }
+            }
+            */
+            
+            foreach(var prop in uiSlider[bone])
+            {
+                prop.Value.value = codecSliderValue(bone, prop.Key);
+                uiValueLable[bone][prop.Key].text = mp.fValue[bone][prop.Key].ToString("F4");
+                uiValueLable[bone][prop.Key].gameObject.GetComponent<UIInput>().value = mp.fValue[bone][prop.Key].ToString("F4");
+
+            }
+            
+            vPastBoneAngle[bone] = trBone[bone].localRotation;
+            if(bone == "Bip01")
+                vPastBoneTrans = trBone[bone].localPosition;
+
+
+            
         }
 
         //ボーンの本体側の数値(クォータニオン)をプラグイン側の数値（オイラー角）に反映させる関数
@@ -9689,7 +6190,7 @@ namespace CM3D2.AddBoneSlider.Plugin
         }
 
         //ハンドルの値をIKターゲットオブジェクトに反映
-        private void inversekinematicFromHandle(HandleKun.IKMODE _ikmode)
+        /*private void inversekinematicFromHandle(HandleKun.IKMODE _ikmode)
         {
             if (posHandle.controllDragged())
             {
@@ -9700,13 +6201,15 @@ namespace CM3D2.AddBoneSlider.Plugin
                 maid.body0.boHeadToCam = false;
                 maid.body0.boEyeToCam = false;
                 
-                ikManage.inversekinematicHandle(posHandle,maid,currentMaidNo);
+                this.inversekinematicHandle(posHandle,maid,currentMaidNo,_ikmode);
                 
 
                 bLocked = false;
             }
         }
-        private bool inversekinematicFromHandle(Transform _ikParent,bool ikInitted)
+       
+        
+        private bool inversekinematicFromHandle(Transform _ikParent,bool ikInitted, HandleKun.IKMODE _ikmode)
         {
             //右クリック時はIKをボーンにアタッチ
             //
@@ -9728,9 +6231,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                 }
                 //ハンドル君から値取得
                 _ikParent.position += posHandle.DeltaVector();
-                
-                
 
+                
 
                 bLocked = false;
 
@@ -9741,6 +6243,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 return false;
             }
         }
+        */
 
         //IK設定の初期化
         private void ikInit(Transform _ikParent)
@@ -9753,15 +6256,6 @@ namespace CM3D2.AddBoneSlider.Plugin
 
 
             Debuginfo.Log(_ikParent.position.ToString());
-
-            //posHandle.Rot = Quaternion.Euler(-90, 0, 90);//Quaternion.identity;
-            /*
-            if (!attachIKMaidNo.Contains(currentMaidNo))
-            {
-                attachIKMaidList.Add(currentMaidNo, maid);
-                attachIKMaidNo.Add(currentMaidNo);
-            }
-            */
 
         }
 
@@ -9779,80 +6273,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                 maid.body0.boHeadToCam = false;
                 maid.body0.boEyeToCam = false;
 
-                ikManage.ikTargetClicked(posHandle,currentMaidNo);
-
-                /*
-                switch (posHandle.IKmode)
-                {
-                    case HandleKun.IKMODE.LeftLeg:
-                        ikInit(goIKLeftLegTarget[currentMaidNo].transform);
-
-                        goIKLeftLegTarget[currentMaidNo].transform.parent = trTargetIKTemp;
-                        if(trTargetIKTemp.name !="Bip01")
-                            goIKLeftLegTarget[currentMaidNo].transform.localPosition = Vector3.zero;
-
-                        
-                        bIKAttachLeftLeg[currentMaidNo] = true;
-
-                        break;
-
-                    case HandleKun.IKMODE.RightLeg:
-                        ikInit(goIKRightLegTarget[currentMaidNo].transform);
-
-                        goIKRightLegTarget[currentMaidNo].transform.parent = trTargetIKTemp;
-                        if (trTargetIKTemp.name != "Bip01")
-                            goIKRightLegTarget[currentMaidNo].transform.localPosition = Vector3.zero;
-
-                        
-                        bIKAttachRightLeg[currentMaidNo] = true;
-
-                        break;
-
-                    case HandleKun.IKMODE.LeftArm:
-                        ikInit(goIKLeftArmTarget[currentMaidNo].transform);
-
-                        goIKLeftArmTarget[currentMaidNo].transform.parent = trTargetIKTemp;
-                        if (trTargetIKTemp.name != "Bip01")
-                            goIKLeftArmTarget[currentMaidNo].transform.localPosition = Vector3.zero;
-                        
-
-                        bIKAttachLeftArm[currentMaidNo] = true;
-
-                        break;
-
-                    case HandleKun.IKMODE.RightArm:
-                        ikInit(goIKRightArmTarget[currentMaidNo].transform);
-
-                        goIKRightArmTarget[currentMaidNo].transform.parent = trTargetIKTemp;
-                        if (trTargetIKTemp.name != "Bip01")
-                            goIKRightArmTarget[currentMaidNo].transform.localPosition = Vector3.zero;
-
-                        
-                        bIKAttachRightArm[currentMaidNo] = true;
-
-                        break;
-
-                    default:
-
-                        Debug.Log(LogLabel + "Handle IKmode target select exception.");
-                        break;
-                }
+                ikManage.ikTargetClicked(undoList.Add, this.setIKButtonActiveforUndo, getIKButtonActiveforUndo(), posHandle,currentMaidNo,UndofuncName);
                 
-                if (trTargetIKTemp.name != "Bip01")
-                {
-                    posHandle.IKTargetAttachedColor(true);
-                }
-                else
-                {
-                    posHandle.IKTargetAttachedColor(false);
-                }
-
-                bIKTargetGet = false;
-
-                trTargetIKTemp = null;
-                */
-
-
                 posHandle.IKTargetClickAfter();
 
                 bLocked = false;
@@ -9864,7 +6286,7 @@ namespace CM3D2.AddBoneSlider.Plugin
         //IK関係のコレクションリスト自体は要素を削除せずそのまま
         private void detachIKfromBone()
         {
-            ikManage.detachIKfromBone(posHandle,trBone,currentMaidNo);
+            ikManage.detachIKfromBone(undoList.Add, this.setIKButtonActiveforUndo, getIKButtonActiveforUndo(), posHandle,trBone,currentMaidNo, UndofuncName);
         }
 
         private void outputANMPose(string poseName)
@@ -9986,18 +6408,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                         {
                             Maid tempMaid;
 
-                            /*
-                            if (sceneLevel == 27)
-                            {
-                                //公式撮影モード
-                                tempMaid = GameMain.Instance.CharacterMgr.GetMaid(stockNo);
-                            }
-                            else
-                            {
-                                //複数撮影モード
-                                tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(stockNo);
-                            }
-                            */
+
                             tempMaid = GetMaid(stockNo);
 
                             visMaidNo.Add(stockNo);
@@ -10295,18 +6706,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 foreach (int MaidNo in visMaidNo)
                 {
                     Maid tempMaid;
-                    /*
-                    if (sceneLevel == 27)
-                    {
-                        //公式撮影モード
-                        tempMaid = GameMain.Instance.CharacterMgr.GetMaid(MaidNo);
-                    }
-                    else
-                    {
-                        //複数撮影モード
-                        tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(MaidNo);
-                    }
-                    */
+
                     tempMaid = GetMaid(MaidNo);
                     tempMaid.Visible = true;
                 }
@@ -10586,14 +6986,16 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         }
 
+
+
 #endregion
 
 
 
 #region Utility methods
 
+        internal static Transform FindParent(Transform tr, string s) { return FindParent(tr.gameObject, s).transform; }
 
-internal static Transform FindParent(Transform tr, string s) { return FindParent(tr.gameObject, s).transform; }
         internal static GameObject FindParent(GameObject go, string name)
         {
             if (go == null) return null;
