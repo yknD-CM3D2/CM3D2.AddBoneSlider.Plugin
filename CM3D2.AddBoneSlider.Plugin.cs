@@ -77,6 +77,7 @@ namespace CM3D2.AddBoneSlider.Plugin
         private bool visible = false;
         private bool bInitCompleted = false;
         private bool bLocked = false;
+        private bool bCBLMode = false;
 
         private BoneParam mp;
 
@@ -153,7 +154,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         #endregion
 
-
+        
 
         #region Nested classes
 
@@ -373,6 +374,18 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 font = GameObject.Find("SystemUI Root").GetComponentsInChildren<UILabel>()[0].trueTypeFont;
                 setInifile();
+
+                //CBL版か通常版かこのタイミングで判断させる
+                if (File.Exists(Directory.GetCurrentDirectory() + @"\CM3D2OH.exe"))
+                {
+                    bCBLMode = true;
+
+                }
+                else
+                {
+                    bCBLMode = false;
+
+                }
             }
 
             //VR版は当面の間非サポートに決定
@@ -383,15 +396,16 @@ namespace CM3D2.AddBoneSlider.Plugin
             if (UnityEngine.Application.unityVersion.Split('.')[0] == "4" || settingIni.VRmodeEnable != 0 )
             {
                 //SceneLevel == 4(CBL版エディットモード)  と　SceneLevel21 == 21（CBL版公式撮影モード） も追加
-                if (level != sceneLevel && ((sceneLevel == iSceneEdit) || (sceneLevel == iScenePhoto) || (sceneLevel == iSceneEditCBL) || (sceneLevel == iScenePhotoCBL)))
+                if (level != sceneLevel && ((sceneLevel == getEditModeSceneNo()) || (sceneLevel == getPhotoModeSceneNo())))
                 {
                     finalize();
                 }
 
-                if ((level == iSceneEdit) || (level == iScenePhoto) || (level == iSceneEditCBL) || (level == iScenePhotoCBL))
+                if ((level == getEditModeSceneNo()) || (level == getPhotoModeSceneNo()))
                 {
                     mp = new BoneParam();
                     if (xmlLoad = mp.Init()) StartCoroutine(initCoroutine());
+
                 }
 
                 sceneLevel = level;
@@ -400,7 +414,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         public void Update()
         {
-            if (((sceneLevel == iSceneEdit) || (sceneLevel == iScenePhoto)|| (sceneLevel == iSceneEditCBL) || (sceneLevel == iScenePhotoCBL)) && bInitCompleted)
+            if (((sceneLevel == getEditModeSceneNo()) || (sceneLevel == getPhotoModeSceneNo())) && bInitCompleted)
             {
                 //Input.GetKeyDownの代わりに
                 //FlexKeycode.GetKeyDownを使う
@@ -565,7 +579,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                     setSliderVisible(bone, b);
                 }
 
-                if ((sceneLevel == iSceneEdit || sceneLevel == iSceneEditCBL) && bone == "allpos")
+                if ((sceneLevel == getEditModeSceneNo()) && bone == "allpos")
                 {
                     setParentAllOffset();
                 }
@@ -880,18 +894,7 @@ namespace CM3D2.AddBoneSlider.Plugin
             foreach (int MaidNo in visMaidNo)
             {
                 Maid tempMaid;
-                /*
-                if (sceneLevel == 27)
-                {
-                    //公式撮影モード
-                    tempMaid = GameMain.Instance.CharacterMgr.GetMaid(MaidNo);
-                }
-                else
-                {
-                    //複数撮影モード
-                    tempMaid = GameMain.Instance.CharacterMgr.GetStockMaid(MaidNo);
-                }
-                */
+
                 tempMaid = GetMaid(MaidNo);
                 tempMaid.Visible = true;
             }
@@ -1441,7 +1444,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 string bone = getTag(UIButton.current, 1);
 
 
-                if ((sceneLevel == iSceneEdit|| sceneLevel == iSceneEditCBL) && bone == "allpos")
+                if ((sceneLevel == getEditModeSceneNo()) && bone == "allpos")
                 {
                     setParentAllOffset();
                 }
@@ -1531,7 +1534,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 string bone = getTag(UIButton.current, 1);
 
-                if (sceneLevel == 5 && bone == "allpos")
+                if (sceneLevel == getEditModeSceneNo() && bone == "allpos")
                 {
                     setParentAllOffset();
                 }
@@ -2429,7 +2432,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 maid = GameMain.Instance.CharacterMgr.GetMaid(currentMaidNo);
 
                 //じゃまずいから複数メイド撮影のときだけcurrentMaidNoの値をここで同期しとく
-                if(sceneLevel == iSceneEdit || sceneLevel == iSceneEditCBL)
+                if(sceneLevel == getEditModeSceneNo())
                 {
                     List<Maid> maidList = GameMain.Instance.CharacterMgr.GetStockMaidList();
                     for (int i = 0; i < maidList.Count; i++)
@@ -3726,6 +3729,16 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         //----
 
+        public int getPhotoModeSceneNo()
+        {
+            return (bCBLMode ? iScenePhotoCBL : iScenePhoto);
+        }
+
+        public int getEditModeSceneNo()
+        {
+            return (bCBLMode ? iSceneEditCBL : iSceneEdit);
+        }
+
         public void rebootHandle()
         {
             if (FindChild(FindChild(goAMSPanel, "IKLeftLeg"), "SelectCursorIKLeftLeg").activeInHierarchy == true)
@@ -4364,7 +4377,7 @@ namespace CM3D2.AddBoneSlider.Plugin
         //ここで差異を吸収する
         private Maid GetMaid(int _No)
         {
-            if(sceneLevel == iScenePhoto || sceneLevel == iScenePhotoCBL)
+            if(sceneLevel == getPhotoModeSceneNo())
                 return GameMain.Instance.CharacterMgr.GetMaid(_No);
             else
                 return GameMain.Instance.CharacterMgr.GetStockMaid(_No);
@@ -4372,7 +4385,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         private int GetMaidCount()
         {
-            if(sceneLevel == iScenePhoto || sceneLevel == iScenePhotoCBL)
+            if(sceneLevel == getPhotoModeSceneNo())
                 return GameMain.Instance.CharacterMgr.GetMaidCount();
             else
                 return GameMain.Instance.CharacterMgr.GetStockMaidCount();
@@ -6531,7 +6544,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 //エディットモードかつメイドさんが2人以上いて対象が1人目じゃない場合
                 //bool bVisBra = maid.body0.goSlot[i].AttachName
-                if ((sceneLevel == iSceneEdit|| sceneLevel == iSceneEditCBL) && maid != GameMain.Instance.CharacterMgr.GetMaid(0))//bVisivle.Count > 0)
+                if ((sceneLevel == getEditModeSceneNo()) && maid != GameMain.Instance.CharacterMgr.GetMaid(0))//bVisivle.Count > 0)
                 {
                     foreach (TBodySkin goSlotID in maid.body0.goSlot)
                     {
@@ -6674,8 +6687,8 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                 maid.AllProcProp();
 
-
-                if ((sceneLevel == iSceneEdit|| sceneLevel == iSceneEditCBL) && maid != GameMain.Instance.CharacterMgr.GetMaid(0))//bVisivle.Count > 0)
+                
+                if ((sceneLevel == getEditModeSceneNo()) && maid != GameMain.Instance.CharacterMgr.GetMaid(0))//bVisivle.Count > 0)
                 {
                     foreach (var exSlotVisiblePair in existGoSlot.Select((pairSlotIDList, index) => new { pairSlotIDList, index }))
                     {
