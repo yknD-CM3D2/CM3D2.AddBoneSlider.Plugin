@@ -42,7 +42,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
 
         public const string PluginName = "AddBoneSlider";
-        public const string Version = "0.0.1.4";
+        public const string Version = "0.0.1.5dev1";
 
         private readonly string LogLabel = AddBoneSlider.PluginName + " : ";
 
@@ -460,10 +460,10 @@ namespace CM3D2.AddBoneSlider.Plugin
                     if (bLocked == false)
                     {
                         //UIと一緒に消す用
-                        if (settingIni.HandleLegacymode == 0)
-                        {
+                        //if (settingIni.HandleLegacymode == 0)
+                        //{
                             posHandle.Proc();
-                        }
+                        //}
                         //複数撮影SS対策用
                         if (Input.GetKeyDown(KeyCode.S))
                         {
@@ -2112,7 +2112,38 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 vCopyBoneTrans = Vector3.zero; ;
             }
+            /*
+            Debuginfo.Log("シェーダー実験");
 
+            string _shaderDir = settingIni.ShaderDirectry;
+            if (!File.Exists(_shaderDir + @"\CM3D2_Toony_Lighted_Trans_Extra.Shader"))
+            {
+                Debug.LogError(AddBoneSlider.PluginName + " : " + _shaderDir + @"\CM3D2_Toony_Lighted_Trans_Extra.Shader is not exist.");
+            }
+
+            StreamReader sr = new StreamReader(_shaderDir + @"\CM3D2_Toony_Lighted_Trans_Extra.Shader");
+            string shader = sr.ReadToEnd();
+            sr.Close();
+            Material mMatrix = new Material(shader);
+            Transform[] componentsInChildren = maid.body0.goSlot[0].obj.transform.GetComponentsInChildren<Transform>(true);
+            Material mOriginal = null;
+            for (int i = 0; i < componentsInChildren.Length; i++)
+            {
+                Transform transform = componentsInChildren[i];
+                Renderer component = transform.GetComponent<Renderer>();
+                if (component != null && component.material != null)
+                {
+                    if (1 < component.materials.Length)
+                    {
+                        mOriginal = component.materials[1];
+                    }
+                }
+            }
+            
+            Shader originalShader = mOriginal.shader;
+            mOriginal.shader = mMatrix.shader;
+            Debuginfo.Log("シェーダー実験");
+            */
         }
 
         public void OnClickMirrorButton()
@@ -3127,12 +3158,14 @@ namespace CM3D2.AddBoneSlider.Plugin
                 {
 
                     getMaidBonetransform();
-                    posHandle = new HandleKun(settingIni.HandleLegacymode, FindAtlas("SystemDialog"), maid);
+                    //posHandle = new HandleKun(settingIni.HandleLegacymode, FindAtlas("SystemDialog"), maid);
+                    posHandle = new HandleKun(settingIni.ShaderDirectry, FindAtlas("SystemDialog"), maid);
 
                 }
                 else
                 {
-                    posHandle = new HandleKun(settingIni.HandleLegacymode, FindAtlas("SystemDialog"));
+                    //posHandle = new HandleKun(settingIni.HandleLegacymode, FindAtlas("SystemDialog"));
+                    posHandle = new HandleKun(settingIni.ShaderDirectry, FindAtlas("SystemDialog"));
 
                 }
                 posHandle.setVisible(false);
@@ -3652,6 +3685,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                 settingIni = new SettingIni();
                 settingIni.PoseXmlDirectory = currentDirectory + @"\UnityInjector\Config";
                 settingIni.PoseImgDirectory = currentDirectory + @"\UnityInjector\Config\PoseImg";
+                settingIni.ShaderDirectry = currentDirectory + @"\UnityInjector\Config\CustomShader";
                 if (bExistSybaris)
                 {
                     settingIni.AnmOutputmode = "sybaris";
@@ -3678,6 +3712,8 @@ namespace CM3D2.AddBoneSlider.Plugin
                     settingIni.PoseXmlDirectory = currentDirectory + @"\UnityInjector\Config";
                 if (settingIni.PoseImgDirectory == "")
                     settingIni.PoseImgDirectory = currentDirectory + @"\UnityInjector\Config\PoseImg";
+                if (settingIni.ShaderDirectry == "")
+                    settingIni.ShaderDirectry = currentDirectory + @"\UnityInjector\Config\CustomShader";
 
                 settingIni.AnmOutputmode = settingIni.AnmOutputmode.ToLower();
                 if (settingIni.AnmOutputmode != "both" && settingIni.AnmOutputmode != "photomode" && settingIni.AnmOutputmode != "sybaris")

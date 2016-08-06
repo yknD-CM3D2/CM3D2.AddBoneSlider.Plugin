@@ -14,6 +14,7 @@ namespace CM3D2.AddBoneSlider.Plugin
         private readonly int BaseRenderQueue = 3500;
 
         private bool initComplete = false;
+        private bool bGuiVisible = false;
 
         private Maid maid = null;
         private Transform trParentBone;
@@ -40,7 +41,7 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         private ClickOnlyControll CoC;
 
-        private int Legacymode;
+        //private int Legacymode;
 
         private bool bIKAttached = false;
 
@@ -48,8 +49,9 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         public bool rightClicked = false;
 
+        private Material mHandleMaterial;
 
-
+        /*
         Texture2D m_texture_red = new Texture2D(4, 4, TextureFormat.ARGB32, false);
         Texture2D m_texture_green = new Texture2D(4, 4, TextureFormat.ARGB32, false);
         Texture2D m_texture_blue = new Texture2D(4, 4, TextureFormat.ARGB32, false);
@@ -60,6 +62,10 @@ namespace CM3D2.AddBoneSlider.Plugin
         Texture2D m_texture_yellow = new Texture2D(4, 4, TextureFormat.ARGB32, false);
         Texture2D m_texture_cyan = new Texture2D(4, 4, TextureFormat.ARGB32, false);
         Texture2D m_texture_magenta = new Texture2D(4, 4, TextureFormat.ARGB32, false);
+        */
+
+        Texture2D m_texture_all = new Texture2D(16, 16, TextureFormat.ARGB32, false);
+
 
         GameObject redring;
         GameObject bluering;
@@ -71,7 +77,19 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         GameObject cyancube;
 
-        GizmoRender gizmoRender;
+        private readonly Dictionary<string, int[]> sColorUV = new Dictionary<string, int[]>()
+        {
+            { "red",    new int[] {0,0} },
+            { "green",  new int[] {1,0} },
+            { "blue",   new int[] {2,0} },
+            { "yellow", new int[] {0,1} },
+            { "cyan",   new int[] {1,1} },
+            { "magenta",new int[] {2,1} },
+            { "white",  new int[] {0,2} }
+        };
+
+
+        //GizmoRender gizmoRender;
 
         private UILabel uiLabelIKBoneName;
 
@@ -165,8 +183,11 @@ namespace CM3D2.AddBoneSlider.Plugin
                 {
                     this.uiLabelIKBoneName.gameObject.SetActive(value);
                     this.goIKBoneTarget.SetActive(value);
+                    /*
                     goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
                     goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
+                    */
+                    SetUVColor("magenta", goIKBoneTarget);
                 }
             }
         }
@@ -553,10 +574,11 @@ namespace CM3D2.AddBoneSlider.Plugin
             }
         }
 
-        public HandleKun(int _Legacymode, UIAtlas _systemAtlas, Maid _maid = null, Transform _transform = null)
+        public HandleKun(string _shaderDir, UIAtlas _systemAtlas, Maid _maid = null, Transform _transform = null)
         {
-            this.Legacymode = _Legacymode;
+            //this.Legacymode = _Legacymode;
 
+            /*
             SetMaterial(m_texture_red, new Color(1f, 0f, 0f, 0.5f), "red");
             SetMaterial(m_texture_green, new Color(0f, 1f, 0f, 0.5f), "green");
             SetMaterial(m_texture_blue, new Color(0f, 0f, 1f, 0.5f), "blue");
@@ -569,9 +591,26 @@ namespace CM3D2.AddBoneSlider.Plugin
             SetMaterial(m_texture_yellow, new Color(1f, 0.92f, 0.04f, 0.3f), "yellow");
             SetMaterial(m_texture_cyan, new Color(0f, 1f, 1f, 0.5f), "cyan");
             SetMaterial(m_texture_magenta, new Color(1f, 0f, 1f, 0.5f), "magenta");
+            */
 
+            SetMaterialAll();
+
+            //iniにオリジナルシェーダーの場所設定を追加する
+
+            if(!File.Exists(_shaderDir + @"\CustomHandleShader.Shader"))
+            {
+                Debug.LogError(AddBoneSlider.PluginName + " : "+ _shaderDir + @"\CustomHandleShader.Shader is not exist.");
+            }
+            
+            StreamReader sr = new StreamReader(_shaderDir + @"\CustomHandleShader.Shader");
+            string shader = sr.ReadToEnd();
+            sr.Close();
+            
+            mHandleMaterial = new Material(shader);
+            mHandleMaterial.mainTexture = m_texture_all;
+            mHandleMaterial.renderQueue = BaseRenderQueue;
+            
             Init();
-
             //IKボーン表示用ラベル
             UIPanel uiPanelIKBoneName = NGUITools.AddChild<UIPanel>(GameObject.Find("UI Root"));
 
@@ -600,7 +639,6 @@ namespace CM3D2.AddBoneSlider.Plugin
             }
 
             this.goHandleMasterObject.SetActive(false);
-            
         }
 
         //ハンドル君初期化生成処理
@@ -620,49 +658,65 @@ namespace CM3D2.AddBoneSlider.Plugin
             //公式のハンドルを線の太さ0にして所持しとく
             //公式のハンドルが消えたらハンドル君も消す
             //ここまでやるなら公式のハンドル流用しろよとは思うけどなんとなく
-            
+
+            /*
             if (Legacymode == 0)
             {
                 gizmoRender = this.goHandleMasterObject.AddComponent<GizmoRender>();
                 gizmoRender.Visible = true;
                 gizmoRender.offsetScale = 0;
             }
-            
+            */
 
-            
-            SetHandleObject(PrimitiveType.Sphere, m_texture_white, new Vector3(0.125f, 0.125f, 0.125f), new Vector3(0f, 0f, 0f), 0);
+            SetHandleObject2(PrimitiveType.Sphere, new Vector3(0.125f, 0.125f, 0.125f), new Vector3(0f, 0f, 0f),"white", this.goAngleHandle);
+            SetHandleObject2(PrimitiveType.Cylinder, new Vector3(0.025f, 1f, 0.025f), new Vector3(0f, 0f, 0f), "blue", this.goAngleHandle);
+            SetHandleObject2(PrimitiveType.Cylinder, new Vector3(0.025f, 1f, 0.025f), new Vector3(90f, 0f, 0f), "red", this.goAngleHandle);
+            SetHandleObject2(PrimitiveType.Cylinder, new Vector3(0.025f, 1f, 0.025f), new Vector3(0f, 0f, 90f), "green", this.goAngleHandle);
 
-            SetHandleObject(PrimitiveType.Cylinder, m_texture_blue, new Vector3(0.025f, 1f, 0.025f), new Vector3(0f, 0f, 0f), 1);
-            SetHandleObject(PrimitiveType.Cylinder, m_texture_red, new Vector3(0.025f, 1f, 0.025f), new Vector3(90f, 0f, 0f), 2);
-            SetHandleObject(PrimitiveType.Cylinder, m_texture_green, new Vector3(0.025f, 1f, 0.025f), new Vector3(0f, 0f, 90f), 3);
-            
-            
-            this.controllOnMouseZ = SetHandleRingObject(m_texture_blue_2, new Vector3(0f, 0f, 0f), new Color(0, 0, 1, 0.5f), 4);//Z
+
+            //SetHandleObject(PrimitiveType.Sphere, m_texture_white, new Vector3(0.125f, 0.125f, 0.125f), new Vector3(0f, 0f, 0f), 0);
+
+            //SetHandleObject(PrimitiveType.Cylinder, m_texture_blue, new Vector3(0.025f, 1f, 0.025f), new Vector3(0f, 0f, 0f), 1);
+            //SetHandleObject(PrimitiveType.Cylinder, m_texture_red, new Vector3(0.025f, 1f, 0.025f), new Vector3(90f, 0f, 0f), 2);
+            //SetHandleObject(PrimitiveType.Cylinder, m_texture_green, new Vector3(0.025f, 1f, 0.025f), new Vector3(0f, 0f, 90f), 3);
+
+            bluering = SetHandleRingObject2(new Vector3(0f, 0f, 0f), "blue");//Z
+            this.controllOnMouseZ = bluering.AddComponent<ControllOnMouse>();
+            //this.controllOnMouseZ = SetHandleRingObject(m_texture_blue_2, new Vector3(0f, 0f, 0f), new Color(0, 0, 1, 0.5f), 4);//Z
             this.controllOnMouseZ.wheelType = ControllOnMouse.WheelType.Angle;
             this.controllOnMouseZ.axisType = ControllOnMouse.AxisType.RZ;
-            
-            this.controllOnMouseX = SetHandleRingObject(m_texture_red_2, new Vector3(90f, 0f, 0f), new Color(1, 0, 0, 0.5f), 5);//X
+
+            redring = SetHandleRingObject2(new Vector3(90f, 0f, 0f), "red");//X
+            this.controllOnMouseX = redring.AddComponent<ControllOnMouse>();
+            //this.controllOnMouseX = SetHandleRingObject(m_texture_red_2, new Vector3(90f, 0f, 0f), new Color(1, 0, 0, 0.5f), 5);//X
             this.controllOnMouseX.wheelType = ControllOnMouse.WheelType.Angle;
             this.controllOnMouseX.axisType = ControllOnMouse.AxisType.RX;
 
-            this.controllOnMouseY = SetHandleRingObject(m_texture_green_2, new Vector3(0f, 0f, 90f), new Color(0, 1, 0, 0.5f), 6);//Y
+            greenring = SetHandleRingObject2(new Vector3(0f, 0f, 90f), "green");//Y
+            this.controllOnMouseY = greenring.AddComponent<ControllOnMouse>();
+            //this.controllOnMouseY = SetHandleRingObject(m_texture_green_2, new Vector3(0f, 0f, 90f), new Color(0, 1, 0, 0.5f), 6);//Y
             this.controllOnMouseY.wheelType = ControllOnMouse.WheelType.Angle;
             this.controllOnMouseY.axisType = ControllOnMouse.AxisType.RY;
 
-            this.controllOnMousePZ = SetHandleVectorObject(m_texture_blue, new Vector3(0f, 0f, 0f), new Color(0, 0, 1, 0.5f), 4);//Z
+            bluevector = SetHandleVectorObject2(new Vector3(0f, 0f, 0f), "blue");//Z
+            this.controllOnMousePZ = bluevector.AddComponent<ControllOnMouse>();
+            //this.controllOnMousePZ = SetHandleVectorObject(m_texture_blue, new Vector3(0f, 0f, 0f), new Color(0, 0, 1, 0.5f), 4);//Z
             this.controllOnMousePZ.wheelType = ControllOnMouse.WheelType.Position;
             this.controllOnMousePZ.axisType = ControllOnMouse.AxisType.RZ;
 
-            this.controllOnMousePX = SetHandleVectorObject(m_texture_red, new Vector3(90f, 0f, 0f), new Color(1, 0, 0, 0.5f), 5);//X
+            redvector = SetHandleVectorObject2(new Vector3(90f, 0f, 0f), "red");//X
+            this.controllOnMousePX = redvector.AddComponent<ControllOnMouse>();
+            //this.controllOnMousePX = SetHandleVectorObject(m_texture_red, new Vector3(90f, 0f, 0f), new Color(1, 0, 0, 0.5f), 5);//X
             this.controllOnMousePX.wheelType = ControllOnMouse.WheelType.Position;
             this.controllOnMousePX.axisType = ControllOnMouse.AxisType.RX;
 
-            this.controllOnMousePY = SetHandleVectorObject(m_texture_green, new Vector3(0f, 0f, 90f), new Color(0, 1, 0, 0.5f), 6);//Y
+            greenvector = SetHandleVectorObject2(new Vector3(0f, 0f, 90f), "green");//Y
+            this.controllOnMousePY = greenvector.AddComponent<ControllOnMouse>();
+            //this.controllOnMousePY = SetHandleVectorObject(m_texture_green, new Vector3(0f, 0f, 90f), new Color(0, 1, 0, 0.5f), 6);//Y
             this.controllOnMousePY.wheelType = ControllOnMouse.WheelType.Position;
             this.controllOnMousePY.axisType = ControllOnMouse.AxisType.RY;
-            
 
-            
+            /*
             cyancube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cyancube.renderer.receiveShadows = false;
             cyancube.renderer.castShadows = false;
@@ -697,13 +751,15 @@ namespace CM3D2.AddBoneSlider.Plugin
             cyancube.transform.localScale = new Vector3(0.20f, 0.20f, 0.20f);
             cyancube.name = "cyancube";
             cyancube.transform.parent = this.goAngleHandle.transform;
+            */
+            cyancube = SetHandleObject2(PrimitiveType.Cube, new Vector3(0.2f, 0.2f, 0.2f), new Vector3(0f, 0f, 0f), "cyan", this.goAngleHandle);
+            cyancube.transform.localPosition = new Vector3(-1, 0, 0);
 
             this.controllOnMouseH = cyancube.AddComponent<ControllOnMouse>();
             this.controllOnMouseH.wheelType = ControllOnMouse.WheelType.RotHead;
             this.controllOnMouseH.axisType = ControllOnMouse.AxisType.NONE;
-            
 
-
+            /*
             whitecenter = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             whitecenter.renderer.receiveShadows = false;
             whitecenter.renderer.castShadows = false;
@@ -729,11 +785,15 @@ namespace CM3D2.AddBoneSlider.Plugin
             whitecenter.transform.localScale = new Vector3(0.25f, 0.25f, 0.25f);
             whitecenter.name = "whitecenter";
             whitecenter.transform.parent = this.goPositionHandle.transform;
-            
+            */
+
+            whitecenter = SetHandleObject2(PrimitiveType.Sphere, new Vector3(0.25f, 0.25f, 0.25f), new Vector3(0f, 0f, 0f), "white", this.goPositionHandle);
+
             this.controllOnMouseC = whitecenter.AddComponent<ControllOnMouse>();
             this.controllOnMouseC.wheelType = ControllOnMouse.WheelType.PosCenter;
             this.controllOnMouseC.axisType = ControllOnMouse.AxisType.NONE;
 
+            /*
             goIKBoneTarget = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             goIKBoneTarget.renderer.receiveShadows = false;
             goIKBoneTarget.renderer.castShadows = false;
@@ -759,7 +819,9 @@ namespace CM3D2.AddBoneSlider.Plugin
             goIKBoneTarget.name = "goIKBoneTarget";
             goIKBoneTarget.transform.parent = this.goHandleMasterObject.transform;
             goIKBoneTarget.SetActive(false);
-
+            */
+            goIKBoneTarget = SetHandleObject2(PrimitiveType.Sphere, new Vector3(0.3f, 0.3f, 0.3f), new Vector3(0f, 0f, 0f), "magenta", this.goHandleMasterObject);
+            goIKBoneTarget.SetActive(false);
             this.CoC = goIKBoneTarget.AddComponent<ClickOnlyControll>();
 
             #endregion
@@ -781,7 +843,67 @@ namespace CM3D2.AddBoneSlider.Plugin
             m_texture.name = name;
         }
 
+        private void SetMaterialAll()
+        {
+            /*
+            for (int y = 0; y < m_texture_all.height; y++)
+            {
+                for (int x = 0; x < m_texture_all.width; x++)
+                {
+                    m_texture_all.SetPixel(x, y, Color.black);
+                }
+            }
+            */
+            SetMaterialAllPixel("red", new Color(1f, 0f, 0f, 0.5f) ); //red
+            SetMaterialAllPixel("green", new Color(0f, 1f, 0f, 0.5f) ); //green
+            SetMaterialAllPixel("blue", new Color(0f, 0f, 1f, 0.5f) ); //blue
+            
+            SetMaterialAllPixel("yellow", new Color(1f, 0.92f, 0.04f, 0.3f));  //yellow
+            SetMaterialAllPixel("cyan", new Color(0f, 1f, 1f, 0.5f));  //cyan
+            SetMaterialAllPixel("magenta", new Color(1f, 0f, 1f, 0.5f));  //magenta
+
+            SetMaterialAllPixel("white", new Color(1f, 1f, 1f, 0.5f));  //white
+            //SetMaterialAllPixel(12, 16, 4, 8, new Color(0f, 0f, 0f, 0.5f));
+            //SetMaterialAllPixel( 0,  4, 8, 12, new Color(0f, 0f, 0f, 0.5f)); 
+            //SetMaterialAllPixel( 4,  8, 8, 12, new Color(0f, 0f, 0f, 0.5f));
+            //SetMaterialAllPixel( 8, 12, 8, 12, new Color(0f, 0f, 0f, 0.5f));
+            //SetMaterialAllPixel(12, 16, 8, 12, new Color(0f, 0f, 0f, 0.5f));
+            //SetMaterialAllPixel( 0,  4, 12, 16, new Color(0f, 0f, 0f, 0.5f)); 
+            //SetMaterialAllPixel( 4,  8, 12, 16, new Color(0f, 0f, 0f, 0.5f));
+            //SetMaterialAllPixel( 8, 12, 12, 16, new Color(0f, 0f, 0f, 0.5f));
+            //SetMaterialAllPixel(12, 16, 12, 16, new Color(0f, 0f, 0f, 0.5f));
+
+
+            m_texture_all.Apply();
+            m_texture_all.name = "all";
+        }
+
+
+        private void SetMaterialAllPixel(string _name, Color _color)
+        {
+            for (int y = 4 * sColorUV[_name][1]; y < 4 * (sColorUV[_name][1] + 1); y++)
+            {
+                for (int x = 4 * sColorUV[_name][0]; x < 4 * (sColorUV[_name][0] + 1); x++)
+                {
+                    m_texture_all.SetPixel(x, y, _color);
+                }
+            }
+        }
+
+        private void SetUVColor(string _name, GameObject _obj)
+        {
+            Mesh mesh = _obj.GetComponent<MeshFilter>().mesh;
+            Vector2[] uv = mesh.uv;
+            for (int i = 0; i < uv.Count(); ++i)
+            {
+                uv[i].x = 0.25f * uv[i].x + sColorUV[_name][0] * 0.25f;
+                uv[i].y = 0.25f * uv[i].y + sColorUV[_name][1] * 0.25f;
+            }
+            mesh.uv = uv;
+        }
+
         //ハンドル君汎用パーツを作る
+        /*
         private void SetHandleObject(PrimitiveType _type, Texture2D m_texture, Vector3 _position, Vector3 _angle, int RQ)
         {
             GameObject PartsObject = GameObject.CreatePrimitive(_type);
@@ -790,6 +912,7 @@ namespace CM3D2.AddBoneSlider.Plugin
             PartsObject.renderer.castShadows = false;
             PartsObject.renderer.useLightProbes = false;
             PartsObject.renderer.material.mainTexture = m_texture;
+            
             if (Legacymode == 0)
             {
                 PartsObject.renderer.material.shader = Shader.Find("Custom/GizmoShader");
@@ -799,14 +922,82 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 PartsObject.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
             }
+            
             PartsObject.renderer.material.renderQueue = BaseRenderQueue + RQ;
             PartsObject.transform.localScale = _position;
             PartsObject.transform.localEulerAngles = _angle;
 
             PartsObject.transform.parent = this.goAngleHandle.transform;
         }
+        */
+
+        private GameObject SetHandleObject2(PrimitiveType _type, Vector3 _scale, Vector3 _angle,string _name, GameObject _parent)
+        {
+            GameObject PartsObject = GameObject.CreatePrimitive(_type);
+
+
+            Mesh mesh = PartsObject.GetComponent<MeshFilter>().mesh;
+
+            Vector3[] vertices = mesh.vertices;
+            Vector2[] uv = mesh.uv;
+
+            for (int i = 0; i < vertices.Count();++i)
+            {
+                vertices[i].x *= _scale.x;
+                vertices[i].y *= _scale.y;
+                vertices[i].z *= _scale.z;
+            }
+
+            for (int i = 0; i < uv.Count(); ++i)
+            {
+                uv[i].x = 0.25f * uv[i].x + sColorUV[_name][0] * 0.25f;
+                uv[i].y = 0.25f * uv[i].y + sColorUV[_name][1] * 0.25f;
+            }
+
+
+            mesh.vertices = vertices;
+            mesh.uv = uv;
+
+            //UnityEngine.Object.Destroy(PartsObject.GetComponent<Collider>());
+            //MeshCollider meshCollider = PartsObject.AddComponent<MeshCollider>();
+            //meshCollider.sharedMesh = PartsObject.GetComponent<MeshFilter>().sharedMesh;
+
+            switch(_type)
+            {
+                case PrimitiveType.Sphere: 
+                    SphereCollider colliderS = PartsObject.GetComponent<Collider>() as SphereCollider;
+                    colliderS.radius *= (_scale.x + _scale.y +_scale.z)/3f;
+                    break;
+                case PrimitiveType.Cube:
+                    BoxCollider colliderR = PartsObject.GetComponent<Collider>() as BoxCollider;
+                    Vector3 boxScale = colliderR.size;
+                    boxScale.x *= 2 * _scale.x;
+                    boxScale.y *= 2 * _scale.y;
+                    boxScale.z *= 2 * _scale.z;
+                    colliderR.size = boxScale;
+                    break;
+                default:
+                    break;
+
+            }
+
+
+            PartsObject.renderer.receiveShadows = false;
+            PartsObject.renderer.castShadows = false;
+            PartsObject.renderer.useLightProbes = false;
+
+            PartsObject.renderer.material = mHandleMaterial;
+
+            PartsObject.transform.localEulerAngles = _angle;
+
+            PartsObject.transform.parent = _parent.transform;
+
+            return PartsObject;
+        }
+        
 
         //ハンドル君のリング部分を作る
+        /*
         private ControllOnMouse SetHandleRingObject(Texture2D m_texture, Vector3 handleAngle, Color m_color, int RQ)
         {
             #region createPrimitive
@@ -953,7 +1144,7 @@ namespace CM3D2.AddBoneSlider.Plugin
             Ring.renderer.castShadows = false;
             Ring.renderer.useLightProbes = false;
             Ring.renderer.material.mainTexture = m_texture;
-
+            
             if (Legacymode == 0)
             {
                 Ring.renderer.material.shader = Shader.Find("Hidden/Transplant_Internal-Colored");
@@ -965,7 +1156,7 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 Ring.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
             }
-
+            
             Ring.renderer.material.SetColor("_Color", m_color);
             Ring.renderer.material.renderQueue = BaseRenderQueue + RQ;
 
@@ -1001,8 +1192,199 @@ namespace CM3D2.AddBoneSlider.Plugin
             return Ring.AddComponent<ControllOnMouse>();
 
         }
+        */
+        private GameObject SetHandleRingObject2(Vector3 handleAngle, string _name )
+        {
+
+            #region createPrimitive
+            GameObject Ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+
+            Mesh mesh = Ring.GetComponent<MeshFilter>().mesh;
+
+            //円筒プリミティブを縁を少し残して円柱の底面を抜いたメッシュに修正
+            Vector3[] newMesh = new Vector3[92];
+            Vector2[] newUV = new Vector2[92];
+            
+            for (int i = 0; i < 92; ++i)
+            {
+                if (i >= 46)
+                {
+                    newMesh[i] = newMesh[i - 46];
+                    newMesh[i].x *= 0.95f;
+                    newMesh[i].z *= 0.95f;
+
+                    newUV[i] = newUV[i - 46];
+                    //newUV[i].y = 0.5f;
+                    newUV[i].y = 0.125f + sColorUV[_name][1] * 0.25f;
+
+                }
+                else if (i >= 40)
+                {
+                    newMesh[i] = mesh.vertices[i + 2];
+                    newMesh[i].x *= 2.0f;
+                    newMesh[i].y *= 0.005f;
+                    newMesh[i].z *= 2.0f;
+
+                    newUV[i] = mesh.uv[i + 2];
+                    newUV[i].x = 0.25f * newUV[i].x + sColorUV[_name][0] * 0.25f;
+                    newUV[i].y = 0.25f * newUV[i].y + sColorUV[_name][1] * 0.25f;
+
+                }
+                else
+                {
+                    newMesh[i] = mesh.vertices[i];
+                    newMesh[i].x *= 2.0f;
+                    newMesh[i].y *= 0.005f;
+                    newMesh[i].z *= 2.0f;
+                    
+                    newUV[i] = mesh.uv[i];
+                    newUV[i].x = 0.25f * newUV[i].x + sColorUV[_name][0] * 0.25f;
+                    newUV[i].y = 0.25f * newUV[i].y + sColorUV[_name][1] * 0.25f;
+                }
+            }
+
+            int[] newTri = new int[360];
+
+            for (int i = 0; i < 120; ++i)
+            {
+                if (mesh.triangles[i] > 40)
+                    newTri[i] = mesh.triangles[i] - 2;
+                else
+                    newTri[i] = mesh.triangles[i];
+
+            }
+
+            for (int i = 0; i < 20; ++i)
+            {
+                for (int j = 0; j < 3; ++j)
+                {
+                    if (newTri[6 * i + j] == 41)
+                    {
+                        newTri[6 * i + 122 - j] = 86;
+                    }
+                    else if (newTri[6 * i + j] == 43)
+                    {
+                        newTri[6 * i + 122 - j] = 90;
+                    }
+                    else if (newTri[6 * i + j] == 45)
+                    {
+                        newTri[6 * i + 122 - j] = 88;
+                    }
+                    else if (newTri[6 * i + j] >= 20 && newTri[6 * i + j] < 40)
+                    {
+                        newTri[6 * i + 122 - j] = newTri[6 * i + j] + 26;
+                    }
+                    else
+                    {
+                        newTri[6 * i + 122 - j] = newTri[6 * i + j];
+
+                    }
+
+                    if (newTri[6 * i + j + 3] == 41)
+                    {
+                        newTri[6 * i + 125 - j] = 86;
+                    }
+                    else if (newTri[6 * i + j + 3] == 43)
+                    {
+                        newTri[6 * i + 125 - j] = 90;
+                    }
+                    else if (newTri[6 * i + j + 3] == 45)
+                    {
+                        newTri[6 * i + 125 - j] = 88;
+                    }
+                    else if (newTri[6 * i + j + 3] >= 20 && newTri[6 * i + j + 3] < 40)
+                    {
+                        newTri[6 * i + 125 - j] = newTri[6 * i + j + 3] + 26;
+                    }
+                    else
+                    {
+                        newTri[6 * i + 125 - j] = newTri[6 * i + j + 3];
+                    }
+
+                    if (newTri[6 * i + j] == 40)
+                    {
+                        newTri[6 * i + 242 - j] = 87;
+                    }
+                    else if (newTri[6 * i + j] == 42)
+                    {
+                        newTri[6 * i + 242 - j] = 91;
+                    }
+                    else if (newTri[6 * i + j] == 44)
+                    {
+                        newTri[6 * i + 242 - j] = 89;
+                    }
+                    else if (newTri[6 * i + j] < 20)
+                    {
+                        newTri[6 * i + 242 - j] = newTri[6 * i + j] + 66;
+                    }
+                    else
+                    {
+                        newTri[6 * i + 242 - j] = newTri[6 * i + j];
+                    }
+
+                    if (newTri[6 * i + j + 3] == 40)
+                    {
+                        newTri[6 * i + 245 - j] = 87;
+                    }
+                    else if (newTri[6 * i + j + 3] == 42)
+                    {
+                        newTri[6 * i + 245 - j] = 91;
+                    }
+                    else if (newTri[6 * i + j + 3] == 44)
+                    {
+                        newTri[6 * i + 245 - j] = 89;
+                    }
+                    else if (newTri[6 * i + j + 3] < 20)
+                    {
+                        newTri[6 * i + 245 - j] = newTri[6 * i + j + 3] + 66;
+                    }
+                    else
+                    {
+                        newTri[6 * i + 245 - j] = newTri[6 * i + j + 3];
+
+                    }
+                }
+            }
+
+            mesh.Clear();
+            mesh.vertices = newMesh;
+            mesh.uv = newUV;
+            mesh.triangles = newTri;
+
+            Ring.renderer.receiveShadows = false;
+            Ring.renderer.castShadows = false;
+            Ring.renderer.useLightProbes = false;
+            Ring.renderer.material = mHandleMaterial;
+            
+            Ring.transform.localEulerAngles = handleAngle;
+
+            UnityEngine.Object.Destroy(Ring.GetComponent<Collider>());
+
+            BoxCollider collider = Ring.AddComponent<BoxCollider>();
+
+            Vector3 box = collider.size;
+            box.x = 2.5f;
+            box.y = 0.02f;
+            box.z = 2.5f;
+            collider.size = box;
+            
+            Vector3 pos = collider.center;
+            pos.x = 0;
+            pos.y = 0;
+            pos.z = 0;
+            collider.center = pos;
+            
+
+            Ring.transform.parent = this.goAngleHandle.transform;
+
+            #endregion
+
+            return Ring;
+
+        }
 
         //ハンドル君の矢印部分を作る
+        /*
         private ControllOnMouse SetHandleVectorObject(Texture2D m_texture, Vector3 handleAngle, Color m_color, int RQ)
         {
             #region createPrimitive
@@ -1066,7 +1448,7 @@ namespace CM3D2.AddBoneSlider.Plugin
             Segare.renderer.castShadows = false;
             Segare.renderer.useLightProbes = false;
             Segare.renderer.material.mainTexture = m_texture;
-
+            
             if (Legacymode == 0)
             {
                 Segare.renderer.material.shader = Shader.Find("Hidden/Transplant_Internal-Colored");
@@ -1078,6 +1460,7 @@ namespace CM3D2.AddBoneSlider.Plugin
             {
                 Segare.renderer.material.shader = Shader.Find("CM3D2/Toony_Lighted_Trans");
             }
+            
 
             Segare.renderer.material.SetColor("_Color", m_color);
             Segare.renderer.material.renderQueue = BaseRenderQueue + RQ;
@@ -1113,7 +1496,91 @@ namespace CM3D2.AddBoneSlider.Plugin
 
             return Segare.AddComponent<ControllOnMouse>();
         }
+        */
 
+        private GameObject SetHandleVectorObject2(Vector3 handleAngle, string _name)
+        {
+            #region createPrimitive
+            GameObject Segare = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+
+            Mesh mesh = Segare.GetComponent<MeshFilter>().mesh;
+            
+            //円筒プリミティブを矢印形に修正
+            Vector3[] newMesh = new Vector3[88];
+            Vector2[] newUV = new Vector2[88];
+
+            for (int i = 0; i < 88; ++i)
+            {
+                if (i == 41)
+                {
+                    newMesh[i] = new Vector3(0f, 1.25f, 0f);
+                }
+                else if (i >= 68)
+                {
+                    newMesh[i] = mesh.vertices[i];
+                    newMesh[i].x *= 2.0f;
+                    newMesh[i].z *= 2.0f;
+                    //newMesh[i].y += 1.0f;
+                }
+                else
+                {
+                    newMesh[i] = mesh.vertices[i];
+                    ///newMesh[i].y += 1.0f;
+                }
+                newUV[i] = mesh.uv[i];
+
+                newMesh[i].x *= 0.05f;
+                newMesh[i].y *= 0.4f;
+                newMesh[i].z *= 0.05f;
+                newUV[i].x = 0.25f * newUV[i].x + sColorUV[_name][0] * 0.25f;
+                newUV[i].y = 0.25f * newUV[i].y + sColorUV[_name][1] * 0.25f;
+
+            }
+
+            int[] newTri = new int[360];
+            for (int i = 0; i < 240; ++i)
+            {
+                newTri[i] = mesh.triangles[i];
+            }
+            for (int i = 0; i < 19; ++i)
+            {
+                newTri[6 * i + 240] = 20 + i;
+                newTri[6 * i + 241] = 68 + i;
+                newTri[6 * i + 242] = 21 + i;
+                newTri[6 * i + 243] = 69 + i;
+                newTri[6 * i + 244] = 21 + i;
+                newTri[6 * i + 245] = 68 + i;
+            }
+            {
+                newTri[354] = 39;
+                newTri[355] = 87;
+                newTri[356] = 20;
+                newTri[357] = 68;
+                newTri[358] = 20;
+                newTri[359] = 87;
+            }
+            mesh.Clear();
+            mesh.vertices = newMesh;
+            mesh.uv = newUV;
+            mesh.triangles = newTri;
+
+            Segare.renderer.receiveShadows = false;
+            Segare.renderer.castShadows = false;
+            Segare.renderer.useLightProbes = false;
+            Segare.renderer.material  = mHandleMaterial;
+            
+            Segare.transform.localEulerAngles = handleAngle;
+            
+            CapsuleCollider collider = Segare.GetComponent<Collider>() as CapsuleCollider;
+            collider.radius *= 0.05f;
+            collider.height *= 0.4f;
+
+            Segare.transform.parent = this.goPositionHandle.transform;
+
+            #endregion
+
+            return Segare;
+        }
 
         //ハンドル君変形
         public void ChangeHandleModePosition(bool isPositionMode)
@@ -1249,18 +1716,24 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                     controllOnMouseH.DragFinished = false;
 
+                    /*
                     redring.renderer.material.mainTexture = m_texture_red_2;
                     greenring.renderer.material.mainTexture = m_texture_green_2;
                     bluering.renderer.material.mainTexture = m_texture_blue_2;
-
                     cyancube.renderer.material.mainTexture = m_texture_cyan;
 
 
                     redring.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
                     greenring.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
                     bluering.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
-
                     cyancube.renderer.material.SetColor("_Color", new Color(0, 1, 1, 0.5f));
+                    */
+
+                    SetUVColor("red", redring);
+                    SetUVColor("green", greenring);
+                    SetUVColor("blue", bluering);
+                    SetUVColor("cyan", cyancube);
+
 
                     //SetParentBone(trParentBone);
                     Visible = true;
@@ -1270,48 +1743,56 @@ namespace CM3D2.AddBoneSlider.Plugin
                 {
                     if (controllOnMouseX.mouseOver)
                     {
-                        redring.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
-                        redring.renderer.material.mainTexture = m_texture_yellow;
+                        //redring.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
+                        //redring.renderer.material.mainTexture = m_texture_yellow;
+                        SetUVColor("yellow", redring);
                     }
                     else
                     {
-                        redring.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
-                        redring.renderer.material.mainTexture = m_texture_red_2;
+                        //redring.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
+                        //redring.renderer.material.mainTexture = m_texture_red_2;
+                        SetUVColor("red", redring);
                     }
 
                     if (controllOnMouseY.mouseOver)
                     {
-                        greenring.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
-                        greenring.renderer.material.mainTexture = m_texture_yellow;
+                        //greenring.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
+                        //greenring.renderer.material.mainTexture = m_texture_yellow;
+                        SetUVColor("yellow", greenring);
                     }
                     else
                     {
-                        greenring.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
-                        greenring.renderer.material.mainTexture = m_texture_green_2;
+                        //greenring.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
+                        //greenring.renderer.material.mainTexture = m_texture_green_2;
+                        SetUVColor("green", greenring);
 
                     }
 
                     if (controllOnMouseZ.mouseOver)
                     {
-                        bluering.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
-                        bluering.renderer.material.mainTexture = m_texture_yellow;
+                        //bluering.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
+                        //bluering.renderer.material.mainTexture = m_texture_yellow;
+                        SetUVColor("yellow", bluering);
                     }
                     else
                     {
-                        bluering.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
-                        bluering.renderer.material.mainTexture = m_texture_blue_2;
+                        //bluering.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
+                        //bluering.renderer.material.mainTexture = m_texture_blue_2;
+                        SetUVColor("blue", bluering);
                     }
 
                     
                     if (controllOnMouseH.mouseOver)
                     {
-                        cyancube.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
-                        cyancube.renderer.material.mainTexture = m_texture_yellow;
+                        //cyancube.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
+                        //cyancube.renderer.material.mainTexture = m_texture_yellow;
+                        SetUVColor("yellow", cyancube);
                     }
                     else
                     {
-                        cyancube.renderer.material.SetColor("_Color", new Color(0, 1, 1, 0.5f));
-                        cyancube.renderer.material.mainTexture = m_texture_cyan;
+                        //cyancube.renderer.material.SetColor("_Color", new Color(0, 1, 1, 0.5f));
+                        //cyancube.renderer.material.mainTexture = m_texture_cyan;
+                        SetUVColor("cyan", cyancube);
                     }
                     
                 }
@@ -1329,6 +1810,7 @@ namespace CM3D2.AddBoneSlider.Plugin
                     controllOnMousePZ.DragFinished = false;
                     controllOnMouseC.DragFinished = false;
                     
+                    /*
                     redvector.renderer.material.mainTexture = m_texture_red;
                     greenvector.renderer.material.mainTexture = m_texture_green;
                     bluevector.renderer.material.mainTexture = m_texture_blue;
@@ -1338,6 +1820,13 @@ namespace CM3D2.AddBoneSlider.Plugin
                     greenvector.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
                     bluevector.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
                     whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
+                    */
+
+                    SetUVColor("red", redvector);
+                    SetUVColor("green", greenvector);
+                    SetUVColor("blue", bluevector);
+                    SetUVColor(bIKAttached ? "cyan" : "white", whitecenter);
+
 
                     Visible = true;
                 }
@@ -1354,48 +1843,56 @@ namespace CM3D2.AddBoneSlider.Plugin
 
                     if (controllOnMousePX.mouseOver)
                     {
-                        redvector.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
-                        redvector.renderer.material.mainTexture = m_texture_yellow;
+                        //redvector.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
+                        //redvector.renderer.material.mainTexture = m_texture_yellow;
+                        SetUVColor("yellow", redvector);
                     }
                     else
                     {
-                        redvector.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
-                        redvector.renderer.material.mainTexture = m_texture_red_2;
+                        //redvector.renderer.material.SetColor("_Color", new Color(1, 0, 0, 0.5f));
+                        //redvector.renderer.material.mainTexture = m_texture_red_2;
+                        SetUVColor("red", redvector);
 
                     }
 
                     if (controllOnMousePY.mouseOver)
                     {
-                        greenvector.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
-                        greenvector.renderer.material.mainTexture = m_texture_yellow;
+                        //greenvector.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
+                        //greenvector.renderer.material.mainTexture = m_texture_yellow;
+                        SetUVColor("yellow", greenvector);
                     }
                     else
                     {
-                        greenvector.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
-                        greenvector.renderer.material.mainTexture = m_texture_green_2;
+                        //greenvector.renderer.material.SetColor("_Color", new Color(0, 1, 0, 0.5f));
+                        //greenvector.renderer.material.mainTexture = m_texture_green_2;
+                        SetUVColor("green", greenvector);
 
                     }
 
                     if (controllOnMousePZ.mouseOver)
                     {
-                        bluevector.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
-                        bluevector.renderer.material.mainTexture = m_texture_yellow;
+                        //bluevector.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
+                        //bluevector.renderer.material.mainTexture = m_texture_yellow;
+                        SetUVColor("yellow", bluevector);
                     }
                     else
                     {
-                        bluevector.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
-                        bluevector.renderer.material.mainTexture = m_texture_blue_2;
+                        //bluevector.renderer.material.SetColor("_Color", new Color(0, 0, 1, 0.5f));
+                        //bluevector.renderer.material.mainTexture = m_texture_blue_2;
+                        SetUVColor("blue", bluevector);
                     }
 
                     if (controllOnMouseC.mouseOver)
                     {
-                        whitecenter.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
-                        whitecenter.renderer.material.mainTexture = m_texture_yellow;
+                        //whitecenter.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
+                        //whitecenter.renderer.material.mainTexture = m_texture_yellow;
+                        SetUVColor("yellow", whitecenter);
                     }
                     else
                     {
-                        whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
-                        whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
+                        //whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
+                        //whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
+                        SetUVColor(bIKAttached ? "cyan" : "white", whitecenter);
                     }
                 }
 
@@ -1406,8 +1903,9 @@ namespace CM3D2.AddBoneSlider.Plugin
 
         public void resetHandleCoreColor()
         {
-            whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
-            whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
+            //whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
+            //whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
+            SetUVColor(bIKAttached ? "cyan" : "white", whitecenter);
         }
 
         //IKターゲットのクリック終了後に呼び出すよう
@@ -1416,11 +1914,15 @@ namespace CM3D2.AddBoneSlider.Plugin
             //Debuginfo.Log("IKハンドル君左クリック終了後");
             CoC.DragFinished = false;
             CoC.Dragged = false;
-            goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
-            goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
 
-            whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
-            whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
+            //goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
+            //goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
+            SetUVColor("magenta", goIKBoneTarget);
+
+            //whitecenter.renderer.material.SetColor("_Color", bIKAttached ? new Color(0, 1, 1, 0.5f) : new Color(1, 1, 1, 0.5f));
+            //whitecenter.renderer.material.mainTexture = bIKAttached ? m_texture_cyan : m_texture_white;
+            SetUVColor(bIKAttached ? "cyan" : "white", whitecenter);
+
 
             //一旦再表示させないとハンドル君のコアが消える
             Visible = false;
@@ -1452,8 +1954,9 @@ namespace CM3D2.AddBoneSlider.Plugin
                     //Debuginfo.Log("IKハンドル君左クリック終了");
                     CoC.DragFinished = false;
 
-                    goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
-                    goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
+                    //goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
+                    //goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
+                    SetUVColor("magenta", goIKBoneTarget);
 
                     IKTargetVisible = false;
                 }
@@ -1462,13 +1965,15 @@ namespace CM3D2.AddBoneSlider.Plugin
                     //Debuginfo.Log("IKハンドル君左クリック");
                     if (CoC.mouseOver)
                     {
-                        goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
-                        goIKBoneTarget.renderer.material.mainTexture = m_texture_yellow;
+                        //goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0.92f, 0.04f, 0.5f));
+                        //goIKBoneTarget.renderer.material.mainTexture = m_texture_yellow;
+                        SetUVColor("yellow", goIKBoneTarget);
                     }
                     else
                     {
-                        goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
-                        goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
+                        //goIKBoneTarget.renderer.material.mainTexture = m_texture_magenta;
+                        //goIKBoneTarget.renderer.material.SetColor("_Color", new Color(1f, 0f, 1f, 0.5f));
+                        SetUVColor("magenta", goIKBoneTarget);
                     }
                 }
                 return CoC.Dragged;
@@ -1490,19 +1995,24 @@ namespace CM3D2.AddBoneSlider.Plugin
             if (!initComplete) return;
 
             //検知用のGizmoRenderが消えたらハンドル君も消える
-            
+            /*
             if (Legacymode == 0 && gizmoRender.Visible != Visible)
             {
                 Visible = gizmoRender.Visible;
             }
-            
+            */
+            //こっちに変更
+            bool isGUIVis = IsGuiVisible();
+            if (isGUIVis != Visible)
+                Visible = IsGuiVisible();
+
         }
 
         public void setVisible(bool bVisible)
         {
-            if(Legacymode == 0)
-                gizmoRender.Visible = bVisible;
-
+            //if(Legacymode == 0)
+            //    gizmoRender.Visible = bVisible;
+            bGuiVisible = bVisible;
             Visible = bVisible;
         }
 
@@ -1594,6 +2104,14 @@ namespace CM3D2.AddBoneSlider.Plugin
                 GameObject.Destroy(this.goHandleMasterObject);
             }
             initComplete = false;
+        }
+
+        //Neguse氏のGistより
+        //UI無し撮影の判定用
+        bool IsGuiVisible()
+        {
+            Camera camera = UICamera.currentCamera;
+            return camera != null && camera.enabled && bGuiVisible;
         }
     }
 }

@@ -67,8 +67,9 @@ namespace CM3D2.AddBoneSlider.Plugin
         public string OutputJsonDirectory = "";
         public string OutputAnmSybarisDirectory = "";
         public int DebugLogLevel = 0;
-        public int HandleLegacymode = 0;
+        //public int HandleLegacymode = 0;
         public int VRmodeEnable = 0;
+        public string ShaderDirectry = "";
 
     }
 }
